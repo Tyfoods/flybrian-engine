@@ -3,5 +3,6 @@ include FLYBRIAN_E2_ARTIFACT_CONTRACT.md
 include FLYBRIAN_E3_BRIAN_ADAPTER_CONTRACT.md
 include FLYBRIAN_E4_INGESTION_EMBODIMENT_CONTRACT.md
 include FLYBRIAN_E5_DURABLE_RUNNER_CONTRACT.md
+recursive-include src/flybrian_engine/data *.json
 recursive-include docs *.md
 recursive-include examples *.json

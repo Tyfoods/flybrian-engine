@@ -36,7 +36,7 @@ flybrian-engine = "flybrian_engine.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-flybrian_engine = ["py.typed"]
+flybrian_engine = ["py.typed", "data/*.json"]
 
 [tool.setuptools.data-files]
 "." = ["THIRD_PARTY_NOTICES.md"]

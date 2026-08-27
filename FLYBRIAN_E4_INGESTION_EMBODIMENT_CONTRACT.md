@@ -2790,3 +2790,119 @@ This closes the public reviewed-manifest boundary only. No private estate manife
 committed, no historical file was declared an experiment from its name or payload shape, and no web
 catalog row exists from E4-C4. Candidate preparation, researcher review, controlled web import,
 artifact serving, and catalog-to-DigiFly acceptance remain subsequent slices of the open parent.
+
+## 23. E4-C5 reviewed historical catalog export package
+
+Status: **implemented and host-accepted**
+
+### 23.1 Outcome and boundary
+
+E4-C5 packages the first engineering-reviewed historical cohort as a deterministic public-engine
+catalog export. It joins exact E4-C3 inventories, E4-C4 projection records, and exact historical
+envelopes to catalog-facing names, descriptions, tags, stable external keys, explicit missing
+requirements, and artifact dispositions. The package is a scientific/provenance authority; it is
+not a database seed, a cloud deployment, an artifact server, or a runnable certification.
+
+The first cohort contains exactly the twelve stakeholder-approved champion identities already used
+by the product catalog. All twelve are `PROVENANCE_ONLY`. The separate complete FES verification
+fixture remains web-owned and is not part of this historical package.
+
+### 23.2 Invariants
+
+`INV-E4-CATALOG-EXPORT-1` — An export is constructed only from a projection already validated
+against its exact ordered inventories and envelope authorities. Catalog presentation cannot add a
+run, source edge, artifact edge, or reproducibility claim.
+
+`INV-E4-CATALOG-EXPORT-2` — Each catalog record binds `(design ID, design version, run ID)`, the
+stable external source key, exact projection/import hashes, source metadata checksum, review and
+contributor facts, envelope class, missing requirements, and artifact dispositions. Any accepted
+fact change changes the record checksum and export hash.
+
+`INV-E4-CATALOG-EXPORT-3` — `PROVENANCE_ONLY` requires `historical/provenance-1` plus at least one
+missing requirement. `RUNNABLE_*` forbids missing requirements and must equal the joined envelope
+class. Presentation fields cannot promote either state.
+
+`INV-E4-CATALOG-EXPORT-4` — The bundled loader is bounded, strict-schema, duplicate-key rejecting,
+integer-only for JSON numbers, canonical, and pinned to the reviewed export hash. Unknown fields,
+binary floats, duplicate identities, checksum drift, class drift, or projection drift reject the
+whole package.
+
+`INV-E4-CATALOG-EXPORT-5` — The checked-in data file is a generated distribution artifact whose
+decoded value must equal a freshly constructed export. Python construction remains the review
+authority; the JSON file is never a second editable scientific authority.
+
+`INV-E4-CATALOG-EXPORT-6` — No private source/result bytes, absolute host path, username,
+credential, secret, or unapproved artifact location enters the package. Private source facts may
+name exact repository-relative paths, byte counts, and hashes without granting redistribution.
+
+`INV-E4-CATALOG-EXPORT-7` — Historical Git symlink commands do not become portable file
+authorities. The four `scripts/*.py` aliases resolve through explicit engineering review to exact
+regular files under `scripts/tools/`; C161's stale source name is corrected explicitly while its
+`<0-13>` selector remains unresolved.
+
+`INV-E4-CATALOG-EXPORT-8` — Each result, video, and motor-command edge is explicit. The launch
+cohort has no `available` artifact: unavailable/failed states include a reason and no byte,
+inventory reference, storage key, or URL.
+
+### 23.3 Authority and consumer map
+
+| Fact | Public engine authority | Consumer obligation |
+| --- | --- | --- |
+| exact source bytes/revision | `HistoricalEstateInventory` and `HistoricalSourceAuthority` | never reopen or redistribute from metadata alone |
+| options/FES/runnability | `HistoricalExperimentEnvelope` | copy class/missing requirements exactly |
+| design/run/artifact linkage | `HistoricalEstateProjection` | never infer a new edge from name/path/content |
+| card metadata/external key | `HistoricalCatalogMetadata` | preserve immutable external identity/versioning |
+| transport bytes/hash | `HistoricalCatalogExport` plus packaged JSON | verify before persistence; replay idempotently |
+| catalog publication | proprietary product importer | stage invisibly and promote atomically |
+| artifact serving | future approved storage authority | require exact available edge and serving policy |
+
+### 23.4 Initial reviewed evidence
+
+The cohort binds eight exact regular source files at service revision
+`d08d4a8cd20b44d54a583515ccb39586d505215d`: four reviewed `scripts/tools/`
+targets and C161, C173, C174, and C182 experiment sources. Their exact source inventory contains
+eight files and 320,266 bytes. Five champion identities use distinct reviewed C174 envelopes where
+their requested/effective options differ; shared exact invocations remain distinct historical
+designs without an inferred scientific equivalence.
+
+No consolidation output path is accepted as an available result. C161's absent referenced result
+is `failed`; the remaining result edges and all video/motor-command edges are `unavailable` for
+this cohort.
+
+### 23.5 Closure gate
+
+E4-C5 may say **implemented and host-accepted** only after:
+
+1. the real cohort validates jointly against exact inventories, envelopes, and projection;
+2. constructed and packaged exports are equal and match the pinned canonical SHA-256;
+3. source-path corrections, stable twelve-key identity, class, visibility, missing requirements,
+   and artifact dispositions have focused sensitivity tests;
+4. recursive public-byte/path/secret census passes;
+5. full pytest, Ruff, strict mypy, sdist/wheel content, and isolated installed-wheel smoke pass;
+6. the web transport bytes are byte-identical to the packaged engine JSON; and
+7. diff-to-contract review proves no service, private estate, web, Maestro, or unrelated edit.
+
+E4-C5 closure does not certify any champion runnable, normalize the full historical estate,
+publish a remote repository, deploy the product, serve historical artifacts, or close E4-D.
+
+### 23.6 Host acceptance receipts
+
+```text
+RED: focused web and engine consumers initially failed because the reviewed package/export did not exist
+COHORT: 12 stable external identities; 8 exact regular source files; 320,266 source bytes
+CLASS: 12/12 PROVENANCE_ONLY; 0 available historical artifacts; C161 result explicitly failed
+IDENTITY: canonical export SHA-256 275037b39263bf5aac579c388c521496f9b327f472a44c7e8cd03510fc0b3cad
+TRANSPORT: pretty JSON 346,428 bytes; physical SHA-256 7aa25ecdb930ed178192f1b5896a703302046b2535ef0b9b92e586ed693db464
+FOCUSED: 6 reviewed historical-corpus tests passed
+FULL: 264 engine tests passed, including the prior 258-test preservation baseline
+STATIC: Ruff 0.16.4 clean; strict mypy 2.3.1 clean across 41 source/test files
+PACKAGE: sdist 77 members; wheel 35 members; reviewed JSON/module/type marker present
+WHEEL: isolated target import outside the source tree loaded 12 records and the exact pinned hash
+BRIDGE: packaged engine JSON and proprietary web transport JSON are byte-identical
+PRIVACY: reviewed JSON contains no host path, username, credential, secret, or private/artifact bytes
+SCOPE: no service, private research estate, web, Maestro, credential, or unrelated source edit
+```
+
+This closes only E4-C5 and supplies the public scientific input to the product's controlled catalog
+importer. Full historical normalization, runnable reconstruction, remote publication, E4-D service
+cutover, artifact serving, and production deployment remain open.

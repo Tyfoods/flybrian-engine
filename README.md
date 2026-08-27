@@ -254,6 +254,31 @@ admission idempotent while preserving changed evidence as a new review decision.
 JSON key signatures, and filename-encoded parameters may help a human prepare a candidate, but are
 never accepted as linkage authority.
 
+The package includes one engineering-reviewed launch cohort for twelve historical FlyBrian
+champions. It is a source-only provenance package: all records remain `PROVENANCE_ONLY`, every
+missing execution authority is named, and result/video/motor-command artifacts have explicit
+`unavailable` or `failed` dispositions. The package redistributes no private source or result
+bytes. Four historical command aliases are resolved to their exact regular-file targets for
+Windows portability, while the unresolved C161 selector remains explicitly unresolved.
+
+```python
+from flybrian_engine import load_bundled_reviewed_champions_export
+
+catalog_export = load_bundled_reviewed_champions_export()
+assert catalog_export.record_count == 12
+assert all(
+    record.reproducibility_class == "PROVENANCE_ONLY"
+    for record in catalog_export.records
+)
+print(catalog_export.import_sha256, catalog_export.sha256())
+```
+
+`load_bundled_reviewed_champions_export()` validates the packaged bytes against the exact public
+engine inventory, envelopes, projection, metadata checksums, and pinned export hash. Consumers may
+transport those facts into a catalog, but must not reclassify runnability, infer artifact links, or
+turn a repository path into a download URL. A later complete reconstruction is a new immutable
+engine package/version; it does not rewrite this historical record.
+
 FlyBody-derived metadata is redistributed under Apache-2.0 with the bundled license and
 third-party modification notice. The runtime catalog has no MuJoCo dependency; the pinned XML and
 MuJoCo compilation are development/acceptance authorities.
