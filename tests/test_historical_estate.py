@@ -23,12 +23,12 @@ from flybrian_engine.historical_estate import (
 def write_fixture(root: Path) -> None:
     (root / "experiments").mkdir(parents=True)
     (root / "output" / "run-a").mkdir(parents=True)
-    (root / "experiments" / "walk.py").write_text("seed = 42\n", encoding="utf-8")
-    (root / "output" / "run-a" / "result.json").write_text(
-        '{"status":"complete"}\n', encoding="utf-8"
-    )
+    # These exact-byte fixtures back portable identity assertions; text-mode
+    # writes would translate LF to CRLF on Windows.
+    (root / "experiments" / "walk.py").write_bytes(b"seed = 42\n")
+    (root / "output" / "run-a" / "result.json").write_bytes(b'{"status":"complete"}\n')
     (root / "output" / "run-a" / "motor.npy").write_bytes(b"NUMPY-FIXTURE")
-    (root / "README.md").write_text("# Estate\n", encoding="utf-8")
+    (root / "README.md").write_bytes(b"# Estate\n")
 
 
 def authority(root: Path, **overrides: object) -> HistoricalEstateRoot:
