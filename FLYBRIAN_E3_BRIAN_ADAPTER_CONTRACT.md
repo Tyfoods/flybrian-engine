@@ -1,6 +1,6 @@
 # FlyBrian E3 Public Brian Scientific Adapter — OA Behavioral Specification
 
-Status: **public v0.1.1 typing receipt revoked by CI; v0.1.2 compatibility patch in verification; mixed connections and private-consumer cutover open**
+Status: **public v0.1.2 released with green multi-OS CI and verified private source consumption; mixed connections, production image, and legacy-authority closure open**
 
 Parent authorities:
 
@@ -381,10 +381,10 @@ work.
 | E3-08 | Python/CLI/HTTP pre-allocation incompatibility and runtime failure behavior | PARTIAL — accepted Python/CLI/HTTP and missing-dependency rejection pass; injected runtime failure/partial-output oracle remains open |
 | E3-09 | Manifest 1.1 standardized-results identity/checksum/disposition | PASS — public result validator plus verified artifact/disposition |
 | E3-10 | Base/Brian package, lint, typing, test, build, clean-install, and mutation gates | PARTIAL — macOS and three-OS CI definition pass; real Windows/Linux runtime remains E5/E6 |
-| E3-11 | Released public package consumed by private service | PARTIAL — immutable v0.1.1 exists but failed public CI; v0.1.2 green release and service pin remain open |
+| E3-11 | Released public package consumed by private service | PARTIAL — immutable v0.1.2 is hash-pinned and exercised through private admission/worker/package tests; production Linux image proof remains open |
 | E3-12 | Superseded private authority removed after consumer proof | OPEN — deletion requires verified v0.1.2 consumer migration |
 | E3-13 | Optional embodiment mapping has an explicit absent/null/nonempty/invalid value-domain contract | PASS in source — isolated v0.1.0 negative control rejects null; preservation and six invalid-domain cases pass in the 271-test suite |
-| E3-14 | Strict typing passes across supported local/public checker releases without hiding failures behind a checker cap | PASS in v0.1.2 source candidate — mypy 1.20.2 and CI-resolved 2.3.1 both check 41 files with no issues; exact-tag public CI remains release evidence |
+| E3-14 | Strict typing passes across supported local/public checker releases without hiding failures behind a checker cap | PASS — mypy 1.20.2 and CI-resolved 2.3.1 both check 41 files with no issues; both exact-v0.1.2 workflows are green |
 
 ## 14. Principles compliance review
 
@@ -526,4 +526,14 @@ authority and is prohibited.
   Private service consumption remains open until that evidence exists.
 - The v0.1.2 source candidate passes all 271 tests, Ruff 0.16.4, local mypy 1.20.2, and a
   disposable mypy 2.3.1 target matching the failed CI resolver. Both type-checker generations
-  report no issues across 41 files. Exact-tag package/Brian and public CI evidence remain open.
+  report no issues across 41 files.
+- The immutable v0.1.2 tag resolves to commit `98a8b087608b6d1fec31095dfaab6d6cc4de650d`;
+  its observed archive SHA-256 is
+  `aa45e10b33251f641f12a5d4728a0730df3d03e4fd3da6baec71f6fbe9c3279a`.
+  Exact-commit workflows `33087485241` and `33087480406` completed successfully across Ubuntu,
+  macOS, and Windows on Python 3.10 and 3.12 (twelve matrix jobs).
+- The private service pins that exact archive in both dependency manifests and imports 0.1.2.
+  Its focused admission/dispatch/error/completion/equivalence suite passes 35 tests; the
+  cache-disabled service suite reports 97 passing with four unchanged DigiFly baseline failures.
+  Service commit `c974c0b` is published on `codex/fes-validation-run-authority`. Production image
+  proof and superseded private-authority closure remain open and are not release claims.
