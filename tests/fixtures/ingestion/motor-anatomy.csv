@@ -1,0 +1,4 @@
+class,bodyid,subclass,systematic_type,exit_nerve,target,match_certainty(1-5),x_source_note
+motor neuron,10347,hl,MNhl01,MetaLN_L,Ti extensor,5,curated
+motor neuron,10462,fl,MNfl02,ProLN_R,Ti flexor,3,curated
+motor neuron,12009,xm,MNxm01,PDMNa_L,,,uncharacterized

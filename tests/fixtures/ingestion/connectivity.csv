@@ -1,0 +1,5 @@
+preId,preType,preInstance,preNt,postId,postType,postInstance,postNt,total_weight
+10000,DNp01,DNlt002_CvC_R,acetylcholine,10110,TTMn,MNwm34_PDMNp_R,glutamate,146
+10110,TTMn,MNwm34_PDMNp_R,glutamate,10200,MN,MNfl01_R,acetylcholine,8
+10200,MN,MNfl01_R,acetylcholine,8.4137E+11,,,,11.0
+10201,MN,MNfl02_R,acetylcholine,9.007199254740993E+15,,,,1

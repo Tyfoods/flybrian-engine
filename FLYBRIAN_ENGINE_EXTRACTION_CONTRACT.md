@@ -188,7 +188,7 @@ Mutation/sensitivity evidence must show that removing each new validation or adm
 | ENG03 | Structured schema/backend compatibility with no silent loss | PASS — E1 Python/CLI/HTTP pre-allocation rejection |
 | ENG04 | Public artifact contract spans results/motor/video/provenance | PARTIAL — manifest 1.1 plus validated biological standardized results source-verified; motor/video producers and private consumers pending |
 | ENG05 | Public Brian adapter reproduces declared golden fixtures | PASS — LIF/rate/passive-compartment analytic fixture under declared tolerances |
-| ENG06 | Public ingestion reconstructs declared dataset releases/checksums | OPEN |
+| ENG06 | Public ingestion reconstructs declared dataset releases/checksums | PARTIAL — E4-A manifest 1.0 and strict streaming normalization verify the full historical private MANC migration corpus read-only (1,208,689 edges plus 838 anatomy rows) with exact Decimal/provenance handling; official acquisition, redistribution/license evidence, canonical output receipt, and public release manifest remain open |
 | ENG07 | Direct and muscle-mediated embodiment transforms are public | OPEN |
 | ENG08 | Private service consumes released engine and duplicates are deleted | OPEN |
 | ENG09 | Durable origin-safe local runner lifecycle | PARTIAL — atomic records, bounded isolated workers, queued/running recovery semantics, queued and real running cancellation, reconnect, validated manifest/artifact retrieval, loopback-only binding, and browser-Origin denial are implemented under the E5 contract; forced termination uncertainty, multi-worker restart stress, and trusted connector evidence remain open |
@@ -225,3 +225,15 @@ This child contract may advance but cannot close the parent FlyBrian launch goal
   token, IPv4 loopback restriction, and IPv6 loopback construction when the host supports it.
 - Publication, trusted FlyBrian connector consumption, running-worker cancellation race coverage,
   real Windows/Linux runtime evidence, and local/cloud equivalence remain open.
+
+## 12. E4-A offline ingestion checkpoint — 2026-08-27
+
+- Commit-local `FLYBRIAN_E4_INGESTION_EMBODIMENT_CONTRACT.md` freezes release identity, source
+  domains, transformation boundaries, licensing, failure behavior, and staged cutover.
+- Manifest 1.0 validates canonical identity plus safe paths, files, checksums, CSV rows, schemas,
+  access, citation, license, and redistribution metadata before parsing.
+- Initial connection and motor-anatomy readers stream strict UTF-8 records with row provenance,
+  exact Decimal handling for historical scientific IDs/`.0` counts, and nullable unknown targets.
+- Full private migration rehearsal was read-only and copied no data. Official provider acquisition,
+  public data licensing, canonical normalized output receipts, embodiment transforms, and consumer
+  cutover remain open.

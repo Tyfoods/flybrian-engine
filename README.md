@@ -29,6 +29,13 @@ canonical experiment hash, seed, and dataset identity to checksummed relative fi
 per-kind disposition distinguishes `available`, `unavailable`, and `failed`, so motor commands
 can remain replayable when video rendering fails without inventing an MP4 URL.
 
+Dataset manifest 1.0 provides the corresponding input boundary. It verifies safe relative paths,
+byte size, SHA-256, CSV row count, schema identity, access, citation, license, and redistribution
+status before streaming normalized connection or motor-anatomy records. Historical MANC exports
+that contain exact integral scientific IDs or `.0` connection counts are parsed with Decimal—not
+binary float—and preserve their original lexemes in provenance. Missing muscle targets remain
+explicitly unknown for later mapping dispositions; they are never guessed.
+
 ## Install and verify
 
 ```text
