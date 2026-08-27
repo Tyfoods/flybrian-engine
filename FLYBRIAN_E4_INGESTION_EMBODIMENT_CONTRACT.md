@@ -664,6 +664,9 @@ dataset-manifest.json            (promotion only)
 acquisition-receipt.json         (promotion only)
 ```
 
+Atomic JSON replacement may create the corresponding exact `<name>.tmp` sibling transiently; it
+is fsynced and replaced or removed, never treated as evidence or left as an alternate authority.
+
 The journal canonical-hashes the request and initial provider snapshot, and records per stream:
 committed byte offset, data-row count, last keyset cursor, completion, and update time. For each
 page the file is flushed and fsynced before an atomic journal replacement. Resume truncates each
@@ -674,6 +677,10 @@ Finalization flushes files, obtains a second provider snapshot, and requires exa
 the first. It then constructs manifest 1.0 with computed SHA-256/size/row counts, verifies through
 the E4-A owner, writes the canonical acquisition receipt and manifest atomically, and renames part
 files without overwriting an existing final. No final artifact appears before all checks pass.
+Because a filesystem cannot atomically rename the full set, the receipt is the promotion marker.
+On restart before that marker, an owned final file is moved back to its `.part` name and the
+candidate manifest is removed before verification resumes; source rows and journal offsets remain
+authoritative and no provider page is lost or duplicated.
 
 ### 15.6 Credential and failure contract
 
