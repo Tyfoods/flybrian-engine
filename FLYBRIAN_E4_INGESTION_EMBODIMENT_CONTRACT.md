@@ -269,8 +269,8 @@ and a migration comparison that reads private source data without copying it.
 | E4-01 | Detailed release/manifest/normalization/transformation contract | PASS — this document |
 | E4-02 | Portable manifest validation and canonical identity | PASS — strict manifest 1.0 round-trip/canonical hash and unknown/version/domain rejection pass |
 | E4-03 | Checksum/size/path/symlink/row verification | PASS — safe relative paths, duplicate/case collision, regular-file/symlink, size/hash, strict CSV, row count, and mid-stream mutation oracles pass |
-| E4-04 | Streaming connection and motor-anatomy normalization | PASS for the initial two schemas — bounded fixtures and the full private migration corpus stream with exact provenance; duplicate-edge policy remains E4-05 receipt work |
-| E4-05 | Deterministic canonical normalized receipt | OPEN |
+| E4-04 | Streaming connection and motor-anatomy normalization | PASS for the initial two schemas — bounded fixtures and the full private migration corpus stream with exact provenance |
+| E4-05 | Deterministic canonical normalized receipt | PASS — §16 profile/receipt owner preserves every source row, records 21,296 repeated pair identities plus one annotation conflict in the 1,208,689-row migration corpus, retains 15 self-edges, rejects under strict policies, and passes canonical/promotion/idempotence/scale/sensitivity oracles |
 | E4-06 | Explicit direct actuator transform and dispositions | PASS — stable catalogs, exact target/direction/confidence/fan-out/normalization rules, canonical graph/receipt hashes, and unknown/ambiguous dispositions pass bounded and full-corpus direct oracles |
 | E4-07 | Explicit muscle-mediated transform and dispositions | PASS for graph construction — unit-bearing versioned muscles, explicit weighted fan-out, complete actuator links, canonical graph/receipt hashes, and incomplete-profile rejection pass; muscle dynamics execution remains outside this transform acceptance |
 | E4-08 | Historical corpus migration comparison | PARTIAL — all 396 private leg rows transform read-only into 692 corrected links plus 90 dispositions, removing 660 historical generic zero-sign links; historical muscle profile/catalog comparison remains open |
@@ -754,3 +754,221 @@ PASS until an authorized token is available and no secret appears in evidence.
   API import pass.
 - `BLOCKED-LIVE`: `NEUPRINT_APPLICATION_CREDENTIALS` is absent on this host, and unauthenticated
   NeuPrint access returns 401. No live row-count, receipt, or MANC v1.2.1 provider claim is made.
+
+## 16. E4-A2 deterministic connection normalization and receipt contract
+
+Status: **implemented and verified locally; cross-platform CI execution remains E4-12**
+
+### 16.1 Intended outcome and single owner
+
+A researcher can turn one verified dataset into an immutable, portable normalized connection
+stream plus a receipt that proves the exact source manifest, policy, engine version, record bytes,
+and scientific edge decisions. `ingestion.py` is the sole public owner. The raw
+`iter_connections()` reader remains a lossless source-schema reader; the new normalization owner
+wraps it rather than changing parser behavior beneath existing consumers.
+
+The owner accepts an exact destination directory and produces only:
+
+```text
+connections.ndjson
+connection-normalization-receipt.json
+```
+
+During work it may create the exact owned siblings `connections.ndjson.part`,
+`connection-normalization-receipt.json.tmp`, and `.connection-normalization-index.sqlite3`.
+Temporary files are never evidence and are removed after success or handled failure. The receipt
+is written last and is the sole promotion marker. A final connection file without its receipt is
+recoverable incomplete work, never an executable normalized dataset.
+
+### 16.2 Versioned normalization profile
+
+Connection normalization profile 1.0 contains only trimmed, bounded strings and these exact
+fields:
+
+```text
+schema_version = "1.0"
+profile_id, profile_version, source
+self_edge_policy = retain | reject
+duplicate_edge_policy = record | reject
+annotation_conflict_policy = record | reject
+```
+
+The initial public MANC profile is
+`org.flybrian.connection-normalization.manc.v1@1.0`: self-edges are retained and counted because
+the historical corpus contains 15; duplicate pairs and conflicting non-null neuron annotations
+are retained per source row and recorded. A read-only full-corpus rehearsal found 21,296 distinct
+repeated pre/post identities, including `(13316, 841370000000)` twice with different positive
+weights, while a separate annotation census found one
+conflicting neuron/field identity (`841370000000`, `transmitter`) with four source values and 52
+post-establishment conflict occurrences. Rejecting the whole release would prevent historical
+reproduction, while selecting one transmitter would fabricate authority. Version 1.0 deliberately
+does not offer duplicate-edge summation. The historical simulator explicitly groups by
+`(preId, postId, preNt)` and sums weights later; that execution policy is not silently promoted to
+source-normalization truth. Adding an aggregation choice requires a new profile schema
+that specifies weight arithmetic, provenance cardinality, annotation compatibility, overflow
+bounds, and canonical source ordering before production code changes.
+
+This is an explicit scientific choice, not an assertion that self-connections are universally
+meaningful. A consumer that requires their removal must use a later cited profile rather than
+silently filtering the normalized bytes.
+
+### 16.3 Canonical record stream and conflict identity
+
+Each output line is one UTF-8 canonical JSON object followed by exactly LF. Object keys are sorted,
+JSON is compact and non-ASCII text is preserved. Lines remain in verified manifest/file/data-row
+order. Every field of `ConnectionRecord`, including source extensions and source lexemes, is
+serialized; no local absolute path or credential is admitted.
+
+Connection identity is `(pre_neuron_id, post_neuron_id)` across every declared connectivity file,
+not within one file. Under `record`, repeated rows remain unchanged and the receipt counts each
+unique repeated pair once; under `reject`, any repeated identity fails with both source locations
+and produces no receipt or final output. Neither branch sums weights or chooses one row. A self-edge
+has equal pre/post IDs; `retain` writes it unchanged and increments `self_edge_count`, while
+`reject` fails with source evidence.
+
+For each neuron ID, each non-null `type`, `instance`, and `transmitter` value independently
+establishes an annotation. Later null values do not erase it and the identical non-null value is
+compatible. A different non-null value for the same field is a conflict. Under `record`, every
+row remains unchanged and the receipt counts each unique conflicting `(neuron_id, field)` once;
+under `reject`, normalization fails with neuron, field, first source, and conflicting source
+evidence. Pre- and post-side annotations participate in the same identity table. Source text is
+compared exactly; this owner does not case-fold, guess synonyms, or select a winning value.
+
+### 16.4 Receipt 1.0 and deterministic identity
+
+The receipt contains exactly:
+
+```text
+schema_version = "1.0"
+engine_version
+dataset_id, release, manifest_sha256
+profile_id, profile_version, profile_sha256
+self_edge_policy, duplicate_edge_policy, annotation_conflict_policy
+input_record_count, output_record_count, self_edge_count
+duplicate_edge_count, annotation_conflict_count
+output_schema = "org.flybrian.normalized-connections.ndjson.v1"
+output_path = "connections.ndjson"
+output_size_bytes, output_sha256
+```
+
+`profile_sha256` hashes canonical profile JSON. `output_sha256` hashes the exact NDJSON bytes.
+The receipt SHA-256 hashes its canonical JSON and is available through the API but is not embedded
+as a self-hash. Counts are non-negative JSON integers. Profile 1.0 is source-lossless, so successful
+input/output row counts match even when repeated identities are recorded. `duplicate_edge_count`
+is the number of distinct repeated pre/post keys; it is zero under a successful duplicate `reject`
+profile and may be non-zero under `record`. `annotation_conflict_count` is the number of distinct
+conflicting neuron/field keys; it is zero under a successful annotation `reject` profile and may
+be non-zero under `record`.
+
+Reordering dictionary construction cannot change bytes. Reordering source files or rows changes
+the manifest or output hash. Changing a policy changes the profile and receipt hashes even when
+the bounded fixture happens not to contain the affected edge.
+
+### 16.5 State machine, atomicity, and idempotence
+
+```text
+ABSENT + verified manifest/profile                  -> NORMALIZING
+NORMALIZING + all records admitted/indexed/written  -> VERIFYING
+VERIFYING + part size/hash/count recheck            -> CONNECTION_PROMOTED
+CONNECTION_PROMOTED + canonical receipt write       -> PROMOTED
+any active state + rejected-duplicate/self/conflict or tamper -> REJECTED
+PROMOTED + identical manifest/profile/output        -> PROMOTED (idempotent)
+PROMOTED + different manifest/profile/output        -> CONFLICT (no overwrite)
+```
+
+The SQLite index is an implementation detail used to prove global identity with bounded memory;
+it is not an authority, package artifact, or returned result. Transactions are bounded. Output is
+flushed and fsynced before rename; the destination directory is fsynced where supported. A caught
+failure removes only the exact files created by that invocation. Existing complete output is
+verified byte-for-byte before idempotent return. Existing unknown files are untouched. Incomplete
+output is recovered only when the receipt is absent and the exact owned SQLite marker remains from
+an interrupted invocation. An unreceipted connection file without that marker is preserved and
+rejected as ambiguous, not assumed disposable. A complete conflicting result is never overwritten.
+
+### 16.6 Scale, portability, and resource bounds
+
+For `N` records, parsing and hashing are `O(N)` and the on-disk identity index is `O(N)`; retained
+Python memory is `O(1)` apart from bounded CSV/SQLite buffers. No production row cap is introduced.
+The algorithm uses standard-library paths, JSON, hashing, CSV, and SQLite so the same public API
+runs on macOS, Windows, and Linux. Canonical content contains POSIX logical paths from the manifest,
+never OS-native destination paths. A caller must provision space for output plus the temporary
+index; disk exhaustion fails without a receipt.
+
+### 16.7 Failure matrix
+
+| Edge | Required result |
+| --- | --- |
+| duplicate pair in one file or across files with `record` | retain every source row; count the pair once; never aggregate |
+| duplicate pair with `reject` | reject with both source rows; no final/receipt |
+| duplicate pair with identical metadata | follow declared policy; still no implicit aggregation |
+| self-edge with `retain` | exact record retained and counted |
+| self-edge with `reject` | reject with source row; no final/receipt |
+| null followed by known annotation | compatible; establish known value |
+| two different non-null annotations/transmitters with `record` | retain both source rows; count the neuron/field conflict once |
+| two different non-null annotations/transmitters with `reject` | reject with neuron/field/both sources |
+| source mutation during stream | verified reader rejects; no final/receipt |
+| output/index write or fsync failure | no receipt; exact owned temporary files removable |
+| crash after connection rename, before receipt, with owned index marker | incomplete owned output; never executable; next call recovers |
+| unreceipted output without owned recovery marker | preserve and reject; never assume researcher data is disposable |
+| complete identical rerun | reverify and return identical receipt without rewriting |
+| complete different profile/manifest | conflict; preserve every existing byte |
+| unknown destination file | preserve it; normalization does not broaden cleanup |
+
+### 16.8 Forecast and decisive acceptance
+
+Expected diff: `ingestion.py`, public exports, focused ingestion tests, README, and this contract.
+No service, web, Maestro, historical catalog, provider acquisition, or simulation-backend file
+belongs to E4-A2.
+
+| Oracle | Required evidence |
+| --- | --- |
+| canonical happy path | fixture output bytes/count/hash and receipt/profile round-trip are exact |
+| duplicate policy | `record` retains/counts same/cross-file duplicates once; `reject` fails with both provenance locations |
+| annotation policy | null enrichment passes; `record` retains/counts conflict once; `reject` fails for type/instance/transmitter |
+| self-edge policy | retained/count and rejected/no-promotion branches both pass |
+| promotion | injected writer/verification failure and marked-orphan recovery never expose a receipt early; unmarked output is preserved |
+| idempotence | identical rerun preserves mtimes/bytes; changed policy conflicts without overwrite |
+| portability | fixed fixture output/receipt hashes match on supported CI operating systems |
+| scale | synthetic multi-file stream exceeds bounded SQLite transaction size without memory growth owner |
+| sensitivity | disabling the global uniqueness insert must make the cross-file duplicate oracle fail |
+| quality | full pytest, Ruff, strict mypy, sdist/wheel, and clean-wheel import/smoke pass |
+
+Implementation starts with red tests for the absent profile/result/normalization API. E4-05 moves
+to PASS only after every local oracle above is evidenced. The historical 1,208,689-row corpus is
+an additional read-only migration rehearsal, not a substitute for bounded behavioral tests and
+not authorization to copy its bytes into this repository.
+
+### 16.9 E4-A2 implementation evidence — 2026-08-27
+
+- `RED`: focused test collection failed because the public profile, receipt, result, and
+  normalization API did not exist.
+- `DISCOVERY — annotation`: the first proposed MANC profile rejected non-null annotation
+  disagreement. A read-only corpus census found exactly one conflicting neuron/field key,
+  `(841370000000, transmitter)`, four declared source values, and 52 post-establishment conflict
+  occurrences. The contract was amended to lossless `record` before production behavior changed.
+- `DISCOVERY — duplicate`: the first full normalization failed at part 1 rows 212,734/212,740 for
+  repeated pair `(13316, 841370000000)` with weights 12/11. Historical execution separately sums
+  `(preId, postId, preNt)` groups. The normalization contract was amended to preserve/count source
+  rows and keep aggregation outside normalization before the profile changed.
+- `MIGRATION-READONLY`: all three private connection files were verified and streamed without
+  modification. Manifest `3e8c4d3caeccec80f73ffa8bf5b2a0f6430ac6d349d0a1007f4fb224dea161dc`
+  produced 1,208,689 rows, 15 retained self-edges, 21,296 distinct repeated pair identities, and
+  one annotation-conflict identity. Output SHA-256 was
+  `7bd2bb474b2316d66747bd9505d2690734cb24b13cff8ee201cf417354344594`
+  over 522,803,133 bytes; receipt SHA-256 was
+  `1ad35623b0d1f8ffd7d49d095640087b43baae479d36d65c03cbd21a5e7521e8`.
+  The exact 510,556-KiB disposable output was removed immediately; no private bytes were copied
+  into the public repository or package.
+- `PRODUCTION`: standard-library SQLite globally indexes pair and neuron/field identities with
+  bounded Python memory. Canonical NDJSON preserves manifest/file/row order and all provenance;
+  the receipt binds manifest, profile, engine, policies, counts, output bytes, and hashes.
+  Promotion is fsynced and receipt-last; idempotent complete output is reverified; strict profile
+  conflicts, unmarked unreceipted output, and unrelated destination files are preserved.
+- `SENSITIVITY`: temporarily returning from the SQLite uniqueness conflict path made the strict
+  cross-file duplicate oracle fail because no exception was raised. Restoring the global policy
+  guard returned the oracle to PASS.
+- `QUALITY`: all 104 engine tests, Ruff, strict mypy, sdist/wheel build, and fresh-wheel public
+  normalization/profile-round-trip smoke pass locally. The existing six-entry
+  macOS/Ubuntu/Windows ×
+  Python 3.10/3.12 CI matrix carries the fixed canonical hashes; remote matrix execution remains
+  E4-12 rather than being inferred from this macOS run.

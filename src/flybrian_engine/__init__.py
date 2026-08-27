@@ -49,6 +49,19 @@ from .embodiment import (
     transform_direct,
     transform_muscle_mediated,
 )
+from .ingestion import (
+    MANC_CONNECTION_NORMALIZATION_V1,
+    ConnectionNormalizationError,
+    ConnectionNormalizationProfile,
+    ConnectionNormalizationReceipt,
+    ConnectionNormalizationResult,
+    ConnectionRecord,
+    MotorAnatomyRecord,
+    SourceProvenance,
+    iter_connections,
+    iter_motor_anatomy,
+    normalize_connection_dataset,
+)
 from .results import (
     ResultsValidationError,
     StandardizedResults,
@@ -59,6 +72,7 @@ from .schema import ExperimentSpec, ValidationError, validate_experiment_spec
 from .version import __version__
 
 __all__ = [
+    "MANC_CONNECTION_NORMALIZATION_V1",
     "MANC_V121",
     "AcquisitionCancelled",
     "AcquisitionError",
@@ -77,6 +91,11 @@ __all__ = [
     "CompatibilityError",
     "CompatibilityIssue",
     "ConfidenceRule",
+    "ConnectionNormalizationError",
+    "ConnectionNormalizationProfile",
+    "ConnectionNormalizationReceipt",
+    "ConnectionNormalizationResult",
+    "ConnectionRecord",
     "DatasetReference",
     "DirectMapping",
     "DirectProfile",
@@ -85,6 +104,7 @@ __all__ = [
     "ExperimentSpec",
     "MappingDisposition",
     "MappingReceipt",
+    "MotorAnatomyRecord",
     "Muscle",
     "MuscleActuatorRule",
     "MuscleCatalog",
@@ -99,11 +119,15 @@ __all__ = [
     "ProviderSnapshot",
     "ResultsValidationError",
     "RetryableAcquisitionError",
+    "SourceProvenance",
     "StandardizedResults",
     "ValidationError",
     "__version__",
     "acquire_neuprint_release",
     "assess_backend_compatibility",
+    "iter_connections",
+    "iter_motor_anatomy",
+    "normalize_connection_dataset",
     "transform_direct",
     "transform_muscle_mediated",
     "validate_experiment_spec",

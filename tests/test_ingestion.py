@@ -2,12 +2,25 @@ from __future__ import annotations
 
 import hashlib
 import shutil
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
-from flybrian_engine.datasets import DatasetManifest, DatasetVerificationError
-from flybrian_engine.ingestion import iter_connections, iter_motor_anatomy
+from flybrian_engine.datasets import (
+    DatasetManifest,
+    DatasetVerificationError,
+    VerifiedDataset,
+)
+from flybrian_engine.ingestion import (
+    MANC_CONNECTION_NORMALIZATION_V1,
+    ConnectionNormalizationError,
+    ConnectionNormalizationProfile,
+    ConnectionNormalizationReceipt,
+    iter_connections,
+    iter_motor_anatomy,
+    normalize_connection_dataset,
+)
 
 FIXTURES = Path(__file__).parent / "fixtures" / "ingestion"
 
@@ -224,3 +237,305 @@ def test_parser_validates_declared_role_and_header_only_sources(tmp_path: Path) 
     files[1]["role"] = "extension"
     with pytest.raises(DatasetVerificationError, match="requires role motor_anatomy"):
         list(iter_motor_anatomy(DatasetManifest.from_dict(value).verify(root)))
+
+
+def _connection_dataset(tmp_path: Path, files: dict[str, str]) -> VerifiedDataset:
+    root = tmp_path / "source"
+    root.mkdir()
+    entries: list[dict[str, object]] = []
+    for name, content in files.items():
+        path = root / name
+        path.write_text(content, encoding="utf-8")
+        entries.append(
+            file_entry(
+                path,
+                "connectivity",
+                "org.janelia.neuprint.connection-summary.v1",
+                content.count("\n") - 1,
+            )
+        )
+    manifest = DatasetManifest.from_dict(
+        {
+            "schema_version": "1.0",
+            "dataset_id": "fixture:normalization",
+            "provider": "FlyBrian tests",
+            "release": "1",
+            "source_url": "https://example.test/fixture",
+            "citation": None,
+            "license": "CC0-1.0",
+            "redistribution": "allowed",
+            "access": "public",
+            "files": entries,
+        }
+    )
+    return manifest.verify(root)
+
+
+_CONNECTION_HEADER = (
+    "preId,preType,preInstance,preNt,postId,postType,postInstance,postNt,total_weight\n"
+)
+
+
+def test_connection_normalization_canonical_receipt_and_idempotence(tmp_path: Path) -> None:
+    dataset = _connection_dataset(
+        tmp_path,
+        {
+            "connections.csv": _CONNECTION_HEADER
+            + "1,TypeA,A_L,acetylcholine,2,TypeB,B_R,gaba,3\n"
+            + "2,TypeB,B_R,gaba,3,,,,4.0\n"
+        },
+    )
+    destination = tmp_path / "normalized"
+    unknown = destination / "researcher-note.txt"
+    destination.mkdir()
+    unknown.write_text("preserve me", encoding="utf-8")
+
+    result = normalize_connection_dataset(
+        dataset, MANC_CONNECTION_NORMALIZATION_V1, destination
+    )
+    output = destination / "connections.ndjson"
+    receipt_path = destination / "connection-normalization-receipt.json"
+    assert result.output_path == output
+    assert output.read_bytes().endswith(b"\n")
+    assert result.receipt.output_record_count == 2
+    assert result.receipt.input_record_count == 2
+    assert result.receipt.self_edge_count == 0
+    assert result.receipt.output_sha256 == hashlib.sha256(output.read_bytes()).hexdigest()
+    assert result.receipt.profile_sha256 == MANC_CONNECTION_NORMALIZATION_V1.sha256()
+    assert result.receipt.duplicate_edge_count == 0
+    assert result.receipt.annotation_conflict_count == 0
+    assert result.receipt.output_sha256 == (
+        "92123fdbf30851dbc3ff6f175fbbc000911b18429b5a2ccc3b0f2a4e6a51f2dc"
+    )
+    assert result.receipt.sha256() == (
+        "535a995fbe3ace86bdaeb38acd523aedf85b4ae3d7489e0bfcce34e885a0044e"
+    )
+    assert MANC_CONNECTION_NORMALIZATION_V1.sha256() == (
+        "648aa3bd382a5bcd7e09d778f154c1a6ca209d521f6ff0399ad048768f2a020d"
+    )
+    assert (
+        ConnectionNormalizationProfile.from_dict(
+            MANC_CONNECTION_NORMALIZATION_V1.to_dict()
+        )
+        == MANC_CONNECTION_NORMALIZATION_V1
+    )
+    assert ConnectionNormalizationReceipt.from_dict(result.receipt.to_dict()) == result.receipt
+    assert receipt_path.read_bytes() == result.receipt.canonical_bytes() + b"\n"
+    assert unknown.read_text(encoding="utf-8") == "preserve me"
+    output_stat = output.stat()
+    receipt_stat = receipt_path.stat()
+
+    repeated = normalize_connection_dataset(
+        dataset, MANC_CONNECTION_NORMALIZATION_V1, destination
+    )
+    assert repeated.receipt.sha256() == result.receipt.sha256()
+    assert output.stat().st_mtime_ns == output_stat.st_mtime_ns
+    assert receipt_path.stat().st_mtime_ns == receipt_stat.st_mtime_ns
+
+    changed = replace(MANC_CONNECTION_NORMALIZATION_V1, self_edge_policy="reject")
+    with pytest.raises(ConnectionNormalizationError, match="conflicts with existing normalized"):
+        normalize_connection_dataset(dataset, changed, destination)
+    assert output.stat().st_mtime_ns == output_stat.st_mtime_ns
+    assert receipt_path.stat().st_mtime_ns == receipt_stat.st_mtime_ns
+
+
+def test_connection_normalization_rejects_cross_file_duplicate_with_provenance(
+    tmp_path: Path,
+) -> None:
+    dataset = _connection_dataset(
+        tmp_path,
+        {
+            "a.csv": _CONNECTION_HEADER + "1,A,a,acetylcholine,2,B,b,gaba,3\n",
+            "b.csv": _CONNECTION_HEADER + "1,A,a,acetylcholine,2,B,b,gaba,3\n",
+        },
+    )
+    destination = tmp_path / "normalized"
+    rejecting = replace(
+        MANC_CONNECTION_NORMALIZATION_V1,
+        duplicate_edge_policy="reject",
+    )
+    with pytest.raises(ConnectionNormalizationError) as caught:
+        normalize_connection_dataset(dataset, rejecting, destination)
+    message = str(caught.value)
+    assert "duplicate connection pair (1, 2)" in message
+    assert "a.csv data row 1" in message
+    assert "b.csv data row 1" in message
+    assert not (destination / "connections.ndjson").exists()
+    assert not (destination / "connection-normalization-receipt.json").exists()
+    assert not (destination / ".connection-normalization-index.sqlite3").exists()
+
+
+def test_connection_normalization_records_each_duplicate_pair_once(tmp_path: Path) -> None:
+    row = "1,A,a,acetylcholine,2,B,b,gaba,3\n"
+    dataset = _connection_dataset(
+        tmp_path,
+        {
+            "a.csv": _CONNECTION_HEADER + row + row,
+            "b.csv": _CONNECTION_HEADER + row,
+        },
+    )
+    result = normalize_connection_dataset(
+        dataset,
+        MANC_CONNECTION_NORMALIZATION_V1,
+        tmp_path / "normalized",
+    )
+    assert result.receipt.input_record_count == 3
+    assert result.receipt.output_record_count == 3
+    assert result.receipt.duplicate_edge_count == 1
+    assert result.output_path.read_text(encoding="utf-8").count("\n") == 3
+
+
+@pytest.mark.parametrize("field,column", [("type", 1), ("instance", 2), ("transmitter", 3)])
+def test_connection_normalization_rejects_annotation_conflicts(
+    tmp_path: Path, field: str, column: int
+) -> None:
+    first = ["1", "TypeA", "A_L", "acetylcholine", "2", "TypeB", "B_R", "gaba", "3"]
+    second = ["1", "TypeA", "A_L", "acetylcholine", "3", "", "", "", "4"]
+    second[column] = "conflicting"
+    dataset = _connection_dataset(
+        tmp_path,
+        {"connections.csv": _CONNECTION_HEADER + ",".join(first) + "\n" + ",".join(second) + "\n"},
+    )
+    rejecting = replace(
+        MANC_CONNECTION_NORMALIZATION_V1,
+        annotation_conflict_policy="reject",
+    )
+    with pytest.raises(
+        ConnectionNormalizationError,
+        match=rf"neuron 1 {field} annotation conflicts.*data row 1.*data row 2",
+    ):
+        normalize_connection_dataset(dataset, rejecting, tmp_path / "normalized")
+
+
+def test_connection_normalization_records_each_annotation_conflict_once(
+    tmp_path: Path,
+) -> None:
+    dataset = _connection_dataset(
+        tmp_path,
+        {
+            "connections.csv": _CONNECTION_HEADER
+            + "1,A,a,acetylcholine,2,B,b,gaba,3\n"
+            + "1,A,a,gaba,3,C,c,gaba,4\n"
+            + "1,A,a,glutamate,4,D,d,gaba,5\n"
+        },
+    )
+    result = normalize_connection_dataset(
+        dataset,
+        MANC_CONNECTION_NORMALIZATION_V1,
+        tmp_path / "normalized",
+    )
+    assert result.receipt.annotation_conflict_count == 1
+    assert result.receipt.output_record_count == 3
+    output = result.output_path.read_text(encoding="utf-8")
+    assert '"pre_transmitter":"acetylcholine"' in output
+    assert '"pre_transmitter":"gaba"' in output
+    assert '"pre_transmitter":"glutamate"' in output
+
+
+def test_connection_normalization_allows_null_enrichment_and_controls_self_edges(
+    tmp_path: Path,
+) -> None:
+    dataset = _connection_dataset(
+        tmp_path,
+        {
+            "connections.csv": _CONNECTION_HEADER
+            + "1,,,,2,,,,3\n"
+            + "2,TypeB,B_R,gaba,2,TypeB,B_R,gaba,4\n"
+        },
+    )
+    kept = normalize_connection_dataset(
+        dataset, MANC_CONNECTION_NORMALIZATION_V1, tmp_path / "kept"
+    )
+    assert kept.receipt.self_edge_count == 1
+    assert kept.receipt.duplicate_edge_count == 0
+    assert kept.receipt.annotation_conflict_count == 0
+    assert kept.receipt.output_record_count == 2
+
+    rejecting = replace(MANC_CONNECTION_NORMALIZATION_V1, self_edge_policy="reject")
+    with pytest.raises(ConnectionNormalizationError, match=r"self-edge \(2, 2\).*data row 2"):
+        normalize_connection_dataset(dataset, rejecting, tmp_path / "rejected")
+    assert not (tmp_path / "rejected" / "connections.ndjson").exists()
+
+
+def test_connection_normalization_recovers_orphan_and_never_promotes_receipt_early(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = _connection_dataset(
+        tmp_path,
+        {"connections.csv": _CONNECTION_HEADER + "1,A,a,acetylcholine,2,B,b,gaba,3\n"},
+    )
+    destination = tmp_path / "normalized"
+    destination.mkdir()
+    orphan = destination / "connections.ndjson"
+    orphan.write_text("incomplete\n", encoding="utf-8")
+    (destination / ".connection-normalization-index.sqlite3").write_text(
+        "owned interrupted marker",
+        encoding="utf-8",
+    )
+
+    import flybrian_engine.ingestion as ingestion
+
+    def fail_promotion(_source: Path, _destination: Path) -> None:
+        raise OSError("injected promotion failure")
+
+    monkeypatch.setattr(ingestion, "_promote_connection_part", fail_promotion)
+    with pytest.raises(ConnectionNormalizationError, match="cannot promote normalized connections"):
+        normalize_connection_dataset(dataset, MANC_CONNECTION_NORMALIZATION_V1, destination)
+    assert not orphan.exists()
+    assert not (destination / "connection-normalization-receipt.json").exists()
+    assert not (destination / "connections.ndjson.part").exists()
+    assert not (destination / ".connection-normalization-index.sqlite3").exists()
+
+
+def test_connection_normalization_preserves_unowned_unreceipted_output(
+    tmp_path: Path,
+) -> None:
+    dataset = _connection_dataset(
+        tmp_path,
+        {"connections.csv": _CONNECTION_HEADER + "1,A,a,acetylcholine,2,B,b,gaba,3\n"},
+    )
+    destination = tmp_path / "normalized"
+    destination.mkdir()
+    unowned = destination / "connections.ndjson"
+    unowned.write_text("researcher data\n", encoding="utf-8")
+
+    with pytest.raises(
+        ConnectionNormalizationError,
+        match="has no owned recovery marker; refusing overwrite",
+    ):
+        normalize_connection_dataset(
+            dataset,
+            MANC_CONNECTION_NORMALIZATION_V1,
+            destination,
+        )
+    assert unowned.read_text(encoding="utf-8") == "researcher data\n"
+    assert not (destination / "connection-normalization-receipt.json").exists()
+
+
+def test_connection_profile_rejects_unknown_policy_and_scale_streams(tmp_path: Path) -> None:
+    with pytest.raises(ConnectionNormalizationError, match="duplicate_edge_policy"):
+        ConnectionNormalizationProfile(
+            profile_id="fixture",
+            profile_version="1",
+            source="https://example.test/profile",
+            self_edge_policy="retain",
+            duplicate_edge_policy="sum",  # type: ignore[arg-type]
+            annotation_conflict_policy="reject",
+        )
+    invalid_profile = MANC_CONNECTION_NORMALIZATION_V1.to_dict()
+    invalid_profile["unexpected"] = "value"
+    with pytest.raises(ConnectionNormalizationError, match=r"unknown=\['unexpected'\]"):
+        ConnectionNormalizationProfile.from_dict(invalid_profile)
+
+    rows = [f"{index},,,,10000,,,,1\n" for index in range(1, 2501)]
+    dataset = _connection_dataset(
+        tmp_path,
+        {
+            "a.csv": _CONNECTION_HEADER + "".join(rows[:1250]),
+            "b.csv": _CONNECTION_HEADER + "".join(rows[1250:]),
+        },
+    )
+    result = normalize_connection_dataset(
+        dataset, MANC_CONNECTION_NORMALIZATION_V1, tmp_path / "normalized"
+    )
+    assert result.receipt.output_record_count == 2500

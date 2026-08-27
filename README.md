@@ -36,6 +36,29 @@ that contain exact integral scientific IDs or `.0` connection counts are parsed 
 binary float—and preserve their original lexemes in provenance. Missing muscle targets remain
 explicitly unknown for later mapping dispositions; they are never guessed.
 
+Verified connection sources can be promoted into canonical NDJSON with an explicit normalization
+profile and receipt. The initial MANC profile retains and counts self-edges, repeated pre/post
+pairs, and conflicting non-null neuron annotations while preserving every source row. It does not
+silently sum weights or select one annotation. A strict caller can instead choose rejection. A
+temporary on-disk identity index keeps retained Python memory bounded;
+only `connections.ndjson` plus its receipt are promoted, and the receipt is written last.
+
+```python
+from pathlib import Path
+
+from flybrian_engine import (
+    MANC_CONNECTION_NORMALIZATION_V1,
+    normalize_connection_dataset,
+)
+
+result = normalize_connection_dataset(
+    verified_dataset,
+    MANC_CONNECTION_NORMALIZATION_V1,
+    Path("normalized-manc"),
+)
+print(result.receipt.output_sha256)
+```
+
 Versioned embodiment profiles then convert normalized motor anatomy into either direct
 neuron-to-actuator links or explicit neuron-to-muscle-to-actuator graphs. Actuator and muscle
 identities are stable strings rather than array positions; direction, exact rational weights,
