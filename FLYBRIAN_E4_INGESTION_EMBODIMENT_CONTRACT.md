@@ -334,3 +334,180 @@ redistribution, service cutover, or cloud policy.
 When real source data contradicts a field/rule assumption: stop, preserve the exact offending row,
 amend the schema/profile/disposition rule here, add a pre-change failing fixture, then resume. Git
 history records superseded behavior; old profile IDs remain reproducible.
+
+## 14. E4-B explicit embodiment implementation contract
+
+Status: **implementation contract; production implementation not yet started**
+
+This slice turns normalized motor anatomy into one of two simulator-neutral, versioned graphs. It
+does not execute muscle dynamics, calculate motor commands, copy the private Flybody catalog, or
+claim that a bounded profile is the final biological mapping.
+
+### 14.1 Current authority and reuse record
+
+| Fact | Current authority/evidence | E4-B decision |
+| --- | --- | --- |
+| normalized motor anatomy | public `ingestion.py` `MotorAnatomyRecord` at E4-A `fefeead` | reuse as the sole transform input |
+| experiment graph shape | public FES 1.0 validation in `schema.py`; direct and muscle specimens | produce data that can be projected into this shape; do not create a second experiment schema |
+| historical 90-actuator catalog/direct mapper | private read-only `flybrian/digifly/mapping.py` | migration evidence only until source/license/version are explicit |
+| historical muscle bridge/dynamics | private read-only `flybrian/digifly/muscle_model.py` | migration evidence only; no implicit import or copy |
+| transformation owner after E4-B | absent | one public engine embodiment module owns profile validation and deterministic graph construction |
+
+Semantic searches covered actuator, muscle, embodiment, mapping, disposition, motor command,
+exit-nerve, target-label, crosswalk, and Hill-model concepts across public engine and private
+service. Existing FES validation checks graph references but does not derive graphs from anatomy.
+The artifact disposition type describes output-file availability and is intentionally not reused
+for scientific mapping dispositions.
+
+Read-only historical census on 2026-08-27 found 838 motor-anatomy rows, 396 leg rows, 1,352 direct
+links over 60 actuators, and no duplicate neuron/actuator pairs. Of those links, 660 are generic-leg
+fan-out links with zero sign. The corrected public profile must represent those source rows as
+`ambiguous`; zero is not an actuator direction. The historical behavior may later be preserved
+under an explicitly unsafe migration profile, but it cannot be the corrected default.
+
+### 14.2 Intended authority and deletion map
+
+- Intended owner: the public engine's versioned actuator catalog, muscle catalog, mapping profiles,
+  transform result, and canonical receipt.
+- E4-B adds no private compatibility reader, hidden default profile, positional actuator lookup, or
+  mutable global mapping.
+- No public authority is displaced in this slice, so there is no public deletion target.
+- Private direct/muscle authorities remain until E4-D has a released-package consumer and exact
+  corpus parity. They are read-only here and are not wrapped as a second runtime authority.
+- Retirement gate: after public profile license/provenance approval, full-corpus comparison, service
+  cutover, and production rehearsal, E4-D must delete the duplicate private transformation paths.
+
+### 14.3 Behavioral state machine
+
+States: `PROFILE_INVALID`, `READY`, `TRANSFORMING`, `GRAPH_WITH_LINKS`, `GRAPH_WITHOUT_LINKS`,
+`TRANSFORM_REJECTED`.
+
+```text
+catalog/profile construction + invalid reference/domain      -> PROFILE_INVALID (no transform)
+catalog/profile construction + complete explicit rules       -> READY
+READY + verified ordered anatomy records                     -> TRANSFORMING
+TRANSFORMING + one or more valid derived links                -> GRAPH_WITH_LINKS
+TRANSFORMING + only scientific dispositions                   -> GRAPH_WITHOUT_LINKS
+TRANSFORMING + duplicate neuron identity/conflicting source  -> TRANSFORM_REJECTED
+```
+
+Both graph outcomes contain a canonical receipt. `GRAPH_WITHOUT_LINKS` is valid for inspection but
+derives `executable = false`. Profile validation and source-identity rejection happen before a
+result is promoted; partial graphs are never returned after rejection.
+
+### 14.4 Catalog and profile contract
+
+Every actuator has a stable string ID, body region, joint/function, control range with unit, and
+source reference. Catalog ID plus version identifies the ordered set; array position is not an
+identity. Duplicate/case-colliding IDs, non-finite or reversed ranges, blank source, and duplicate
+body-region/joint identity are rejected.
+
+Every muscle has a stable string ID, body region, model ID/version, source reference, and an
+ordered unit-bearing parameter set. Parameters use exact decimal lexical values; duplicate names,
+unknown units, non-finite values, or duplicate/case-colliding muscle IDs are rejected.
+
+A direct profile declares:
+
+- profile ID/version/source and compatible dataset identities;
+- exact exit-nerve→body-region rules;
+- exact target-label→joint plus positive/negative direction rules;
+- exact certainty→confidence rules;
+- whether multiple body regions and multiple same-joint actuators may fan out; and
+- weight policy `none` or `per_actuator_equal_share`.
+
+A muscle profile declares the same identity/compatibility/body-region/confidence facts plus exact
+`(body_region, target_label)` rules. Each rule names muscles and exact neuron→muscle weights; each
+muscle names one or more explicit muscle→actuator links with weight and direction. Fan-out is
+therefore data, not inference.
+
+Missing certainty has no default confidence. Missing/unknown target, exit nerve, actuator, muscle,
+direction, or confidence cannot create a link. A generic leg label has no direct target rule in the
+corrected profile and becomes `ambiguous_target`, not a zero-sign fan-out.
+
+### 14.5 Result, provenance, and derived state
+
+Direct links contain neuron ID, stable actuator ID, exact positive weight, direction, confidence,
+and original row provenance. Muscle graphs contain selected muscle definitions, neuron→muscle
+links, and muscle→actuator links with the same explicit identity/weight/direction provenance.
+
+Every disposition contains `unmapped`, `ambiguous`, or `conflicting`; a stable reason code; neuron
+ID where applicable; source row provenance; affected field; and original value when available.
+Disposition order follows input record order and then rule/catalog order.
+
+`DERIVED: executable`
+
+- direct graph: true only when at least one direct link exists;
+- muscle graph: true only when at least one neuron→muscle link exists and every selected muscle has
+  at least one explicit actuator link;
+- missing, empty, or disposition-only output: false.
+
+The canonical receipt binds engine version, input dataset ID/release/manifest hash, profile
+ID/version, catalog IDs/versions, mode, input count, link/muscle/disposition counts, canonical graph
+SHA-256, and receipt SHA-256. Canonical JSON sorts object keys and preserves declared/input order;
+exact decimal values serialize as normalized strings to avoid platform float differences.
+
+### 14.6 Edge and lifecycle resolutions
+
+| Edge/lifecycle | Required resolution |
+| --- | --- |
+| create profile/catalog | validate the complete immutable object before use |
+| read/replay old result | bind exact profile/catalog versions and hashes; do not resolve `latest` |
+| update rules | publish a new version; old graph/receipt bytes remain reproducible |
+| delete profile/catalog | external distribution may retire discovery, but a referenced version cannot silently disappear from reproducibility storage |
+| unknown dataset/profile compatibility | reject before transforming |
+| duplicate neuron source identity | reject the transform; no last-row-wins behavior |
+| two nerves resolve to one region | deduplicate the region without duplicating a link |
+| nerves resolve to multiple regions | `ambiguous` unless the profile explicitly permits fan-out |
+| no target or no rule | `unmapped`; generic target uses `ambiguous` |
+| multiple matching actuators | `ambiguous` unless same-joint fan-out is explicit |
+| certainty absent/outside profile | `unmapped` confidence disposition |
+| selected muscle lacks actuator link | invalid profile before source transformation |
+| direct/muscle duplicate derived pair | invalid profile or rejected transform; never silently sum |
+| no links | valid non-executable graph plus receipt |
+| interrupted transform | no promoted result or receipt; immutable inputs remain untouched |
+
+### 14.7 Scale and horizon
+
+The scaling input is `M` motor-anatomy records and `L` emitted links. Transform work is
+`O(M + L)` plus bounded catalog lookup; retained state is `O(M + L)` because duplicate scientific
+identity detection and the returned graph require those identities. No row-count cap becomes
+product capacity. A profile that deliberately fans one row to many outputs pays for those declared
+links; an unknown row pays for one disposition. The first real constraint is memory for the graph
+that the caller requested, not an unrelated hard-coded neuron count.
+
+The historical migration oracle uses all 396 leg rows. A separate bounded fixture varies fan-out,
+unknown rows, and duplicate identity. Corpus size is evidence, not a production maximum.
+
+### 14.8 Forecast and test-trust gate
+
+Expected production: one new public embodiment module and stable exports only. Expected tests: one
+new test module using E4-A records and small synthetic catalogs/profiles. Expected documentation:
+this contract, extraction ledger, and README. No service/web/Maestro file belongs to E4-B.
+
+| Invariant | Existing test evidence | Pre-change result | Decisive oracle/sensitivity | Disposition |
+| --- | --- | --- | --- | --- |
+| direct explicit mapping | FES validates hand-authored links only | absent | anatomy→direct graph exact bytes; removing target/direction admission fails | add |
+| muscle explicit mapping | FES validates hand-authored graph only | absent | anatomy→muscle graph with explicit fan-out and links; removing actuator completeness fails | add |
+| unknown/ambiguous truth | private tests assert link count/leg coverage, not dispositions | unsafe generic links admitted privately | missing/generic/unknown records produce exact dispositions and no links | replace in public boundary |
+| stable identity/cross-platform bytes | schema round-trip covers experiment JSON, not derived graph receipt | absent | equivalent construction yields identical canonical bytes/hash; float conversion mutation fails | add |
+| duplicate/conflict rejection | no public transform | absent | repeated neuron ID rejects before result | add |
+| scale ownership | private test asserts `>500` links | insensitive to growth owner | full 396-row read-only migration plus bounded fan-out fixture; no fixed count in production | add |
+
+Tests are written and demonstrated red because the embodiment owner does not yet exist. At least one
+critical rule is then mutated after implementation to prove the oracle rejects the harmful
+alternative. Discovery that requires a second authority, guessed sign, hidden aggregation, or a
+private-file runtime dependency returns this slice to contract state before further production
+editing.
+
+### 14.9 Confirmed behavioral scenarios
+
+1. A `MetaLN_L` neuron targeting `Ti extensor` with certainty 5 maps through explicit rules to the
+   declared left T3 tibia actuator with positive direction and confidence 1.
+2. A `ProLN_R` neuron targeting `Ti flexor` maps to the declared right T1 tibia actuator with
+   negative direction; changing only the target changes the direction oracle.
+3. A neuron with no target yields `unmapped/missing_target` and no direct or muscle link.
+4. A generic `hind leg` record yields `ambiguous/ambiguous_target`, never ten zero-sign links.
+5. A muscle rule may explicitly fan one anatomy target into two named muscles with declared
+   weights; both muscles must have explicit actuator links and unit-bearing model parameters.
+6. Reordering dictionary construction without changing declared catalog/rule/input order leaves
+   canonical bytes unchanged; changing a declared rule or source row changes the graph hash.
