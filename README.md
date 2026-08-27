@@ -89,6 +89,51 @@ replay = apply_actuator_crosswalk(
 print(replay.target_values, replay.drops)
 ```
 
+The package separately publishes two deliberately distinct muscle authorities: the exact 15
+left-foreleg parameter records in the pinned FlyMimic OpenSim model, and FlyBrian's historical
+six-leg Hill approximation used by earlier walking experiments. The latter includes the rounded
+90-muscle catalog, explicit MANC target bridge, named muscle-to-DOF projections, spike-count drive
+conversion, and pure activation/force state transitions. It is labeled historical experimental
+behavior, not official FlyMimic validation.
+
+Two Hill profiles prevent a migration shortcut from becoming invisible. The bug-compatible
+profile advances a multi-DOF muscle once per projection, exactly reproducing the historical loop;
+the corrected profile advances it once using its primary DOF and then projects the resulting
+torque. Both require exact catalog and projection hashes. Recorded motor-command artifacts remain
+the stricter replay authority when they exist.
+
+```python
+from flybrian_engine import (
+    FLYBRIAN_HISTORICAL_6LEG_MUSCLE_CATALOG,
+    FLYBRIAN_HISTORICAL_HILL_CORRECTED_PROFILE,
+    FLYBRIAN_HISTORICAL_MUSCLE_DOF_PROJECTIONS,
+    initial_historical_leg_states,
+    step_historical_hill_leg,
+)
+
+profile = FLYBRIAN_HISTORICAL_HILL_CORRECTED_PROFILE
+catalog = FLYBRIAN_HISTORICAL_6LEG_MUSCLE_CATALOG
+states = initial_historical_leg_states(profile, catalog, "T1_left")
+frame = step_historical_hill_leg(
+    profile,
+    catalog,
+    FLYBRIAN_HISTORICAL_MUSCLE_DOF_PROJECTIONS,
+    "T1_left",
+    states,
+    drives={},  # omitted declared muscles receive explicit zero drive
+    joint_states={
+        "coxa_abduct": ("-0.038", "0"),
+        "coxa_twist": ("0", "0"),
+        "coxa": ("-0.131", "0"),
+        "femur_twist": ("0", "0"),
+        "femur": ("0.6", "0"),
+        "tibia": ("-0.5", "0"),
+    },
+    dt="0.002",
+)
+print(frame.torques, frame.sha256())
+```
+
 FlyBody-derived metadata is redistributed under Apache-2.0 with the bundled license and
 third-party modification notice. The runtime catalog has no MuJoCo dependency; the pinned XML and
 MuJoCo compilation are development/acceptance authorities.

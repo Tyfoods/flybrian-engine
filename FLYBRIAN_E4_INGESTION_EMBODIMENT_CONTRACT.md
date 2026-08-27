@@ -1188,3 +1188,349 @@ private runtime dependency returns this slice to specification state before prod
   pass; sdist/wheel build passes; clean-wheel import and 90→78 application smoke pass through only
   public exports. Remote macOS/Ubuntu/Windows × Python 3.10/3.12 execution remains E4-12 and is not
   inferred from this host.
+
+## 18. E4-B3 licensed muscle authorities and historical Hill execution profile
+
+Status: **implemented and host-accepted; supported-platform CI remains E4-12**
+
+### 18.1 Outcome and truth boundary
+
+A historical muscle-mediated FlyBrian experiment can bind explicit muscle parameters, mapping
+rules, drive conversion, dynamic equations, integration behavior, and state instead of relying on
+an unversioned private module. A user can inspect and run the same bounded historical Hill
+approximation locally through the public engine, while separately inspecting the exact official
+FlyMimic foreleg parameters from which part of that approximation was derived.
+
+Two authorities must remain visibly distinct:
+
+1. **Official FlyMimic T1 authority:** 15 left-foreleg muscles and exact source parameters from the
+   pinned OpenSim model. This is cited, Apache-2.0 source data. It is not a six-leg model.
+2. **FlyBrian historical six-leg approximation:** the rounded 15-muscle table copied across six
+   legs, FlyBrian-calibrated moment arms and standing reference angles, T2/T3 strength scales,
+   MANC target bridge, spike-rate sigmoid, and FlyBrian-authored Hill approximation. This is a
+   migration/reproduction profile, not an assertion that FlyMimic validated those choices.
+
+The default public discovery surface labels the second authority `historical_experimental`.
+Callers must opt into it by exact profile ID/version/hash. No API named merely `muscle` or `latest`
+may silently choose it.
+
+### 18.2 Primary sources, license, and pinned bytes
+
+Primary authorities checked on 2026-08-27:
+
+- FlyMimic repository: `https://github.com/gizemozd/FlyMimic`, Apache-2.0, commit
+  `9ea1131626cd76f7203b74076ef8f0e9cab30bef`;
+- exact OpenSim source:
+  `flymimic/assets/models/opensim/best_combined.osim`, 483,413 bytes, SHA-256
+  `091a173b9cfb26a64228935c6f6ebfc93c26a9425a0b5e5c1bb463c644cb89de`;
+- converted MuJoCo source:
+  `flymimic/assets/models/best_combined_arm_cvt3.xml`, 49,643 bytes, SHA-256
+  `59d7db31eb756c61661065c16cfbbb1e3400da1a9df8b1f02fe79dc87bd48724`;
+- exact FlyMimic license: 11,357 bytes, SHA-256
+  `c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4`;
+- paper: Özdil et al., *Musculoskeletal simulation of limb movement biomechanics in Drosophila
+  melanogaster*, ICLR 2026, arXiv `2509.06426`, OpenReview `6lEjX1getx`.
+
+The Apache license is byte-identical to the license already bundled for FlyBody. B3 adds FlyMimic
+source/citation/modification attribution to `THIRD_PARTY_NOTICES.md` and verifies that the shared
+license plus updated notice occur in both source and wheel archives. Neither the 483-KiB OpenSim
+model nor the MuJoCo XML is bundled by this slice.
+
+The pinned OpenSim file declares exactly 15 `Millard2012EquilibriumMuscle` entries, all with rigid
+tendon (`ignore_tendon_compliance=true`), exact full-precision maximum isometric force, optimal
+fiber length, tendon slack length, zero optimal pennation, maximum contraction velocity, and
+activation/deactivation constants `0.0001`/`0.00040000000000000002` seconds. The converted MuJoCo
+file likewise has exactly 15 muscle actuators. The official project and paper describe the
+muscle-driven left foreleg; its ground example supports the remaining legs through direct torque.
+The private historical 90-muscle extrapolation therefore cannot be relabeled as official.
+
+### 18.3 Discovery census and historical deviations
+
+Read-only comparison found that the private 15-muscle values are rounded derivatives of the
+pinned OpenSim values. Maximum absolute rounding differences are:
+
+```text
+F_max:   0.004758622609079 mN
+L_opt:   0.000049243987291333 mm
+L_slack: 0.00004783390114995 mm
+V_max:   0.045275132706327 L_opt/s
+pennation: 0 rad
+```
+
+The historical six-leg builder creates 90 muscles by repeating those rounded T1 values with
+strength scales `T1=1`, `T2=1.2`, `T3=1.4`. It uses 10/40 ms activation/deactivation constants,
+not FlyMimic's 0.1/0.4 ms source constants. It adds 15 calibrated/placeholder moment arms, six
+per-leg standing-angle tables, a length-sensitivity cap, fiber-length/velocity clamps, a passive
+force cap, and output torque scaling. Those additions are FlyBrian historical choices.
+
+The historical builder's documentation advertises `t2_f_max_scale`, `t3_f_max_scale`,
+`tau_act`, and `tau_deact`, while production behavior reads `t2_scale`/`t3_scale` and ignores the
+tau overrides. Public historical import records the actually effective values and emits ignored
+legacy-option evidence; it does not silently pretend the advertised overrides took effect. A
+corrected caller-selected profile may vary tau/scales, but its canonical identity must change.
+
+For the 396 historical leg motor-anatomy rows, the private bridge classifies 242 as mapped, 88 as
+known targets with no FlyMimic equivalent, and 66 as generic leg targets. It emits 312
+neuron→muscle links. Per-leg mapped-neuron counts are `T1L=49`, `T1R=49`, `T2L=38`, `T2R=37`,
+`T3L=34`, `T3R=35`. Both T1 legs drive all 15 reference muscle identities; T2/T3 drive 12 because
+the three promotor identities have no MANC neurons in those segments. Unknown, no-equivalent, and
+generic rows must become dispositions; none may gain baseline torque through an inferred target.
+
+### 18.4 Public owners and immutable authorities
+
+One new narrowly named public module owns:
+
+- `FLYMIMIC_T1_MUSCLE_CATALOG`: exact 15-entry full-precision source catalog;
+- `FLYBRIAN_HISTORICAL_6LEG_MUSCLE_CATALOG`: exact 90-entry historical effective catalog;
+- `FLYBRIAN_HISTORICAL_MANC_MUSCLE_PROFILE`: the target/body/muscle/actuator bridge with explicit
+  confidence and no-equivalent/generic dispositions;
+- `FLYBRIAN_HISTORICAL_HILL_BUG_COMPATIBLE_PROFILE`: equations, constants, clamps, scaling,
+  integration, and the historical per-projection state-advance defect;
+- `FLYBRIAN_HISTORICAL_HILL_CORRECTED_PROFILE`: the same declared approximation with one state
+  advance per muscle and first-declared/primary-DOF kinematics;
+- `MuscleActivationState`, step input/result records, and pure state-transition functions; and
+- an explicit spike-count→drive profile/function.
+
+Stable muscle IDs include leg identity; repeating the raw T1 muscle name is not sufficient for a
+90-entry catalog. Catalog array position is never muscle identity. Every parameter is unit-bearing
+and represented by an exact decimal lexeme in canonical authority JSON. Catalog/profile hashes
+change if any source value, historical rounding, moment arm, standing angle, sign, clamp, scale,
+normalizer, or equation version changes.
+
+The public module must not import private FlyBrian code, pandas, NumPy, MuJoCo, OpenSim, or a
+network client at runtime. The pinned files are acceptance oracles, not runtime dependencies.
+
+### 18.5 Historical spike-count to drive contract
+
+Input is one exact counting window plus a declared muscle→ordered-neuron pool:
+
+```text
+non-negative integer spike count per neuron
+positive finite window_duration_s
+positive finite rate_normalizer_hz and sigmoid_k_hz
+optional positive extensor/flexor normalizers supplied together or neither
+```
+
+For each pool, missing neuron counts are zero. Mean firing rate is the arithmetic mean of each
+neuron's `count / window_duration_s`. Stable pool order and `math.fsum` define aggregation.
+Historical drive is:
+
+```text
+drive = 1 / (1 + exp(-(mean_rate_hz - selected_normalizer_hz) / sigmoid_k_hz))
+```
+
+Flexor classification requires `flexor` in the source muscle name; extensor requires `extensor` or
+the historical coxa keywords `sternal`, `pleural`, `remotor`, or `promotor`; remaining identities
+use the extensor normalizer only when dual mode is explicitly selected. Empty pools produce exact
+zero. A populated pool with zero spikes retains the historical non-zero sigmoid baseline (about
+0.02298 under 30/8); it must not be described as spontaneous biological activation.
+
+Negative/non-integral counts, zero/negative duration, one-sided dual normalizer configuration,
+unknown muscle IDs, duplicate neuron IDs in one pool, booleans, and non-finite numbers reject.
+
+### 18.6 Historical Hill state transition
+
+The state is only activation `a` plus exact profile/catalog identities. State is passed in and a
+new immutable state/result is returned; there is no mutable global or hidden object history.
+
+For neural drive `u`, time step `dt`, angle `q`, velocity `v`, and one historical muscle:
+
+```text
+u_c = clamp(u, 0, 1)
+tau = tau_act if u_c > a else tau_deact
+a_next = clamp(a + ((u_c - a) / tau) * dt, 0, 1)       # explicit Euler
+
+sensitivity = min(moment_arm_mm / L_opt_mm, 1)
+L_norm = clamp(1 + sensitivity * (q - ref_angle), 0.5, 1.5)
+V_norm = clamp(sensitivity * v, -0.95 * V_max, 5 * V_max)
+f_L = exp(-((L_norm - 1) / 0.45)^2)
+
+if V_norm <= 0:
+    f_V = (V_max + V_norm) / (V_max - V_norm / 0.25)
+else:
+    f_V = min((V_max * 1.8 + V_norm) / (V_max + V_norm), 1.8)
+
+if L_norm <= 1:
+    f_passive = 0
+else:
+    f_passive = (exp(4 * ((L_norm - 1) / 0.6)) - 1) / (exp(4) - 1)
+
+F_active = F_max_mN * a_next * f_L * f_V
+F_passive = min(F_max_mN * f_passive, F_max_mN * 0.5)
+F_total = F_active + F_passive
+torque_mN_mm = F_total * moment_arm_mm * cos(pennation_rad)
+```
+
+The per-muscle result exposes activation, normalized length/velocity, active/passive/total force,
+and torque. Under the corrected profile, a leg step computes one transition using the muscle's
+first declared (primary) DOF kinematics, then contributes that torque to every explicit DOF/sign
+entry. Contributions are accumulated in declared muscle order with `math.fsum`. The historical
+private loop instead advances a multi-DOF muscle once per DOF and uses each projection's kinematics;
+the separately named bug-compatible profile reproduces that defect for exact experiment reruns.
+It is never selected as corrected behavior. Recorded motor commands remain the authority for
+strict artifact replay without a dynamics rerun.
+
+### 18.7 Numeric, determinism, and result identity
+
+Authority/config values serialize as exact decimal strings. Execution uses validated IEEE-754
+binary64 and Python `math`; booleans, NaN, infinities, negative `dt`, invalid state, non-positive
+physical constants, and incomplete joint state reject before transition. A zero time step is
+permitted only for read-only force inspection and leaves activation unchanged.
+
+Isolated force/drive/activation comparisons use absolute and relative tolerance `1e-12` against
+the historical Python oracle. Bounded multi-muscle traces use `1e-10`. The result's canonical
+scientific identity includes profile/catalog/bridge hashes, ordered input/state lexemes, output
+binary64 hexadecimal representations, and declared tolerance; formatted decimal display is not
+the authority. Supported-platform CI must compare those canonical result bytes for the fixed
+oracle and separately apply the declared numerical tolerance to any platform math variation.
+
+A state/result may be checkpointed and resumed only with exact matching profile, muscle catalog,
+muscle ID set/order, and prior-state hash. Reusing activation state under changed tau, timestep,
+muscle parameters, or body mapping rejects.
+
+### 18.8 Adapter and artifact boundary
+
+B3 produces named joint torques and state traces. It does not write directly into a 78-value
+MuJoCo array. A separate embodiment adapter must bind each named DOF to the pinned actuator
+catalog, declare the historical `0.01` mN·mm→model-control scaling, validate target control ranges,
+and emit the existing motor-command artifact schema with catalog/profile hashes. Non-leg and
+adhesion controls are explicit adapter inputs; they are never silently passed from an undeclared
+global vector.
+
+The current official FlyMimic model has its own 15 spatial tendons, attachment sites, body rig,
+passive joint properties, and actuator dynamics. A FlyBody torque adapter is not equivalent to
+running that model. UI labels and artifact provenance must distinguish:
+
+- `flymimic_official_left_foreleg`;
+- `flybrian_historical_hill_flybody_adapter`; and
+- future corrected/validated muscle-body profiles.
+
+### 18.9 State/lifecycle and failure matrix
+
+```text
+invalid catalog/profile/bridge                         -> AUTHORITY_INVALID
+valid exact authorities + initial activation state     -> READY
+READY + one validated drive/joint/dt frame              -> STEPPING
+STEPPING + all named transitions/accumulations          -> FRAME_COMPLETE
+FRAME_COMPLETE + checkpoint                             -> READY (next frame)
+any state + identity/non-finite/domain mismatch          -> REJECTED (prior state unchanged)
+recorded motor artifact + exact actuator catalog         -> REPLAYABLE (no dynamics rerun needed)
+```
+
+| Edge | Required resolution |
+| --- | --- |
+| official 15 catalog requested as six-leg | reject; no extrapolation |
+| historical tau option was present but ineffective | preserve requested/effective distinction in import evidence |
+| known MANC target has no muscle equivalent | disposition; never zero-drive pseudo-muscle |
+| generic leg target | ambiguous disposition; never fan out |
+| mapped pool has no spikes | historical sigmoid baseline, explicitly reported |
+| muscle acts on two DOFs | one activation transition, two signed torque projections |
+| missing drive for a declared muscle | explicit zero drive; no hidden `0.02` experiment-script fallback |
+| missing joint state | reject frame unless the selected profile explicitly declares a fixed-state fallback |
+| timestep exceeds activation constant | explicit Euler/clamp behavior remains profile data; validation may warn but not silently change solver |
+| force/velocity exponential overflow | reject non-finite frame; no partial state promotion |
+| target torque exceeds actuator range | adapter disposition/reject per explicit policy; never silent clip |
+| interrupted trace | last complete checkpoint is durable; partial frame has no receipt |
+
+### 18.10 Scale, non-goals, and retirement map
+
+For `M` muscles, `D` declared muscle→DOF projections, and `N` spike-pool memberships, a frame is
+`O(M + D + N)` time and `O(M + D)` state/result memory. No corpus-count or 90-muscle constant is a
+generic engine capacity limit.
+
+B3 does not claim walking, validate the historical approximations biologically, port every C-series
+experiment script, bundle FlyMimic meshes/models, implement MuJoCo physics, or close local/cloud
+equivalence. It does not hide experiment-script overrides such as anti-gravity boosts, per-muscle
+resting-potential changes, reflex controllers, or default `0.02` drives inside the core Hill
+profile. Those become separate structured controller/profile inputs when each historical family is
+converted.
+
+Intended deletion after E4-D consumer cutover: private duplicate parameter tables, MANC bridge,
+drive conversion, and Hill equations. Historical experiment scripts remain provenance/migration
+oracles until their configs/results are imported; they are not bulk-deleted by B3. Private
+MuJoCo/body/render code remains until the separate physical adapter and DigiFly acceptance prove
+replacement.
+
+### 18.11 Test-trust and acceptance gate
+
+Implementation starts with red tests for absent official/historical catalogs, profiles, mapping,
+state, and pure transition APIs.
+
+| Oracle | Required evidence |
+| --- | --- |
+| official catalog | parse pinned OpenSim read-only; exact 15 names/full-precision parameters/tau/rigid-tendon values and fixed hash |
+| historical catalog | exact 90 IDs, rounded parameters, scales, moment arms, references, and fixed hash match private evidence read-only |
+| MANC bridge | all 396 rows reproduce the 242/88/66 classification, 312 links, per-leg counts, and explicit dispositions |
+| isolated dynamics | activation, force components, and torque match independently calculated fixtures at concentric/isometric/eccentric/passive/clamp edges |
+| bounded trace | historical tibia eight-step oracle matches within `1e-12`; result/checkpoint hashes are fixed |
+| drive conversion | empty/zero/mixed pools and default/dual sigmoid fixtures match historical values; invalid domains reject |
+| multi-DOF state | one state advance per frame; sensitivity mutation advancing per projection must fail |
+| authority identity | any parameter/sign/clamp/source/state mutation changes canonical hashes or rejects resume |
+| packaging | shared Apache license and updated FlyMimic notice appear byte-correct in sdist/wheel |
+| quality | full pytest, Ruff, strict mypy, build, clean-wheel public smoke, and supported-platform CI pass |
+
+Historical private numerical comparison is migration evidence, not a runtime dependency. At least
+one equation, one tau/config trap, one bridge disposition, and the multi-DOF state-advance rule are
+mutated during sensitivity review. Any mismatch returns this slice to specification before the
+implementation or parent ledger is promoted.
+
+### 18.12 Forecast and contract-to-diff map
+
+Expected diff: one public muscle-dynamics module, stable exports, focused tests, README, updated
+third-party notice/package archive evidence, and this contract. Reuse the existing `Muscle`,
+`MuscleCatalog`, `MuscleProfile`, mapping result, actuator catalog, and artifact schemas; do not
+create parallel graph/artifact authorities. No service, web, Maestro, cloud, or renderer file
+belongs to B3.
+
+| Changed surface | Contract authority |
+| --- | --- |
+| official/historical catalog constants | §18.2–18.4 source truth, modifications, exact units/identity |
+| drive/bridge profiles | §18.3–18.5 source classification, sigmoid, explicit dispositions |
+| pure Hill state/step/leg result | §18.6–18.9 equations, state, numeric identity, failure behavior |
+| focused tests | §18.9–18.11 behavioral, migration, sensitivity, and portability oracles |
+| notice/README/exports | §18.1–18.2 public promise, license, and truthful labeling |
+
+Any production edit not explained by this map, or contract requirement without implementation or
+explicit open disposition, blocks B3 closure.
+
+### 18.13 Implementation and acceptance evidence (2026-08-27)
+
+Implemented by `src/flybrian_engine/muscle_dynamics.py` and public package exports without a
+runtime dependency on FlyMimic, the private FlyBrian service, NumPy, pandas, OpenSim, or MuJoCo.
+README and third-party notices preserve the official-versus-historical truth boundary. Fixed
+authorities are:
+
+```text
+official FlyMimic 15 catalog:      5e35c1343bcdc2f1744cc1acbe9e3e780a404d121af4cdb982917cb3bb483a53
+historical FlyBrian 90 catalog:    985d57db75882bc541c42ff6b9426369e8c98666b63d53211e4e428c37c94f51
+historical DOF projections:        74cb6e0d5eca850f928dd186ab225e768e64eaa50a798848138388f641d3852a
+historical MANC target bridge:     46b914a7b48c414ec8c96258114434533a4a150efba091b39584b712355685d9
+MANC muscle mapping profile:       bf2530b1b1b1fbc9272e9095c48d330c82e9ae2895252a5385dc6712b4ba7ea4
+historical drive profile:          0ff78dbcd8c18aec64d4f1c838f36f8df0b1512df9200d75deb133cecdc93d3a
+bug-compatible Hill profile:       bec0bbad29de3cd1dea8c7736ae1c831249da4e8b060d6f5e067a40cfd903e30
+corrected Hill profile:            03c982feb92a1acf9058ce840977f912c3e363b193c91e63d7f8fd8daf922600
+```
+
+Read-only acceptance against pinned upstream and private migration authorities proved:
+
+- downloaded OpenSim bytes were exactly 483,413 bytes with the §18.2 SHA-256; XML parsing found
+  exactly 15 muscles, and every public parameter/tau/rigid-tendon value matched its source decimal;
+- all 90 effective historical definitions and all 108 projection rows matched the untouched
+  private builders; the largest Decimal-to-private-binary64 parameter difference was
+  `2.842170943040401e-14` from historical float scaling;
+- the 396 leg rows emitted 312 neuron→muscle links, 78 selected muscle definitions, 88
+  muscle→actuator links, 88 `unknown_muscle_target` dispositions for known no-equivalent targets,
+  and 66 `ambiguous_target` dispositions for generic targets; and
+- a complete deterministic T1L bug-compatible frame matched private joint torques with maximum
+  absolute difference `4.440892098500626e-16`.
+
+The permanent focused suite covers official/historical hashes, the eight-step tibia trace,
+default/dual drive oracles, invalid domains, corrected-versus-legacy state advancement, and
+independent concentric/isometric/eccentric/passive/clamp equations. Sensitivity cases prove that
+equation-width, projection-sign, bridge-confidence, tau, and state-advance mutations change an
+authority/result identity or reject reuse.
+
+Host OA gates passed from the accepted source tree: 124 pytest tests; Ruff; strict mypy over 30
+source files; isolated sdist/wheel build; byte-identical 11,357-byte Apache license and 3,042-byte
+notice in both archives; and clean-wheel public import plus 15-state/6-torque step. Remote
+macOS/Ubuntu/Windows × Python 3.10/3.12 execution remains E4-12 and is not inferred from this host.

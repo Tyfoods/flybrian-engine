@@ -27,3 +27,31 @@ Changes made by FlyBrian contributors:
 
 The FlyBody XML and other FlyBody source assets are not bundled in this distribution. The
 FlyBrian engine's original code remains licensed under MIT as stated in the root `LICENSE`.
+
+## FlyMimic left-foreleg muscle metadata
+
+`flybrian-engine` includes a modified representation of the 15 left-foreleg muscle parameter
+records declared by the FlyMimic OpenSim model:
+
+- Project: FlyMimic
+- Upstream repository: https://github.com/gizemozd/FlyMimic
+- Upstream commit: `9ea1131626cd76f7203b74076ef8f0e9cab30bef`
+- Source artifact: `flymimic/assets/models/opensim/best_combined.osim`
+- Source SHA-256: `091a173b9cfb26a64228935c6f6ebfc93c26a9425a0b5e5c1bb463c644cb89de`
+- License: Apache License 2.0; see `LICENSES/Apache-2.0.txt`
+- Citation: P. G. Özdil et al., *Musculoskeletal simulation of limb movement biomechanics in
+  Drosophila melanogaster*, ICLR 2026, arXiv:2509.06426
+
+Changes made by FlyBrian contributors:
+
+- extracted exact decimal lexemes for force, fiber length, tendon slack length, pennation,
+  contraction velocity, tendon-compliance mode, and activation/deactivation constants into an
+  immutable, unit-bearing Python catalog;
+- added stable catalog identity, provenance, and canonical hashing; and
+- kept FlyBrian's separately authored historical six-leg extrapolation, rounding, strength scales,
+  moment arms, standing angles, MANC bridge, drive conversion, and Hill dynamics under explicitly
+  different authority/profile identities.
+
+The OpenSim model, converted MuJoCo model, meshes, and other FlyMimic source assets are not bundled
+in this distribution. The FlyBrian engine's original implementation and historical approximation
+remain licensed under MIT as stated in the root `LICENSE`.
