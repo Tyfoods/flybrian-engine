@@ -5,10 +5,8 @@ Status: **E3-A and first E3-B biological oracle source-verified; mixed connectio
 Parent authorities:
 
 - `FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md`, segment E3 and acceptance ENG05/ENG08.
-- `/Users/tyroachford/Projects/flybrian-web-p14/FLYBRIAN_LAUNCH_PRODUCT_SPEC.md`,
-  invariants 7–12, scenarios S5/S7, and acceptance A15/A17/A18.
-- `/Users/tyroachford/Projects/agent-harness-oa-provider-cli-bridge/PRINCIPLES_OF_SPECIFICATION_DESIGN.md`.
-- `/Users/tyroachford/Projects/agent-harness/OA_ENGINEERING_PROTOCOL.md`.
+- The product-boundary, specification-design, and quality requirements restated in this document;
+  proprietary planning documents are not required to interpret or verify the public contract.
 
 Mutation authority is limited to this public repository until segment E3-D explicitly starts.
 The private service is read-only source/provenance evidence before that segment. Maestro and

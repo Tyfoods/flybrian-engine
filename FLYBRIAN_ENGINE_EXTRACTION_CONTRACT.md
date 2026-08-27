@@ -2,9 +2,12 @@
 
 Status: **active; E0–E2 and the first public E3 Brian oracle source-verified**
 
-Canonical stakeholder intent: `/Users/tyroachford/Projects/flybrian-web-p14/FLYBRIAN_LAUNCH_PRODUCT_SPEC.md`, especially invariants 8–12, sections 9–12, scenarios S5–S7, and acceptance A15–A19.
+Canonical stakeholder intent: the FlyBrian launch requirements for open scientific execution,
+local/cloud equivalence, reproducibility, and hosted-product separation are restated in this
+contract so the public repository has a self-contained behavioral authority.
 
-Quality authority: `/Users/tyroachford/Projects/agent-harness/OA_ENGINEERING_PROTOCOL.md`.
+Quality authority: behavior-first specification, explicit ownership/invariants, test-first red
+oracles, lint/type/test/build gates, mutation sensitivity, and a reconciled acceptance ledger.
 
 Mutation authority: this public repository and explicitly forecast private-consumer changes only. Maestro has no mutation authority. Historical source in `flybrian-serve` is read-only until an extraction phase names exact files, tests the public replacement, switches every consumer, and deletes the private duplicate in the same reviewed migration.
 

@@ -2,9 +2,9 @@
 
 Status: **source-verified; private service and web consumption deferred**
 
-Parent authority: `FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md` E2 and
-`/Users/tyroachford/Projects/flybrian-web-p14/FLYBRIAN_LAUNCH_PRODUCT_SPEC.md`
-invariants 8–10, run/artifact section 10, and acceptance A11–A12/A16–A17.
+Parent authority: `FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md` E2. The applicable FlyBrian product
+invariants and acceptance behavior are restated in this public contract so it remains usable
+without proprietary product-planning documents.
 
 ## Correct-system outcome
 
