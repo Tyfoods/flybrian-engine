@@ -1,6 +1,6 @@
 # FlyBrian E3 Public Brian Scientific Adapter — OA Behavioral Specification
 
-Status: **E3-A and first E3-B biological oracle source-verified; mixed connections and private-consumer cutover open**
+Status: **public v0.1.0 released; v0.1.1 compatibility patch in verification; mixed connections and private-consumer cutover open**
 
 Parent authorities:
 
@@ -381,8 +381,10 @@ work.
 | E3-08 | Python/CLI/HTTP pre-allocation incompatibility and runtime failure behavior | PARTIAL — accepted Python/CLI/HTTP and missing-dependency rejection pass; injected runtime failure/partial-output oracle remains open |
 | E3-09 | Manifest 1.1 standardized-results identity/checksum/disposition | PASS — public result validator plus verified artifact/disposition |
 | E3-10 | Base/Brian package, lint, typing, test, build, clean-install, and mutation gates | PARTIAL — macOS and three-OS CI definition pass; real Windows/Linux runtime remains E5/E6 |
-| E3-11 | Released public package consumed by private service | BLOCKED — no publication coordinate/credential |
-| E3-12 | Superseded private authority removed after consumer proof | BLOCKED with E3-11 |
+| E3-11 | Released public package consumed by private service | PARTIAL — immutable v0.1.0 tag exists; v0.1.1 service pin and production-consumer evidence remain open |
+| E3-12 | Superseded private authority removed after consumer proof | OPEN — deletion requires verified v0.1.1 consumer migration |
+| E3-13 | Optional embodiment mapping has an explicit absent/null/nonempty/invalid value-domain contract | PASS in 0.1.1 source candidate — isolated v0.1.0 negative control rejects null; preservation and six invalid-domain cases pass in the 271-test suite |
+| E3-14 | Strict typing passes on the current supported mypy release without hiding failures behind a checker cap | PASS in 0.1.1 source candidate — mypy 1.20.2 checks all 41 source/test files with no issues; focused runtime guard oracles remain green |
 
 ## 14. Principles compliance review
 
@@ -438,3 +440,80 @@ work.
 - Not claimed: public connection semantics, MANC/FlyWire ingestion, historical private-model
   numerical equivalence, runtime failure/partial-output normalization, private service cutover,
   package publication, Windows/Linux runtime evidence, or local/cloud equivalence.
+
+## 17. v0.1.1 hosted-embodiment compatibility and current-toolchain addendum
+
+This addendum is an implementation contract for a backward-compatible public patch discovered
+while wiring the released package into the private service. It does not authorize private service
+workarounds and does not expand the public engine into hosted account, queue, or rendering logic.
+
+### Behavioral and derived-state contract
+
+`DERIVED: selectedEmbodimentMapping`
+
+- Source: the optional `embodied_config.mapping_id` FES member.
+- Missing member: no named mapping is selected; preserve the missing representation.
+- Explicit `null`: no named mapping is selected; preserve explicit `null` in canonical bytes.
+- Non-empty string: select that named mapping and preserve the string exactly.
+- Empty string, whitespace-only string, boolean, number, array, or object: reject at
+  `embodied_config.mapping_id` before compatibility checking or output allocation.
+- The value does not select a backend. Backend selection remains the execution constraint's
+  responsibility.
+
+The state transition is deliberately small:
+
+```text
+FES input -> schema validation
+missing/null/nonempty mapping_id -> VALIDATED (representation preserved)
+invalid mapping_id               -> REJECTED (no run/output allocation)
+```
+
+The canonical private constructor currently emits `mapping_id: null`; therefore rejecting null
+prevents an otherwise valid hosted FES from reaching either the explicit public or named legacy
+backend. Converting null to omission in the private service would create a second canonicalization
+authority and is prohibited.
+
+### Test-trust and sensitivity record
+
+| Invariant | Decisive oracle | Pre-change result | Sensitivity/negative control | Acceptance |
+| --- | --- | --- | --- | --- |
+| Null mapping is valid and preserved | `tests/test_schema.py::test_legacy_hosted_embodiment_preserves_null_mapping_selection` through public validation/canonical value | RED on v0.1.0 at `embodied_config.mapping_id` | Reverting the one validator condition reproduces the rejection | Focused and full source suite green on 0.1.1 source |
+| Invalid mapping values still fail closed | Existing schema malformed-field parameterization plus empty-string companion | Preservation baseline green | Empty string/type mutations must remain rejected | Focused schema suite and full suite |
+| Current strict typing accepts runtime-validated literals | `python -m mypy --no-incremental --cache-dir=/dev/null` over `src` and `tests` | RED on mypy 1.20.2: eight return-type failures in four existing deserializers | Existing invalid disposition/visibility/role/reproducibility tests fail if their runtime guards are removed | Current mypy, focused invalid-input tests, and full suite green |
+
+### Intended authority, reuse, and change forecast
+
+- Public schema validation remains the sole mapping value-domain authority; no service-side
+  normalization, default, fallback, or duplicate validator is permitted.
+- Existing deserializer runtime guards remain the literal-domain authorities. The typing slice
+  only carries their already-validated values into declared `Literal` result types; it does not
+  widen accepted values or add a second validator.
+- Expected public production edits: `src/flybrian_engine/schema.py`, version metadata, and the
+  four current-toolchain typing sites in `results.py`, `artifacts.py`,
+  `historical_projection.py`, and `historical_corpus.py`.
+- Expected test edits: the null-domain schema oracle and version/hash expectations caused solely
+  by the 0.1.1 package identity. Existing invalid-input tests are retained as negative controls.
+- Expected documentation edits: this contract, the parent extraction ledger, and README release
+  coordinates. No scientific equations, backend compatibility claims, dataset authorities,
+  runner lifecycle, or private code enter this patch.
+- Release acceptance requires source tests, current Ruff, current strict mypy, package build,
+  clean-wheel import/validation, real Brian golden smoke, immutable tag/archive checksum, and
+  public CI. Service consumption remains a separate E3-D/SC ledger.
+
+### Source-candidate verification receipt — 2026-08-27
+
+- An isolated worktree at public v0.1.0 commit `4022fa3` rejects the canonical hosted specimen
+  with `embodied_config.mapping_id must be a non-empty string`; this is the decisive RED control.
+- The 0.1.1 source candidate passes 271 tests with pytest bytecode/cache writes disabled. The
+  matrix includes missing, null, non-empty, empty, whitespace, boolean, numeric, array, and object
+  mapping values.
+- Ruff 0.16.4 passes `src` and `tests` with its cache disabled. Strict mypy 1.20.2 reports no
+  issues across 41 files with incremental/cache output disabled.
+- Wheel and source distribution build without dependency downloads. The isolated wheel import
+  resolves from the disposable install root, reports engine 0.1.1, preserves explicit null, and
+  reports the real Brian2 2.10.1 adapter.
+- The wheel executes the public Brian golden FES, produces a scientific manifest and standardized
+  results at engine 0.1.1, and emits exactly six spikes. The 174,421-byte wheel and 305,101-byte
+  source distribution were removed after verification.
+- Still open for release acceptance: immutable v0.1.1 tag/archive checksum and the public
+  macOS/Windows/Linux CI result on that exact commit. Private service consumption remains open.

@@ -1,6 +1,6 @@
 # FlyBrian Engine Extraction and Local Runner — OA Implementation Contract
 
-Status: **active; E0–E2 and the first public E3 Brian oracle source-verified**
+Status: **active; public v0.1.0 released and v0.1.1 compatibility candidate source-verified; private consumer cutover open**
 
 Canonical stakeholder intent: the FlyBrian launch requirements for open scientific execution,
 local/cloud equivalence, reproducibility, and hosted-product separation are restated in this
@@ -186,18 +186,18 @@ Mutation/sensitivity evidence must show that removing each new validation or adm
 
 | ID | Oracle | Status |
 | --- | --- | --- |
-| ENG01 | Independent public package has license/docs/build/test/typed API | PASS — local E0 commit `2dd9a2b`; publication pending separately |
+| ENG01 | Independent public package has license/docs/build/test/typed API | PASS — public repository and immutable v0.1.0 tag at commit `4022fa3`; v0.1.1 patch verification recorded in the E3 contract |
 | ENG02 | Heterogeneous FES data round-trips losslessly | PASS — E1 LIF/rate/compartmental + direct/muscle fixtures |
 | ENG03 | Structured schema/backend compatibility with no silent loss | PASS — E1 Python/CLI/HTTP pre-allocation rejection |
 | ENG04 | Public artifact contract spans results/motor/video/provenance | PARTIAL — manifest 1.1 plus validated biological standardized results source-verified; motor/video producers and private consumers pending |
 | ENG05 | Public Brian adapter reproduces declared golden fixtures | PASS — LIF/rate/passive-compartment analytic fixture under declared tolerances |
 | ENG06 | Public ingestion reconstructs declared dataset releases/checksums | PARTIAL — E4-A manifest 1.0 and strict streaming normalization verify the full historical private MANC migration corpus read-only (1,208,689 edges plus 838 anatomy rows) with exact Decimal/provenance handling; official acquisition, redistribution/license evidence, canonical output receipt, and public release manifest remain open |
 | ENG07 | Direct and muscle-mediated embodiment transforms are public | PASS — E4-B adds canonical-hashed public profiles/catalogs, exact direct and muscle-mediated graphs, explicit direction/weight/confidence/provenance, and scientific dispositions; released historical catalogs, muscle execution, private consumer cutover, and cross-platform evidence remain separately open |
-| ENG08 | Private service consumes released engine and duplicates are deleted | OPEN |
+| ENG08 | Private service consumes released engine and duplicates are deleted | PARTIAL — private source consumer migration exists under its own contract; immutable v0.1.1 pin, production package proof, and duplicate-authority closure remain open |
 | ENG09 | Durable origin-safe local runner lifecycle | PARTIAL — atomic records, bounded isolated workers, queued/running recovery semantics, queued and real running cancellation, reconnect, validated manifest/artifact retrieval, loopback-only binding, and browser-Origin denial are implemented under the E5 contract; forced termination uncertainty, multi-worker restart stress, and trusted connector evidence remain open |
-| ENG10 | macOS/Windows/Linux clean install and uninstall-preserves-data | PARTIAL — macOS alpha smoke and CI definition only |
+| ENG10 | macOS/Windows/Linux clean install and uninstall-preserves-data | PARTIAL — public v0.1.0 six-job macOS/Ubuntu/Windows CI and local macOS package smoke are green; independent real Windows/Linux runtime evidence remains open |
 | ENG11 | Local/cloud scientific equivalence under declared tolerance | OPEN |
-| ENG12 | Public release/tag/package/docs/security evidence | OPEN |
+| ENG12 | Public release/tag/package/docs/security evidence | PARTIAL — public v0.1.0 source/tag/release/docs and CI exist; v0.1.1 immutable coordinate, archive checksum, release CI, signing, and final security/reproducibility closure remain open |
 
 This child contract may advance but cannot close the parent FlyBrian launch goal by itself.
 

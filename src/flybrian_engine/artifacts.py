@@ -8,7 +8,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Literal
+from typing import Literal, cast
 
 ArtifactStatus = Literal["available", "unavailable", "failed"]
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -217,7 +217,7 @@ class ArtifactDisposition:
             raise ValueError("disposition.reason must be a string or null")
         return cls(
             kind=_identifier(record.get("kind"), "disposition.kind"),
-            status=raw_status,
+            status=cast(ArtifactStatus, raw_status),
             artifact_keys=artifact_keys,
             reason=reason,
         )

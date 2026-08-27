@@ -308,11 +308,11 @@ boundaries without fabricating live-provider evidence.
 
 ## Install and verify
 
-Install the reviewed public v0.1.0 release on macOS or Linux:
+Install the reviewed public v0.1.1 release on macOS or Linux:
 
 ```text
 python3 -m venv .venv
-.venv/bin/python -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.0.zip"
+.venv/bin/python -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.1.zip"
 .venv/bin/flybrian-engine health
 ```
 
@@ -320,9 +320,14 @@ On Windows PowerShell:
 
 ```text
 py -m venv .venv
-.venv\Scripts\python.exe -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.0.zip"
+.venv\Scripts\python.exe -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.1.zip"
 .venv\Scripts\flybrian-engine.exe health
 ```
+
+v0.1.1 is a backward-compatible schema patch for hosted and local consumers: an explicit
+`embodied_config.mapping_id: null` now means that no named mapping is selected and is preserved
+in canonical FES bytes. Missing values and non-empty mapping IDs retain their existing behavior;
+empty strings and non-string values still fail validation before execution allocation.
 
 For an editable source checkout, use:
 

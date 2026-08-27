@@ -374,7 +374,7 @@ def _validate_embodiment(value: Any, neuron_ids: set[int]) -> None:
     config = _object(value, "embodied_config")
     if "enabled" in config and not isinstance(config["enabled"], bool):
         raise ValidationError("embodied_config.enabled must be a boolean")
-    if "mapping_id" in config:
+    if "mapping_id" in config and config["mapping_id"] is not None:
         _nonempty_string(config["mapping_id"], "embodied_config.mapping_id")
     if "firing_rate_window_ms" in config:
         _finite_number(

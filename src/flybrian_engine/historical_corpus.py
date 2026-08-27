@@ -374,8 +374,8 @@ class HistoricalCatalogExportRecord:
                 _text(item, "catalog_record.tags item", maximum=128)
                 for item in _array(record["tags"], "catalog_record.tags")
             ),
-            visibility=visibility,
-            reproducibility_class=reproducibility,
+            visibility=cast(CatalogVisibility, visibility),
+            reproducibility_class=cast(ReproducibilityClass, reproducibility),
             missing_requirements=tuple(
                 _text(item, "catalog_record.missingRequirements item", maximum=255)
                 for item in _array(

@@ -58,7 +58,7 @@ def _integer(value: Any, path: str, *, non_negative: bool = False) -> int:
         raise ResultsValidationError(f"{path} must be an integer")
     if non_negative and value < 0:
         raise ResultsValidationError(f"{path} must be non-negative")
-    return value
+    return int(value)
 
 
 @dataclass(frozen=True)

@@ -265,7 +265,7 @@ class HistoricalEvidenceReference:
                 record["byte_length"], "evidence.byte_length"
             ),
             file_sha256=_sha256(record["file_sha256"], "evidence.file_sha256"),
-            candidate_role=role,
+            candidate_role=cast(EstateCandidateRole, role),
         )
 
 
@@ -367,7 +367,7 @@ class HistoricalEnvelopeReference:
             envelope_sha256=_sha256(
                 record["envelope_sha256"], "envelope_reference.envelope_sha256"
             ),
-            reproducibility_class=reproducibility,
+            reproducibility_class=cast(ReproducibilityClass, reproducibility),
             fes_sha256=_optional_sha256(
                 record["fes_sha256"], "envelope_reference.fes_sha256"
             ),
@@ -442,7 +442,7 @@ class HistoricalVisibilityPolicy:
         scope = record["scope_id"]
         if scope is not None and not isinstance(scope, str):
             raise HistoricalProjectionError("visibility.scope_id must be a string or null")
-        return cls(visibility, scope)
+        return cls(cast(ProjectionVisibility, visibility), scope)
 
 
 @dataclass(frozen=True)
@@ -504,7 +504,7 @@ class HistoricalProjectedArtifact:
                 record["artifact_id"], "projected_artifact.artifact_id"
             ),
             kind=kind,
-            availability=availability,
+            availability=cast(ProjectedArtifactAvailability, availability),
             evidence=(
                 None
                 if raw_evidence is None

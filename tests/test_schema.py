@@ -60,6 +60,33 @@ def test_direct_actuator_spec_is_distinct_from_muscle_mediated_drive() -> None:
     assert spec.embodiment_mode == "direct_actuator"
 
 
+def test_legacy_hosted_embodiment_preserves_null_mapping_selection() -> None:
+    value = load_fixture()
+    value["embodied_config"] = {
+        "enabled": True,
+        "mapping_id": None,
+        "firing_rate_window_ms": 32.0,
+    }
+
+    spec = validate_experiment_spec(value)
+
+    assert spec.value == value
+    assert spec.embodiment_mode == "direct_actuator"
+
+
+@pytest.mark.parametrize("mapping_id", ["", " ", True, 1, [], {}])
+def test_embodiment_mapping_selection_rejects_invalid_values(mapping_id: object) -> None:
+    value = load_fixture()
+    value["embodied_config"] = {
+        "enabled": True,
+        "mapping_id": mapping_id,
+        "firing_rate_window_ms": 32.0,
+    }
+
+    with pytest.raises(ValidationError, match=r"embodied_config\.mapping_id"):
+        validate_experiment_spec(value)
+
+
 def test_direct_actuator_links_must_reference_selected_neurons() -> None:
     value = cast(dict[str, object], json.loads(DIRECT_FIXTURE.read_text(encoding="utf-8")))
     nested_object(value, "embodied_config", "direct_actuator", "links", 0).update(
