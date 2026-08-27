@@ -1,5 +1,18 @@
 """Public scientific execution boundary for FlyBrian."""
 
+from .acquisition import (
+    MANC_V121,
+    AcquisitionCancelled,
+    AcquisitionError,
+    AcquisitionReceipt,
+    AcquisitionResult,
+    NeuprintPythonTransport,
+    NeuprintReleaseProfile,
+    NeuprintTransport,
+    ProviderSnapshot,
+    RetryableAcquisitionError,
+    acquire_neuprint_release,
+)
 from .artifacts import (
     Artifact,
     ArtifactDisposition,
@@ -46,6 +59,11 @@ from .schema import ExperimentSpec, ValidationError, validate_experiment_spec
 from .version import __version__
 
 __all__ = [
+    "MANC_V121",
+    "AcquisitionCancelled",
+    "AcquisitionError",
+    "AcquisitionReceipt",
+    "AcquisitionResult",
     "Actuator",
     "ActuatorCatalog",
     "Artifact",
@@ -75,10 +93,16 @@ __all__ = [
     "MuscleProfile",
     "MuscleTarget",
     "MuscleTargetRule",
+    "NeuprintPythonTransport",
+    "NeuprintReleaseProfile",
+    "NeuprintTransport",
+    "ProviderSnapshot",
     "ResultsValidationError",
+    "RetryableAcquisitionError",
     "StandardizedResults",
     "ValidationError",
     "__version__",
+    "acquire_neuprint_release",
     "assess_backend_compatibility",
     "transform_direct",
     "transform_muscle_mediated",

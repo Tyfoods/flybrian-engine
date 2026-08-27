@@ -25,6 +25,7 @@ classifiers = [
 
 [project.optional-dependencies]
 brian2 = ["brian2>=2.7,<3", "numpy>=2.0,<2.2"]
+neuprint = ["neuprint-python>=0.6.3,<0.7"]
 dev = ["build>=1.2", "mypy>=1.11", "pytest>=8.3", "ruff>=0.6"]
 
 [project.scripts]

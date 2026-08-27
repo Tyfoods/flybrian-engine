@@ -274,12 +274,12 @@ and a migration comparison that reads private source data without copying it.
 | E4-06 | Explicit direct actuator transform and dispositions | PASS — stable catalogs, exact target/direction/confidence/fan-out/normalization rules, canonical graph/receipt hashes, and unknown/ambiguous dispositions pass bounded and full-corpus direct oracles |
 | E4-07 | Explicit muscle-mediated transform and dispositions | PASS for graph construction — unit-bearing versioned muscles, explicit weighted fan-out, complete actuator links, canonical graph/receipt hashes, and incomplete-profile rejection pass; muscle dynamics execution remains outside this transform acceptance |
 | E4-08 | Historical corpus migration comparison | PARTIAL — all 396 private leg rows transform read-only into 692 corrected links plus 90 dispositions, removing 660 historical generic zero-sign links; historical muscle profile/catalog comparison remains open |
-| E4-09 | Official provider acquisition/resume/credential boundary | OPEN |
-| E4-10 | License/citation/redistribution evidence | OPEN |
-| E4-11 | Ruff, strict mypy, pytest, build/clean-wheel and sensitivity | PASS for E4-A/E4-B — 81 tests, Ruff, strict mypy, wheel/sdist, clean-wheel embodiment smoke, eight E4 critical mutation receipts, and exact private read-only direct rehearsal pass; later E4 segments require their own gates |
+| E4-09 | Official provider acquisition/resume/credential boundary | PARTIAL — the release-pinned adapter, exact paging, retry/terminal/cancellation states, crash-safe resume, snapshot guard, receipt-last promotion, idempotence/conflict, and credential-sentinel oracles pass offline; authorized live MANC v1.2.1 rehearsal is `BLOCKED-LIVE` because this host has no token |
+| E4-10 | License/citation/redistribution evidence | PASS for the initial MANC v1.2.1 profile — official Janelia, neuPrint, and CC BY 4.0 authorities are recorded; receipts bind DOI, license, redistribution, query-profile version, and modified-representation status |
+| E4-11 | Ruff, strict mypy, pytest, build/clean-wheel and sensitivity | PASS for E4-A/E4-B/E4-C offline — 93 tests, Ruff, strict mypy, wheel/sdist, clean-wheel public acquisition smoke, nine E4 critical mutation receipts, exact private read-only direct rehearsal, and E4-C base-install tests pass; live provider rehearsal remains separate |
 | E4-12 | macOS/Windows/Linux canonical-byte agreement | OPEN |
 | E4-13 | Released package consumed by private service | BLOCKED — publication coordinate absent |
-| E4-14 | Bidirectional contract/diff closure | PASS for E4-A/E4-B checkpoints — maps below; acquisition, historical muscle/crosswalk, and consumer changes remain open |
+| E4-14 | Bidirectional contract/diff closure | PASS for E4-A/E4-B and the E4-C offline checkpoint — maps below; live provider acceptance, historical muscle/crosswalk, and consumer changes remain open |
 
 No open or blocked row is completion. E4 cannot close local/cloud equivalence, production rehearsal,
 or the overall FlyBrian launch.
@@ -569,7 +569,7 @@ rendering. Those remain governed by open E4/parent rows rather than implied by g
 
 ## 15. E4-C official NeuPrint acquisition implementation contract
 
-Status: **implementation contract; production implementation not yet started**
+Status: **implemented and verified offline; authorized live-provider acceptance is `BLOCKED-LIVE`**
 
 ### 15.1 Primary-source and current-authority record
 
@@ -581,6 +581,10 @@ Primary sources checked on 2026-08-27:
 - Current neuprint-python documentation declares explicit server/dataset selection, token argument
   or `NEUPRINT_APPLICATION_CREDENTIALS`, and custom query support:
   `https://connectome-neuprint.github.io/neuprint-python/docs/client.html`.
+- Current official neuprint-python source identifies the cross-dataset neuron properties used by
+  the fixed MANC query as `predictedNt`, `systematicType`, `exitNerve`, `matchingNotes`, and
+  `target`; provider-absent historical review columns are emitted as explicit nulls, not guessed:
+  `https://github.com/connectome-neuprint/neuprint-python/blob/master/neuprint/queries/neuroncriteria.py`.
 - The official neuPrintHTTP repository documents the custom JSON endpoint and Bearer-token header:
   `https://github.com/connectome-neuprint/neuPrintHTTP`.
 - CC BY 4.0 permits sharing/adaptation with attribution, license link, and change indication:
@@ -674,13 +678,15 @@ page the file is flushed and fsynced before an atomic journal replacement. Resum
 commit cannot duplicate rows. Journal advancement before durable bytes is prohibited.
 
 Finalization flushes files, obtains a second provider snapshot, and requires exact equality with
-the first. It then constructs manifest 1.0 with computed SHA-256/size/row counts, verifies through
-the E4-A owner, writes the canonical acquisition receipt and manifest atomically, and renames part
-files without overwriting an existing final. No final artifact appears before all checks pass.
-Because a filesystem cannot atomically rename the full set, the receipt is the promotion marker.
-On restart before that marker, an owned final file is moved back to its `.part` name and the
-candidate manifest is removed before verification resumes; source rows and journal offsets remain
-authoritative and no provider page is lost or duplicated.
+the first. It constructs a candidate manifest over the part files with computed
+SHA-256/size/row counts and verifies it through the E4-A owner. It then derives the identical
+final-path manifest, renames parts without overwriting an existing final, verifies the final-path
+manifest, writes that manifest atomically, and writes the canonical receipt last. Because a
+filesystem cannot atomically rename the full set, the receipt is the sole promotion marker; final
+filenames that exist without it are recoverable staging, not a promoted dataset. On restart before
+that marker, an owned final file is moved back to its `.part` name and the candidate manifest is
+removed before verification resumes; source rows and journal offsets remain authoritative and no
+provider page is lost or duplicated.
 
 ### 15.6 Credential and failure contract
 
@@ -724,3 +730,27 @@ Implementation begins with failing tests because the acquisition owner is absent
 journal-order or snapshot guard is temporarily removed after implementation to prove the
 filesystem oracle detects duplicate or stale promotion. Official live acceptance cannot become
 PASS until an authorized token is available and no secret appears in evidence.
+
+### 15.9 E4-C implementation evidence — 2026-08-27
+
+- `RED`: with `PYTHONPATH=src`, collection failed because
+  `flybrian_engine.acquisition` did not exist.
+- `PRODUCTION`: `acquisition.py` now owns the immutable `manc:v1.2.1` release profile,
+  provider snapshots, fixed queries, optional neuprint-python adapter, exact row admission,
+  keyset pagination, fsynced part files, atomic journal replacement, retryable/terminal/cancelled
+  states, crash recovery, candidate/final manifest verification, and receipt-last promotion.
+- `CREDENTIAL`: a sentinel token is absent from transport repr, fixed queries, sanitized terminal
+  and retryable exceptions, and every persisted staging artifact. TLS verification is fixed on.
+- `DURABILITY`: fault injection after durable page bytes and before the second journal replacement
+  leaves the earlier offset authoritative; resume truncates and refetches without duplicate rows.
+- `PROMOTION`: injected E4-A manifest verification failure leaves both resumable parts and no
+  finals, manifest, or receipt. An identical promoted request returns without provider access; a
+  changed page-size request neither contacts the provider nor changes any byte.
+- `SENSITIVITY`: temporarily disabling the final provider-snapshot equality guard made
+  `test_changed_provider_snapshot_is_stale_and_never_promotes` fail because no exception was
+  raised. Restoring the guard returned the test to PASS.
+- `QUALITY`: all 93 tests pass in the existing scientific environment; all 12 E4-C tests pass in
+  the base-only environment; Ruff and strict mypy pass; sdist/wheel build and fresh-wheel public
+  API import pass.
+- `BLOCKED-LIVE`: `NEUPRINT_APPLICATION_CREDENTIALS` is absent on this host, and unauthenticated
+  NeuPrint access returns 401. No live row-count, receipt, or MANC v1.2.1 provider claim is made.

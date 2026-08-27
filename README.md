@@ -43,6 +43,29 @@ confidence, unit-bearing muscle parameters, and source-row provenance remain exp
 generic anatomy produces structured dispositions instead of guessed links. Canonical graph and
 receipt hashes bind the exact dataset manifest, profile, and catalog content.
 
+Official MANC v1.2.1 acquisition is available through the optional `neuprint` extra. It uses a
+release-pinned, fixed-query adapter; keyset-paginates into fsynced staging files; verifies that the
+provider snapshot did not change; and promotes only a manifest-verified dataset with a canonical
+receipt. A token enters only through the transport constructor or
+`NEUPRINT_APPLICATION_CREDENTIALS`; it is never written into the profile, journal, manifest, or
+receipt. API-extracted CSV is explicitly recorded as a modified representation under CC BY 4.0.
+
+```python
+from pathlib import Path
+
+from flybrian_engine import MANC_V121, NeuprintPythonTransport, acquire_neuprint_release
+
+transport = NeuprintPythonTransport(MANC_V121)  # reads NEUPRINT_APPLICATION_CREDENTIALS
+result = acquire_neuprint_release(MANC_V121, Path("manc-v1.2.1"), transport)
+print(result.receipt.manifest_sha256)
+```
+
+Install the adapter with `python -m pip install 'flybrian-engine[neuprint]'`. Interrupted downloads
+resume from their last durable keyset cursor. Reusing a promoted staging directory verifies and
+returns the existing result without contacting NeuPrint. Live MANC acceptance still requires an
+authorized Janelia token; offline scripted-transport tests prove the durability and credential
+boundaries without fabricating live-provider evidence.
+
 ## Install and verify
 
 ```text
