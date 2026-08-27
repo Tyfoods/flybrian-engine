@@ -36,6 +36,13 @@ that contain exact integral scientific IDs or `.0` connection counts are parsed 
 binary float—and preserve their original lexemes in provenance. Missing muscle targets remain
 explicitly unknown for later mapping dispositions; they are never guessed.
 
+Versioned embodiment profiles then convert normalized motor anatomy into either direct
+neuron-to-actuator links or explicit neuron-to-muscle-to-actuator graphs. Actuator and muscle
+identities are stable strings rather than array positions; direction, exact rational weights,
+confidence, unit-bearing muscle parameters, and source-row provenance remain explicit. Unknown or
+generic anatomy produces structured dispositions instead of guessed links. Canonical graph and
+receipt hashes bind the exact dataset manifest, profile, and catalog content.
+
 ## Install and verify
 
 ```text

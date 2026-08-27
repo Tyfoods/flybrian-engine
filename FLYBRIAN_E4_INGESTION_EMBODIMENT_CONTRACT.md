@@ -1,6 +1,6 @@
 # FlyBrian E4 Public Ingestion and Embodiment Contract
 
-Status: **E4-A verified checkpoint; E4-B–E4-D open**
+Status: **E4-A and E4-B verified checkpoints; E4-C–E4-D open**
 
 Date: 2026-08-27
 
@@ -271,15 +271,15 @@ and a migration comparison that reads private source data without copying it.
 | E4-03 | Checksum/size/path/symlink/row verification | PASS — safe relative paths, duplicate/case collision, regular-file/symlink, size/hash, strict CSV, row count, and mid-stream mutation oracles pass |
 | E4-04 | Streaming connection and motor-anatomy normalization | PASS for the initial two schemas — bounded fixtures and the full private migration corpus stream with exact provenance; duplicate-edge policy remains E4-05 receipt work |
 | E4-05 | Deterministic canonical normalized receipt | OPEN |
-| E4-06 | Explicit direct actuator transform and dispositions | OPEN |
-| E4-07 | Explicit muscle-mediated transform and dispositions | OPEN |
-| E4-08 | Historical corpus migration comparison | OPEN |
+| E4-06 | Explicit direct actuator transform and dispositions | PASS — stable catalogs, exact target/direction/confidence/fan-out/normalization rules, canonical graph/receipt hashes, and unknown/ambiguous dispositions pass bounded and full-corpus direct oracles |
+| E4-07 | Explicit muscle-mediated transform and dispositions | PASS for graph construction — unit-bearing versioned muscles, explicit weighted fan-out, complete actuator links, canonical graph/receipt hashes, and incomplete-profile rejection pass; muscle dynamics execution remains outside this transform acceptance |
+| E4-08 | Historical corpus migration comparison | PARTIAL — all 396 private leg rows transform read-only into 692 corrected links plus 90 dispositions, removing 660 historical generic zero-sign links; historical muscle profile/catalog comparison remains open |
 | E4-09 | Official provider acquisition/resume/credential boundary | OPEN |
 | E4-10 | License/citation/redistribution evidence | OPEN |
-| E4-11 | Ruff, strict mypy, pytest, build/clean-wheel and sensitivity | PASS for E4-A — 75 tests, Ruff, strict mypy, wheel/sdist, clean-wheel ingestion smoke, and five critical mutation receipts pass; later E4 segments require their own gates |
+| E4-11 | Ruff, strict mypy, pytest, build/clean-wheel and sensitivity | PASS for E4-A/E4-B — 81 tests, Ruff, strict mypy, wheel/sdist, clean-wheel embodiment smoke, eight E4 critical mutation receipts, and exact private read-only direct rehearsal pass; later E4 segments require their own gates |
 | E4-12 | macOS/Windows/Linux canonical-byte agreement | OPEN |
 | E4-13 | Released package consumed by private service | BLOCKED — publication coordinate absent |
-| E4-14 | Bidirectional contract/diff closure | PASS for E4-A checkpoint — current map below; later transformation/acquisition/consumer changes remain unmapped until implemented |
+| E4-14 | Bidirectional contract/diff closure | PASS for E4-A/E4-B checkpoints — maps below; acquisition, historical muscle/crosswalk, and consumer changes remain open |
 
 No open or blocked row is completion. E4 cannot close local/cloud equivalence, production rehearsal,
 or the overall FlyBrian launch.
@@ -337,7 +337,7 @@ history records superseded behavior; old profile IDs remain reproducible.
 
 ## 14. E4-B explicit embodiment implementation contract
 
-Status: **implementation contract; production implementation not yet started**
+Status: **verified checkpoint; E4 parent remains open**
 
 This slice turns normalized motor anatomy into one of two simulator-neutral, versioned graphs. It
 does not execute muscle dynamics, calculate motor commands, copy the private Flybody catalog, or
@@ -413,6 +413,8 @@ A direct profile declares:
 - exact exit-nerve→body-region rules;
 - exact target-label→joint plus positive/negative direction rules;
 - exact certainty→confidence rules;
+- an optional, explicit missing-certainty confidence for releases whose declared source field is
+  blank; absence of this profile field means no fallback;
 - whether multiple body regions and multiple same-joint actuators may fan out; and
 - weight policy `none` or `per_actuator_equal_share`.
 
@@ -421,9 +423,11 @@ A muscle profile declares the same identity/compatibility/body-region/confidence
 muscle names one or more explicit muscle→actuator links with weight and direction. Fan-out is
 therefore data, not inference.
 
-Missing certainty has no default confidence. Missing/unknown target, exit nerve, actuator, muscle,
-direction, or confidence cannot create a link. A generic leg label has no direct target rule in the
-corrected profile and becomes `ambiguous_target`, not a zero-sign fan-out.
+Missing certainty has no implicit default confidence. A profile may declare the exact confidence
+used for a missing source value; that declaration is canonical-hashed and versioned. Without it,
+missing confidence cannot create a link. Missing/unknown target, exit nerve, actuator, muscle, or
+direction cannot create a link. A generic leg label has no direct target rule in the corrected
+profile and becomes `ambiguous_target`, not a zero-sign fan-out.
 
 ### 14.5 Result, provenance, and derived state
 
@@ -444,10 +448,12 @@ Disposition order follows input record order and then rule/catalog order.
 - missing, empty, or disposition-only output: false.
 
 The canonical receipt binds engine version, input dataset ID/release/manifest hash, profile
-ID/version, catalog IDs/versions, mode, input count, link/muscle/disposition counts, canonical graph
-SHA-256, and receipt SHA-256. Canonical JSON sorts object keys and preserves declared/input order;
-exact decimal values serialize as normalized strings and exact rational weights as reduced `p/q`
-strings to avoid platform float differences.
+ID/version/canonical SHA-256, catalog IDs/versions/canonical SHA-256 values, mode, input count,
+link/muscle/disposition counts, canonical graph SHA-256, and receipt SHA-256. The graph also embeds
+those authority hashes, so changing catalog bounds, sources, parameters, or profile rules changes
+the graph identity even when a caller incorrectly reuses a version label. Canonical JSON sorts
+object keys and preserves declared/input order. Exact decimal values serialize as normalized
+strings and exact rational weights as reduced `p/q` strings to avoid platform float differences.
 
 ### 14.6 Edge and lifecycle resolutions
 
@@ -480,6 +486,10 @@ that the caller requested, not an unrelated hard-coded neuron count.
 
 The historical migration oracle uses all 396 leg rows. A separate bounded fixture varies fan-out,
 unknown rows, and duplicate identity. Corpus size is evidence, not a production maximum.
+
+Discovery census found that all 396 historical leg rows leave `match_certainty(1-5)` blank even
+though non-leg rows use the field. The migration profile must therefore declare its historical
+`0.5` confidence explicitly; treating `0.5` as an engine default remains prohibited.
 
 ### 14.8 Forecast and test-trust gate
 
@@ -514,3 +524,45 @@ editing.
    weights; both muscles must have explicit actuator links and unit-bearing model parameters.
 6. Reordering dictionary construction without changing declared catalog/rule/input order leaves
    canonical bytes unchanged; changing a declared rule or source row changes the graph hash.
+
+### 14.10 E4-B evidence journal — 2026-08-27
+
+- `RED — owner`: the behavioral suite failed collection because the public embodiment module did
+  not exist.
+- `RED — authority identity`: source-reference and canonical authority-hash assertions failed
+  against the first implementation; individual actuator sources and profile/catalog hashes were
+  added before closure.
+- `DISCOVERY — certainty`: all 396 historical leg rows leave the declared certainty field blank.
+  The contract was amended before adding an explicit profile-level missing-certainty confidence;
+  profiles without that field still emit `missing_confidence`.
+- `MIGRATION-READONLY — direct`: the public transform consumed all 396 normalized private leg rows
+  in memory without copying or modifying private bytes. Historical code emits 1,352 links,
+  including 660 generic zero-sign links. The corrected transform emits 692 explicit signed links,
+  66 `ambiguous_target` dispositions, and 24 `unknown_target` dispositions. Its read-only migration
+  graph SHA-256 is `670f90de3e191b82d226418c5ed3296c4f219a99925988fea7c1330a6cd2e30d` and
+  receipt SHA-256 is `6b75c0334c9e1725a5f7b65d755e4be527e223a02ba27da31eb60a850502360c`.
+- `SENSITIVITY — direction`: forcing every direct link positive changed the flexor result and
+  failed the exact direction oracle; rule-derived direction was restored.
+- `SENSITIVITY — muscle completeness`: skipping the complete muscle→actuator requirement admitted
+  a neuron→muscle graph with no actuator path and failed the profile oracle; rejection was restored.
+- `SENSITIVITY — authority hash`: replacing the embedded profile hash with a constant made two
+  different profile sources share a graph hash and failed the identity oracle; content binding was
+  restored.
+- `QUALITY`: the final E4-B revision passes the complete 81-test suite, Ruff, strict mypy, wheel and
+  sdist construction, and a clean-wheel direct transform through the public package exports.
+- `PACKAGE`: clean-wheel smoke produced one negative-direction direct link and verified that the
+  receipt's profile and graph hashes exactly match the installed public authorities.
+
+### 14.11 E4-B contract-to-diff map
+
+| Changed surface | Contract authority |
+| --- | --- |
+| `embodiment.py` catalogs/profiles | §§4, 7, 14.4: stable IDs, explicit rules, exact numeric and source authorities |
+| `embodiment.py` transforms/results | §§4, 7, 14.3–14.6: direct/muscle graphs, dispositions, executable derivation, canonical receipts |
+| public package exports | §14.1 intended public owner and §14.8 stable export forecast |
+| `test_embodiment.py` | §§14.6–14.9 behavioral, edge, scale, canonical identity, and sensitivity oracles |
+| README/extraction/E4 contracts | public behavior, ledger promotion, discovery amendments, and remaining limits |
+
+No E4-B edit implements muscle dynamics, a licensed historical catalog distribution, provider
+acquisition, positional 90→78 crosswalk, private service cutover, web form behavior, or DigiFly
+rendering. Those remain governed by open E4/parent rows rather than implied by graph construction.
