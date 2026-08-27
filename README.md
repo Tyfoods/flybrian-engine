@@ -18,6 +18,11 @@ decision: every backend reports its supported model families, embodiment modes, 
 determinism, and whether it performs scientific execution. Unsupported combinations return
 structured issues before allocating output.
 
+Completed runs emit scientific artifact manifest 1.1. The manifest binds run/engine/backend,
+canonical experiment hash, seed, and dataset identity to checksummed relative files. A
+per-kind disposition distinguishes `available`, `unavailable`, and `failed`, so motor commands
+can remain replayable when video rendering fails without inventing an MP4 URL.
+
 ## Install and verify
 
 ```text

@@ -20,10 +20,22 @@ def test_reference_backend_emits_verified_manifest(tmp_path: Path) -> None:
     experiment = json.loads(FIXTURE.read_text(encoding="utf-8"))
     manifest = run_experiment(experiment, tmp_path, run_id="run_fixture")
     assert manifest["backend_id"] == "reference"
-    assert manifest["schema_version"] == "1.0"
+    assert manifest["schema_version"] == "1.1"
+    assert manifest["engine_version"] == "0.1.0"
+    assert manifest["experiment_spec_version"] == "1.0"
+    assert manifest["random_seed"] == 42
+    assert manifest["scientific_execution"] is False
+    assert manifest["deterministic_for_fixed_seed"] is True
+    assert manifest["datasets"] == [{"dataset_id": "fixture:v1", "sha256": None}]
     artifacts = cast(list[dict[str, object]], manifest["artifacts"])
     artifact = artifacts[0]
     assert artifact["relative_path"] == "summary.json"
+    assert manifest["dispositions"] == [{
+        "artifact_keys": ["summary"],
+        "kind": "summary",
+        "reason": None,
+        "status": "available",
+    }]
     assert (tmp_path / "run_fixture" / "manifest.json").is_file()
 
 

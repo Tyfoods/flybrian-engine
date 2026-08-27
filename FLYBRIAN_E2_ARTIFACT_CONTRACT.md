@@ -1,6 +1,6 @@
 # FlyBrian E2 Scientific Artifact Manifest — OA Implementation Contract
 
-Status: **active implementation contract**
+Status: **source-verified; private service and web consumption deferred**
 
 Parent authority: `FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md` E2 and
 `/Users/tyroachford/Projects/flybrian-web-p14/FLYBRIAN_LAUNCH_PRODUCT_SPEC.md`
@@ -33,9 +33,9 @@ manifest fields, not log prose.
 lexically or through symlinks, and has a verified size and lower-case SHA-256 of its bytes.
 
 `INV-E2-AVAIL-1`: each disposition is exactly one of `available`, `unavailable`, or `failed`.
-`available` references exactly one same-kind manifest artifact and has no reason. The other
-states reference no artifact and require a bounded human-readable reason. Duplicate artifact
-keys or disposition kinds are invalid.
+`available` references one or more same-kind manifest artifact keys and has no reason. The
+other states reference no artifacts and require a bounded human-readable reason. Duplicate
+artifact keys or disposition kinds are invalid; every available artifact is referenced once.
 
 `INV-E2-TRUTH-1`: absence of a manifest/disposition is `unknown`, not `unavailable`. A
 requested video that cannot render is `unavailable` or `failed`; it is never represented by a
@@ -54,7 +54,7 @@ not observe a partially written JSON document.
   SHA-256, seed, dataset references, `scientific_execution`, and
   `deterministic_for_fixed_seed`.
 - Available artifacts: unique key/kind, media type, safe relative path, byte size, checksum.
-- Dispositions: unique kind, status, optional available-artifact key, optional failure reason.
+- Dispositions: unique kind, status, available-artifact keys, optional failure reason.
 - Dataset reference: public dataset ID plus optional verified SHA-256. A source release without
   a content checksum remains truthful by leaving checksum null.
 
@@ -94,10 +94,27 @@ biological execution, cloud/local numerical equivalence, or package publication.
 
 | ID | Oracle | Status |
 | --- | --- | --- |
-| E2-01 | Manifest 1.1 immutable identity | OPEN |
-| E2-02 | Safe checksummed available files | OPEN |
-| E2-03 | Explicit available/unavailable/failed dispositions | OPEN |
-| E2-04 | Deterministic JSON + atomic persistence | OPEN |
-| E2-05 | Clean package and sensitivity gates | OPEN |
+| E2-01 | Manifest 1.1 immutable identity | PASS |
+| E2-02 | Safe checksummed available files | PASS |
+| E2-03 | Explicit available/unavailable/failed dispositions | PASS |
+| E2-04 | Deterministic JSON + atomic persistence | PASS |
+| E2-05 | Clean package and sensitivity gates | PASS |
 | E2-06 | Private service emits public manifest | DEFERRED E3/E4 |
 | E2-07 | Web ingests manifest without URL inference | DEFERRED consumer slice |
+
+## Closure evidence — 2026-08-26
+
+- Pre-change focused tests failed because manifest dispositions and dataset/engine/spec
+  identity did not exist.
+- Reference execution emits manifest 1.1 with `scientific_execution: false`, a checksummed
+  summary, and an available disposition. A separate fixture proves motor commands can remain
+  available while video is failed and that the state survives JSON write/read.
+- Traversal, symlink escape, tampering, duplicate/dangling/cross-kind relationships, missing
+  failure reasons/datasets, invalid identity, and failed atomic replacement are covered.
+- 38 tests, Ruff, and strict mypy across 11 source files pass. Wheel/sdist build; the sdist
+  includes both contracts, architecture, and examples. A clean wheel install runs the
+  reference fixture, reads manifest 1.1, and verifies every file.
+- Removing the cross-kind relationship guard in a disposable mutation copy makes exactly its
+  targeted ambiguity oracle fail while the six sibling cases remain green.
+- Not claimed: server/web consumption, biological output kinds, package publication, or
+  local/cloud numerical equivalence.

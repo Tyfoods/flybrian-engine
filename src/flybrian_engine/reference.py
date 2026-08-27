@@ -5,9 +5,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .artifacts import Artifact, ArtifactManifest
+from .artifacts import Artifact, ArtifactDisposition, ArtifactManifest, DatasetReference
 from .backends import BackendCapabilities
 from .schema import ExperimentSpec
+from .version import __version__
 
 
 class ReferenceBackend:
@@ -46,10 +47,21 @@ class ReferenceBackend:
         )
         manifest = ArtifactManifest(
             run_id=run_id,
+            engine_version=__version__,
             backend_id=self.capabilities.backend_id,
             backend_version=self.capabilities.backend_version,
+            experiment_spec_version=str(spec.value["spec_version"]),
             experiment_sha256=spec.sha256(),
+            random_seed=int(spec.value["random_seed"]),
+            datasets=(DatasetReference(dataset_id=str(spec.value["dataset"])),),
+            scientific_execution=self.capabilities.scientific_execution,
+            deterministic_for_fixed_seed=self.capabilities.deterministic_for_fixed_seed,
             artifacts=(artifact,),
+            dispositions=(ArtifactDisposition(
+                kind="summary",
+                status="available",
+                artifact_keys=("summary",),
+            ),),
         )
         manifest.write(run_dir / "manifest.json")
         return manifest

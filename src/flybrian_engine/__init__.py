@@ -1,6 +1,12 @@
 """Public scientific execution boundary for FlyBrian."""
 
-from .artifacts import Artifact, ArtifactManifest
+from .artifacts import (
+    Artifact,
+    ArtifactDisposition,
+    ArtifactManifest,
+    ArtifactStatus,
+    DatasetReference,
+)
 from .backends import (
     Backend,
     BackendCapabilities,
@@ -14,12 +20,15 @@ from .version import __version__
 
 __all__ = [
     "Artifact",
+    "ArtifactDisposition",
     "ArtifactManifest",
+    "ArtifactStatus",
     "Backend",
     "BackendCapabilities",
     "BackendRegistry",
     "CompatibilityError",
     "CompatibilityIssue",
+    "DatasetReference",
     "ExperimentSpec",
     "ValidationError",
     "__version__",

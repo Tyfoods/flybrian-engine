@@ -125,6 +125,11 @@ The reference capability explicitly reports `scientific_execution: false`.
 - Reconcile standardized spikes/topology, motor commands, metrics/logs, video/render status, provenance, and checksums into a versioned manifest.
 - Prove malformed paths/checksums/counts fail closed and cloud URL decoration cannot change scientific identity.
 
+Source closure evidence (2026-08-26): manifest 1.1 binds run/engine/backend/FES/seed/dataset
+identity, checksummed safe relative files, and explicit available/unavailable/failed
+dispositions. Public package, clean-wheel, and mutation gates pass. Private service and web
+consumption remain E3/E4 and a later consumer slice.
+
 ### E3 — Brian schema/adapter extraction
 
 - Move public FES models/validation/serialization, neutral model registry, Brian adapter, and a minimal dependency-closed execution path.
@@ -172,7 +177,7 @@ Mutation/sensitivity evidence must show that removing each new validation or adm
 | ENG01 | Independent public package has license/docs/build/test/typed API | PASS — local E0 commit `2dd9a2b`; publication pending separately |
 | ENG02 | Heterogeneous FES data round-trips losslessly | PASS — E1 LIF/rate/compartmental + direct/muscle fixtures |
 | ENG03 | Structured schema/backend compatibility with no silent loss | PASS — E1 Python/CLI/HTTP pre-allocation rejection |
-| ENG04 | Public artifact contract spans results/motor/video/provenance | OPEN |
+| ENG04 | Public artifact contract spans results/motor/video/provenance | PARTIAL — manifest 1.1 identity/dispositions source-verified; biological producers and private consumers pending |
 | ENG05 | Public Brian adapter reproduces declared golden fixtures | OPEN |
 | ENG06 | Public ingestion reconstructs declared dataset releases/checksums | OPEN |
 | ENG07 | Direct and muscle-mediated embodiment transforms are public | OPEN |

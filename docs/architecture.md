@@ -23,6 +23,11 @@ backend is assessed against those requirements before it can create a run direct
 contract and packaging verification, but it never stands in for Brian2, NEURON, or another
 scientific adapter.
 
+Artifact manifest 1.1 is the portable completion envelope. It contains no hosted URLs or
+credentials. Consumers may decorate its checksummed artifact records with authorized storage
+locations, while explicit dispositions preserve the difference between unavailable, failed,
+and unknown output. Manifest writes use same-directory atomic replacement.
+
 The alpha local server is intentionally synchronous and loopback-only. Durable scheduling,
 tenancy, billing, and autoscaling belong to private `flybrian-serve`; a future desktop daemon
 may add durable local jobs behind the versioned `/v1` protocol without changing engine
