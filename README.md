@@ -198,6 +198,38 @@ The resolver does not import the private script or allocate Brian2/MuJoCo state.
 private and is not packaged; only original public resolution code and reviewed factual metadata are
 published.
 
+Before the larger historical estate enters the catalog, the public inventory boundary can hash and
+classify an explicitly authorized corpus root without executing scripts or parsing result payloads.
+Its canonical receipt contains only logical relative paths, sizes, hashes, deterministic media/role
+hints, collection summaries, and declared root provenance. Physical paths, timestamps, usernames,
+and file contents are excluded. `.DS_Store`, `.pyc`, and `__pycache__` entries become fixed,
+canonical non-scientific exclusions; all other hidden or secret-bearing paths, symlinks,
+nonportable names, races, and bounded-size violations fail closed.
+
+```python
+from pathlib import Path
+
+from flybrian_engine import HistoricalEstateRoot, inventory_historical_estate
+
+inventory = inventory_historical_estate(
+    HistoricalEstateRoot(
+        root_id="org.example.fly-history.snapshot",
+        revision="reviewed-snapshot-2026-08-27",
+        logical_root="fly-history",
+        license_id="UNKNOWN",
+        access="private",
+        redistribution="prohibited",
+        physical_root=Path("/reviewed/local/fly-history"),
+    )
+)
+print(inventory.total_file_count, inventory.total_bytes, inventory.sha256())
+```
+
+Inventory is not import or reproducibility. It does not guess how many experiments exist, link a
+script to an artifact, parse filename parameters, or make a private byte redistributable. A later
+reviewed projection must add stable run/design identity, visibility, lineage, FES completeness, and
+source-to-artifact edges before the controlled catalog importer can expose a historical record.
+
 FlyBody-derived metadata is redistributed under Apache-2.0 with the bundled license and
 third-party modification notice. The runtime catalog has no MuJoCo dependency; the pinned XML and
 MuJoCo compilation are development/acceptance authorities.

@@ -2282,3 +2282,258 @@ contract in the sdist and both modules in the wheel; byte-identical 11,357-byte 
 provenance-only envelope, exact seed variation, controller recomputation, and lineage smoke from an
 isolated target. Remote macOS/Ubuntu/Windows × Python 3.10/3.12 execution remains E4-12 and is not
 inferred from this host.
+
+## 21. E4-C3 historical-estate inventory and controlled-import boundary
+
+Status: **implemented and host-accepted; reviewed import projection remains pending**
+
+### 21.1 Outcome and current factual baseline
+
+E4-C3 creates the public, deterministic inventory boundary needed before the evolving FlyBrian
+research estate can enter the searchable product catalog. It inventories bytes without importing or
+executing experiment modules, opening archives, decoding NumPy payloads, parsing videos, copying
+private source, or inferring that a file is a reproducible experiment.
+
+The 2026-08-27 read-only baseline is deliberately recorded as an observation rather than a frozen
+release claim:
+
+```text
+private experiment scripts:     305 Python files
+private result/artifact estate:  8,105 files
+private estate bytes:            4,378,728,356
+bundled public provenance seed:  12 records
+bundled public runnable seed:    1 record
+```
+
+The existing 6,001- and 10,000-record browser/repository tests prove catalog traversal scale only.
+They are synthetic cohorts and must never be reported as imported historical experiments. Likewise,
+one directory, script, JSON document, video, image, or array is not automatically one experiment.
+Run grouping and source-to-artifact linkage require reviewed authority in a later slice.
+
+### 21.2 Root authority and invocation contract
+
+Each scan receives one immutable `HistoricalEstateRoot`:
+
+```text
+root_id                 namespaced public identifier
+revision                caller-supplied immutable source/worktree identity
+logical_root            safe relative corpus label, never a host path
+license_id              declared license or UNKNOWN
+access                   public/private/restricted
+redistribution           permitted/prohibited/unknown
+physical_root            call-only Path, excluded from serialized/canonical output
+```
+
+The scanner does not invoke Git or synthesize a clean revision from a dirty worktree. A caller may
+inventory a dirty research tree only with an explicit immutable snapshot label supplied by the
+authority owner. Publication policy may reject that inventory later. Local absolute paths,
+usernames, hostnames, mtimes, inode numbers, and scan duration never enter public records or hashes.
+
+`inventory_historical_estate(root, limits=...)` returns one immutable
+`HistoricalEstateInventory`. It is a library call with no network, subprocess, import, database, or
+write side effect. A future CLI/exporter may write the canonical receipt atomically, but E4-C3 does
+not write into the private corpus.
+
+### 21.3 File identity and canonicalization
+
+Every admitted regular file yields exactly one `HistoricalEstateFile` containing:
+
+```text
+logical_path            NFC-normalized POSIX relative path
+byte_length             exact nonnegative byte length
+sha256                   lowercase digest of exact source bytes
+media_kind              deterministic extension-based media family
+candidate_role          source/result/array/video/image/narrative/archive/unknown
+import_disposition      source_candidate/artifact_candidate/review_required
+collection              top-level logical directory or null for root files
+```
+
+Paths are traversed and serialized in Unicode code-point order after NFC validation. Backslashes,
+absolute paths, dot/dot-dot segments, empty segments, control characters, NUL, and case-fold
+collisions reject. Files are hashed in bounded chunks. A before/after `lstat` identity check binds
+device, inode, mode, size, and nanosecond mtime only as an in-process race sentinel; those host facts
+are not serialized. A file that changes while read rejects the entire inventory.
+
+Canonical inventory identity binds schema/profile version, root authority, every ordered file
+identity/classification, every ordered deterministic exclusion, all collection summaries, total
+file/exclusion counts, and total admitted bytes. It excludes scan timestamp, duration, physical
+root, traversal implementation, and chunk size. Moving the same exact corpus between macOS,
+Windows, and Linux therefore preserves identity when logical paths and admitted bytes are
+preserved.
+
+### 21.4 Deterministic classification without scientific inference
+
+Classification is a routing hint, not scientific truth:
+
+| Extension | Media kind | Candidate role | Initial disposition |
+| --- | --- | --- | --- |
+| `.py` | `text/x-python` | `source` | `source_candidate` |
+| `.json`, `.csv` | structured text | `result` | `artifact_candidate` |
+| `.npy`, `.npz` | NumPy binary | `array` | `artifact_candidate` |
+| `.mp4` | video | `video` | `artifact_candidate` |
+| `.png`, `.jpg`, `.jpeg` | image | `image` | `artifact_candidate` |
+| `.md`, `.txt`, `.log` | narrative text | `narrative` | `review_required` |
+| `.tar.gz`, `.tgz`, `.zip` | archive | `archive` | `review_required` |
+| anything else | `application/octet-stream` | `unknown` | `review_required` |
+
+Compound suffixes such as `.standing_report.json` remain JSON results. Filename-encoded parameters
+remain opaque source lexemes; the scanner does not parse `s42`, `ag5`, `31Hz`, or similar fragments
+into scientific controls. Archives are hashed but never opened. JSON is not parsed, NumPy pickle
+loading is impossible, and no media metadata parser runs in this slice.
+
+The `collection` is only the first logical directory component. It supports bounded review and
+pagination but does not assert that all files in that directory share one run. Root-level files have
+no collection. Collection summaries contain counts/bytes by role only; they contain no guessed
+experiment, champion, success, or reproducibility status.
+
+### 21.5 Safety, secrets, and corpus-boundary rules
+
+Three non-scientific cache/platform entries are excluded deterministically rather than forcing the
+researcher to mutate the private estate: regular `.DS_Store` files, regular `.pyc` files, and
+`__pycache__` directories. Each exclusion records its safe logical path, entry kind, and fixed
+reason in the canonical inventory; excluded bytes are not read, hashed, counted as corpus files, or
+eligible for import. A symlink or non-regular entry using one of those names still rejects. No glob,
+caller-configurable ignore list, or unrecorded skip exists in profile 1.0.
+
+All other suspect boundaries fail closed:
+
+- symlinks, sockets, devices, FIFOs, or any non-regular entry;
+- a resolved physical entry outside the exact root;
+- case-fold-colliding logical paths;
+- hidden path components other than an explicitly admitted `.gitkeep` placeholder or recorded
+  regular `.DS_Store` exclusion;
+- secret-bearing names such as `.env`, credentials, secrets, tokens, private keys, or common key
+  file suffixes;
+- file count, per-file byte, or aggregate-byte limit violations;
+- permission/read errors, short/long reads, or mutation during hashing.
+
+`.gitkeep` is recorded as unknown/review-required rather than silently discarded. Secret-path
+rejection records no content and produces no partial inventory. Hashes, exclusions, and relative
+names are not a license grant: `redistribution=prohibited` or `unknown` remains explicit on the root
+authority and must block any later byte redistribution.
+
+Default limits are finite and public: 100,000 files, 128 GiB per file, and 2 TiB aggregate. Boolean
+values reject as integers. Callers may lower but not disable limits. Directory depth and logical path
+length are bounded. The scan keeps one chunk and one file record at a time; it never loads a whole
+artifact or estate into a byte buffer.
+
+### 21.6 Completeness and import lifecycle
+
+An inventory proves only that a bounded set of bytes existed under one declared root/revision and
+classification profile. It does not prove:
+
+- how many experiments or runs exist;
+- which script produced which artifact;
+- whether an artifact is scientifically valid or complete;
+- whether a run is public, private, team-scoped, successful, or rerunnable;
+- a FES mapping, parameter interpretation, seed, dependency lock, body model, or execution backend;
+- local/cloud equivalence or replay compatibility.
+
+The controlled importer must consume a reviewed projection layered over this immutable inventory.
+That later projection assigns stable experiment/run identities, source/artifact edges, visibility,
+contributor provenance, FES completeness, and artifact availability. Re-import is idempotent on
+`inventory_sha256 + projection_sha256`; changed source bytes create new evidence rather than mutate
+an old historical version.
+
+### 21.7 Public API and serialization
+
+Expected public API:
+
+```text
+HISTORICAL_ESTATE_INVENTORY_PROFILE_ID
+HISTORICAL_ESTATE_INVENTORY_PROFILE_VERSION
+HistoricalEstateError
+HistoricalEstateLimits
+HistoricalEstateRoot
+HistoricalEstateFile
+HistoricalEstateExclusion
+HistoricalEstateCollection
+HistoricalEstateInventory
+classify_historical_estate_file(logical_path)
+inventory_historical_estate(root, limits=HistoricalEstateLimits())
+```
+
+Every record validates on construction and has `to_dict`; inventory additionally has
+`canonical_bytes` and `sha256`. Serialized dictionaries use JSON-safe primitives only. Tuples become
+arrays. Deserialization is deferred until the importer/export receipt schema is specified; this
+avoids accepting an unreviewed public manifest surface merely for symmetry.
+
+### 21.8 Test-trust and acceptance matrix
+
+Implementation begins with red tests for the absent module/API. Required oracles:
+
+| Oracle | Evidence |
+| --- | --- |
+| exact inventory | fixed fixture paths, sizes, file hashes, exclusions, totals, collection summaries, inventory hash |
+| relocation | byte-identical roots at different physical paths have equal canonical bytes/hash |
+| sensitivity | byte, logical path, revision, license, classification, and collection mutations change identity |
+| classification | every table row plus compound JSON suffix and unknown extension |
+| path safety | absolute, traversal, backslash, control, non-NFC, depth, length, and case collision reject |
+| entry safety | exact cache exclusions plus symlink/file mutation/non-regular/sensitive/other-hidden/read failure rejection without partial result |
+| bounds | zero/boolean/negative and file/count/aggregate boundaries |
+| non-execution | import/subprocess/network/JSON/NumPy/archive/media parser sentinels remain untouched |
+| scaling | synthetic 10,001-file metadata scan remains bounded and deterministically ordered |
+| quality | focused/full pytest, Ruff, strict mypy, sdist/wheel content, clean-wheel import/smoke |
+
+Sensitivity testing must demonstrate failure or identity change when a checked byte, path,
+classification map, collection assignment, or authority value is perturbed. A test that only mocks
+the scanner or asserts a nonempty list is not closure evidence.
+
+### 21.9 Contract-to-diff forecast and non-goals
+
+Expected E4-C3 diff is one public inventory module, stable exports, focused tests, README guidance,
+and this ledger. No private service, web production, Maestro, historical source, result artifact,
+catalog database, deployment, or unrelated file changes are permitted.
+
+E4-C3 does not import the estate into FlyBrian, infer the 6,000/9,000/10,800 count, review all 305
+scripts, make provenance records runnable, solve 30→31 Hz, package browser FlyBody assets, or close
+local/cloud execution. Those are explicit subsequent gates; reporting them complete from an
+inventory alone is forbidden.
+
+### 21.10 E4-C3 implementation and host acceptance evidence
+
+The public `historical_estate` module implements immutable root, limit, file, exclusion,
+collection, and inventory records plus deterministic classification and bounded inventory. It
+performs lexical traversal, exact chunked SHA-256, before/opened/finished/after identity checks,
+root-containment validation, canonical collection aggregation, and canonical JSON identity. It
+never invokes Git, imports a source file, opens an archive, parses JSON/NumPy/media payloads,
+contacts a network, starts a subprocess, or writes into the source estate.
+
+The initial real-estate rehearsal exposed 63 cached Python bytecode files under one
+`__pycache__` directory and `.DS_Store` metadata in the output tree. Profile 1.0 therefore records
+only the three exact non-scientific exclusions specified in §21.5. It does not use an unbounded
+ignore glob. The final read-only observations against the untouched evolving research tree are:
+
+```text
+authority HEAD:                  af02339a318f79e466af502b47a8ad0fc3a7ade5
+experiment-tree raw files:      386
+experiment admitted files:      324 (305 source, 18 narrative, 1 review-required unknown)
+experiment exclusions:          1 __pycache__ directory (62 contained bytecode files)
+experiment admitted bytes:      6,523,467
+experiment observation SHA:     059cb30a7bc8ec4eb562dca8a6f9f79ab0e323d815e72cb2f3eed1a326f71a7c
+
+output-tree raw files:          8,105
+output admitted files:          8,103
+output exclusions:              2 .DS_Store files
+output raw bytes:               4,378,728,356
+output admitted bytes:          4,378,517,404
+output top-level collections:   721 (routing groups, not experiment claims)
+output role counts:             140 archive; 1,249 array; 1,542 image; 472 narrative;
+                                3,243 result; 1 source; 1,456 video
+output observation SHA:         50a5527d28949991a4f9204fb092b2014f413c71f4112065201c51f372a90a82
+```
+
+These hashes bind explicitly private, redistribution-prohibited, live-worktree observation labels.
+They are audit evidence, not publishable release receipts, and no inventory JSON or private byte is
+committed. A reviewed immutable snapshot and projection remain required before controlled import.
+
+Host gates pass: 58 focused inventory tests and 217 full tests; Ruff across the entire source/test
+tree; and strict mypy across 36 source/test files. Tests cover the fixed inventory hash, relocation,
+authority/content/path sensitivity, all media classes, compound suffixes, POSIX/Windows path safety,
+NFC/control/depth/length limits, fixed cache exclusions, hidden/secret rejection, symlink refusal,
+case-fold collisions, before/after mutation, file/count/aggregate limits, opaque invalid Python,
+JSON, NumPy, and archive payloads, and exact no-omission ordering across 10,001 files. The isolated
+sdist/wheel includes the inventory module, focused tests, README, and contract; MIT/Apache licenses
+and the third-party notice are byte-identical to the working tree; and a clean target install imports
+the top-level API and inventories a result fixture without using the source tree. Supported remote
+platform execution remains E4-12 and is not inferred from this host.
