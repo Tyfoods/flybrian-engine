@@ -399,8 +399,9 @@ result is promoted; partial graphs are never returned after rejection.
 
 Every actuator has a stable string ID, body region, joint/function, control range with unit, and
 source reference. Catalog ID plus version identifies the ordered set; array position is not an
-identity. Duplicate/case-colliding IDs, non-finite or reversed ranges, blank source, and duplicate
-body-region/joint identity are rejected.
+identity. Duplicate/case-colliding IDs, non-finite or reversed ranges, and blank source are
+rejected. Multiple actuator IDs may deliberately share a body-region/joint identity only when the
+consuming profile explicitly permits that fan-out.
 
 Every muscle has a stable string ID, body region, model ID/version, source reference, and an
 ordered unit-bearing parameter set. Parameters use exact decimal lexical values; duplicate names,
@@ -426,7 +427,8 @@ corrected profile and becomes `ambiguous_target`, not a zero-sign fan-out.
 
 ### 14.5 Result, provenance, and derived state
 
-Direct links contain neuron ID, stable actuator ID, exact positive weight, direction, confidence,
+Direct links contain neuron ID, stable actuator ID, exact positive rational weight, direction,
+confidence,
 and original row provenance. Muscle graphs contain selected muscle definitions, neuron→muscle
 links, and muscle→actuator links with the same explicit identity/weight/direction provenance.
 
@@ -444,7 +446,8 @@ Disposition order follows input record order and then rule/catalog order.
 The canonical receipt binds engine version, input dataset ID/release/manifest hash, profile
 ID/version, catalog IDs/versions, mode, input count, link/muscle/disposition counts, canonical graph
 SHA-256, and receipt SHA-256. Canonical JSON sorts object keys and preserves declared/input order;
-exact decimal values serialize as normalized strings to avoid platform float differences.
+exact decimal values serialize as normalized strings and exact rational weights as reduced `p/q`
+strings to avoid platform float differences.
 
 ### 14.6 Edge and lifecycle resolutions
 
