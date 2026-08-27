@@ -42,3 +42,5 @@ require that token. The default bind is `127.0.0.1`, never a public interface.
 See [architecture](docs/architecture.md) for dependency and compatibility rules.
 The staged extraction and cross-platform acceptance contract is recorded in
 [`FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md`](FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md).
+The public biological execution and private-consumer cutover behavior is specified in
+[`FLYBRIAN_E3_BRIAN_ADAPTER_CONTRACT.md`](FLYBRIAN_E3_BRIAN_ADAPTER_CONTRACT.md).

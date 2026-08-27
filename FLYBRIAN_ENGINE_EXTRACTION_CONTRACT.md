@@ -1,6 +1,6 @@
 # FlyBrian Engine Extraction and Local Runner — OA Implementation Contract
 
-Status: **active; E0 boundary bootstrap and E1 rich-schema compatibility admission source-verified**
+Status: **active; E0–E2 source-verified and E3 public Brian behavior specified**
 
 Canonical stakeholder intent: `/Users/tyroachford/Projects/flybrian-web-p14/FLYBRIAN_LAUNCH_PRODUCT_SPEC.md`, especially invariants 8–12, sections 9–12, scenarios S5–S7, and acceptance A15–A19.
 
@@ -136,6 +136,11 @@ consumption remain E3/E4 and a later consumer slice.
 - Move golden LIF/rate/compartmental tests and declare numerical tolerances before comparing.
 - Make `flybrian-serve` import the public package; delete active private duplicates.
 
+The complete behavior, state machines, scientific/result invariants, source/deletion census,
+E3-A through E3-D segmentation, and honest publication blocker are specified in
+`FLYBRIAN_E3_BRIAN_ADAPTER_CONTRACT.md`. Adapter implementation may not begin before E3-A
+freezes its equations, fixtures, and numerical tolerances.
+
 ### E4 — Ingestion and embodiment extraction
 
 - Move licensed/scripted Janelia/FlyWire acquisition and normalized manifests with checksums.
@@ -178,7 +183,7 @@ Mutation/sensitivity evidence must show that removing each new validation or adm
 | ENG02 | Heterogeneous FES data round-trips losslessly | PASS — E1 LIF/rate/compartmental + direct/muscle fixtures |
 | ENG03 | Structured schema/backend compatibility with no silent loss | PASS — E1 Python/CLI/HTTP pre-allocation rejection |
 | ENG04 | Public artifact contract spans results/motor/video/provenance | PARTIAL — manifest 1.1 identity/dispositions source-verified; biological producers and private consumers pending |
-| ENG05 | Public Brian adapter reproduces declared golden fixtures | OPEN |
+| ENG05 | Public Brian adapter reproduces declared golden fixtures | OPEN — detailed E3 behavior specified; equations/fixtures/tolerances must be frozen next |
 | ENG06 | Public ingestion reconstructs declared dataset releases/checksums | OPEN |
 | ENG07 | Direct and muscle-mediated embodiment transforms are public | OPEN |
 | ENG08 | Private service consumes released engine and duplicates are deleted | OPEN |
