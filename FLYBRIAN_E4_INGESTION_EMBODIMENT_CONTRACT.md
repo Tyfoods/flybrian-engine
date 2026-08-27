@@ -2906,3 +2906,31 @@ SCOPE: no service, private research estate, web, Maestro, credential, or unrelat
 This closes only E4-C5 and supplies the public scientific input to the product's controlled catalog
 importer. Full historical normalization, runnable reconstruction, remote publication, E4-D service
 cutover, artifact serving, and production deployment remain open.
+
+### 23.7 Public publication and cross-platform acceptance receipt
+
+The source repository is public at `https://github.com/Tyfoods/flybrian-engine`. Initial CI exposed
+two genuine Windows portability defects before release: cached `os.DirEntry.stat()` identity fields
+did not match the opened descriptor, and exact-LF fixture hashes had been written through Windows
+text-mode newline translation. Production inventory code now obtains a fresh path stat before the
+descriptor comparison, preserving the existing before/during/after race guard, and exact-byte test
+fixtures use byte writes without weakening any expected hash.
+
+GitHub Actions run `33076114637` at commit `b8bc224` passed the unchanged six-job matrix:
+
+```text
+macOS latest   / Python 3.10: PASS
+macOS latest   / Python 3.12: PASS
+Ubuntu latest  / Python 3.10: PASS
+Ubuntu latest  / Python 3.12: PASS
+Windows latest / Python 3.10: PASS
+Windows latest / Python 3.12: PASS
+
+Each job: install [dev,brian2] -> Ruff -> strict mypy -> 264 tests -> sdist/wheel
+          -> CLI health -> FES validation -> real Brian2 golden execution
+Total run status: SUCCESS (6/6 jobs, 3m19s)
+```
+
+This closes remote source publication and the engine's defined three-OS CI matrix. It does not
+close PyPI publication, signed artifacts, trusted desktop pairing, the proprietary service's
+released-package dependency, authenticated product rehearsal, or production deployment.

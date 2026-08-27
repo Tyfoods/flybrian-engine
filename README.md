@@ -308,6 +308,24 @@ boundaries without fabricating live-provider evidence.
 
 ## Install and verify
 
+Install the reviewed public v0.1.0 release on macOS or Linux:
+
+```text
+python3 -m venv .venv
+.venv/bin/python -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.0.zip"
+.venv/bin/flybrian-engine health
+```
+
+On Windows PowerShell:
+
+```text
+py -m venv .venv
+.venv\Scripts\python.exe -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.0.zip"
+.venv\Scripts\flybrian-engine.exe health
+```
+
+For an editable source checkout, use:
+
 ```text
 python -m venv .venv
 .venv/bin/python -m pip install -e '.[brian2]'
