@@ -66,6 +66,33 @@ confidence, unit-bearing muscle parameters, and source-row provenance remain exp
 generic anatomy produces structured dispositions instead of guessed links. Canonical graph and
 receipt hashes bind the exact dataset manifest, profile, and catalog content.
 
+The package also publishes the pinned 78-actuator FlyBody catalog, FlyBrian's historical
+90-entry experiment-vector catalog, and a complete named crosswalk between them. The crosswalk
+maps 78 controls, explicitly aliases the two historical antenna names, and returns the 12 legacy
+`tarsus3`/`tarsus4` values as explained drops. It never truncates a vector or treats an index as
+scientific identity.
+
+```python
+from flybrian_engine import (
+    FLYBODY_78_ACTUATOR_CATALOG,
+    FLYBRIAN_HISTORICAL_90_ACTUATOR_CATALOG,
+    FLYBRIAN_HISTORICAL_90_TO_FLYBODY_78,
+    apply_actuator_crosswalk,
+)
+
+replay = apply_actuator_crosswalk(
+    FLYBRIAN_HISTORICAL_90_TO_FLYBODY_78,
+    FLYBRIAN_HISTORICAL_90_ACTUATOR_CATALOG,
+    FLYBODY_78_ACTUATOR_CATALOG,
+    tuple(str(value) for value in historical_motor_command),
+)
+print(replay.target_values, replay.drops)
+```
+
+FlyBody-derived metadata is redistributed under Apache-2.0 with the bundled license and
+third-party modification notice. The runtime catalog has no MuJoCo dependency; the pinned XML and
+MuJoCo compilation are development/acceptance authorities.
+
 Official MANC v1.2.1 acquisition is available through the optional `neuprint` extra. It uses a
 release-pinned, fixed-query adapter; keyset-paginates into fsynced staging files; verifies that the
 provider snapshot did not change; and promotes only a manifest-verified dataset with a canonical

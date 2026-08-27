@@ -273,13 +273,13 @@ and a migration comparison that reads private source data without copying it.
 | E4-05 | Deterministic canonical normalized receipt | PASS — §16 profile/receipt owner preserves every source row, records 21,296 repeated pair identities plus one annotation conflict in the 1,208,689-row migration corpus, retains 15 self-edges, rejects under strict policies, and passes canonical/promotion/idempotence/scale/sensitivity oracles |
 | E4-06 | Explicit direct actuator transform and dispositions | PASS — stable catalogs, exact target/direction/confidence/fan-out/normalization rules, canonical graph/receipt hashes, and unknown/ambiguous dispositions pass bounded and full-corpus direct oracles |
 | E4-07 | Explicit muscle-mediated transform and dispositions | PASS for graph construction — unit-bearing versioned muscles, explicit weighted fan-out, complete actuator links, canonical graph/receipt hashes, and incomplete-profile rejection pass; muscle dynamics execution remains outside this transform acceptance |
-| E4-08 | Historical corpus migration comparison | PARTIAL — all 396 private leg rows transform read-only into 692 corrected links plus 90 dispositions, removing 660 historical generic zero-sign links; historical muscle profile/catalog comparison remains open |
+| E4-08 | Historical corpus migration comparison | PARTIAL — all 396 private leg rows transform read-only into 692 corrected links plus 90 dispositions, removing 660 historical generic zero-sign links; the 90-entry actuator catalog and all 90 crosswalk dispositions match read-only historical evidence exactly; historical muscle profile/catalog comparison remains open |
 | E4-09 | Official provider acquisition/resume/credential boundary | PARTIAL — the release-pinned adapter, exact paging, retry/terminal/cancellation states, crash-safe resume, snapshot guard, receipt-last promotion, idempotence/conflict, and credential-sentinel oracles pass offline; authorized live MANC v1.2.1 rehearsal is `BLOCKED-LIVE` because this host has no token |
-| E4-10 | License/citation/redistribution evidence | PASS for the initial MANC v1.2.1 profile — official Janelia, neuPrint, and CC BY 4.0 authorities are recorded; receipts bind DOI, license, redistribution, query-profile version, and modified-representation status |
-| E4-11 | Ruff, strict mypy, pytest, build/clean-wheel and sensitivity | PASS for E4-A/E4-B/E4-C offline — 93 tests, Ruff, strict mypy, wheel/sdist, clean-wheel public acquisition smoke, nine E4 critical mutation receipts, exact private read-only direct rehearsal, and E4-C base-install tests pass; live provider rehearsal remains separate |
+| E4-10 | License/citation/redistribution evidence | PASS for the initial MANC v1.2.1 and FlyBody actuator authorities — official Janelia, neuPrint, CC BY 4.0, pinned FlyBody, and Apache-2.0 evidence are recorded; dataset receipts bind DOI/license/redistribution/query/modified-representation status, while wheel/sdist bundle the exact FlyBody license and modification notice |
+| E4-11 | Ruff, strict mypy, pytest, build/clean-wheel and sensitivity | PASS for E4-A/E4-B/E4-C offline — 114 tests, Ruff, strict mypy, wheel/sdist, clean-wheel public acquisition/crosswalk smoke, E4 critical mutation receipts, exact private read-only direct/catalog/crosswalk rehearsals, and E4-C base-install tests pass; live provider rehearsal remains separate |
 | E4-12 | macOS/Windows/Linux canonical-byte agreement | OPEN |
 | E4-13 | Released package consumed by private service | BLOCKED — publication coordinate absent |
-| E4-14 | Bidirectional contract/diff closure | PASS for E4-A/E4-B and the E4-C offline checkpoint — maps below; live provider acceptance, historical muscle/crosswalk, and consumer changes remain open |
+| E4-14 | Bidirectional contract/diff closure | PASS for E4-A/E4-B and the E4-C offline checkpoint — maps below; live provider acceptance, historical muscle behavior, and consumer changes remain open |
 
 No open or blocked row is completion. E4 cannot close local/cloud equivalence, production rehearsal,
 or the overall FlyBrian launch.
@@ -972,3 +972,219 @@ not authorization to copy its bytes into this repository.
   macOS/Ubuntu/Windows ×
   Python 3.10/3.12 CI matrix carries the fixed canonical hashes; remote matrix execution remains
   E4-12 rather than being inferred from this macOS run.
+
+## 17. E4-B2 licensed FlyBody actuator catalogs and explicit 90→78 crosswalk
+
+Status: **implemented and verified locally; supported-platform CI execution remains E4-12**
+
+### 17.1 Intended outcome and user-visible promise
+
+A FlyBrian experiment can bind a stable, inspectable actuator authority instead of an anonymous
+array length. Historical 90-value motor-command artifacts can be replayed against the current
+FlyBody 78-actuator model without positional guessing: every source identity is either mapped to
+one named target identity or returned as one named, explained drop. The same public engine API is
+the authority for local execution, cloud execution, the experiment catalog, and DigiFly playback.
+
+The public package owns two immutable catalogs and one immutable crosswalk:
+
+- `org.flybrian.actuators.flybody@d015e9b`: the exact 78-actuator order and resolved control ranges
+  compiled from pinned upstream FlyBody XML;
+- `org.flybrian.actuators.historical-90@1.0`: FlyBrian's explicitly modified historical 90-entry
+  experiment-vector authority; and
+- `org.flybrian.crosswalk.historical-90-to-flybody-78@1.0`: 78 named mappings and 12 named drops.
+
+Catalog order remains the declared external vector order, but array position is never identity.
+The crosswalk operates only on stable actuator IDs and validates both catalog IDs, versions, and
+canonical hashes before transforming a vector.
+
+### 17.2 Primary-source, license, and modification record
+
+The upstream authority is `TuragaLab/flybody` commit
+`d015e9bfe441bd90ae431bac24c55cb74bdbce26` (also the currently installed FlyBody 0.1.0 direct-url
+commit on the acceptance host):
+
+- repository: `https://github.com/TuragaLab/flybody`;
+- exact XML:
+  `https://raw.githubusercontent.com/TuragaLab/flybody/d015e9bfe441bd90ae431bac24c55cb74bdbce26/flybody/fruitfly/assets/fruitfly.xml`;
+- XML byte size: 65,787; SHA-256:
+  `d14946fd0311025ecca70c8eeb5de80e1fe18700d3072be37ecbb18d33d80fd8`;
+- exact Apache-2.0 license:
+  `https://raw.githubusercontent.com/TuragaLab/flybody/d015e9bfe441bd90ae431bac24c55cb74bdbce26/LICENSE`;
+- license byte size: 11,357; SHA-256:
+  `c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4`.
+
+MuJoCo compilation of that exact XML resolves `nu = 78`. The 78-entry public catalog is a
+modified representation extracted from those Apache-2.0 source bytes: it preserves compiled
+actuator order, exact names, and exact resolved `ctrlrange` decimal values while adding FlyBrian
+stable catalog metadata, body-region/joint labels, and explicit control-domain labels. The source
+XML itself is not bundled.
+
+The historical 90-entry catalog is FlyBrian-authored migration data informed by that upstream
+model. It changes the antenna IDs `antenna_left/right` to historical
+`antenna_extend_left/right`, inserts `tarsus3` and `tarsus4` after each leg's `tarsus2`, and then
+places the eight adhesion controls at positions 82–89. It must be described as modified historical
+FlyBrian behavior, never as an upstream FlyBody 90-actuator claim. The 12 added tarsal entries use
+the historical generic `[-1, 1]` range and have no direct upstream actuator.
+
+The distribution keeps the engine under MIT and bundles the unmodified Apache-2.0 license plus a
+third-party attribution/modification notice in source and wheel artifacts. Package tests must
+inspect both archives; a repository-only notice is insufficient.
+
+### 17.3 Exact catalog semantics
+
+An actuator retains the existing stable fields: ID, body region, joint/function, increasing exact
+decimal control range, control unit/domain, and source. Catalog construction rejects blanks,
+duplicates, case-collisions, non-finite/reversed bounds, and unsupported authority identity.
+
+The upstream 78 catalog uses the compiled XML actuator name as `actuator_id`. The 48 leg controls
+use six explicit regions (`T1_left` through `T3_right`). The eight `adhere_*` controls use the
+`normalized_activation` domain and exact `[0, 1]` range. Other controls use the
+`mujoco_control` domain; this contract does not overclaim that every general actuator is a torque,
+angle, or SI quantity merely because its range resembles a joint limit. Exact XML source and
+compiled behavior remain the semantics.
+
+The historical 90 catalog preserves its exact legacy names and vector order. It is not selected
+by a hidden default and does not make the current model accept 90 controls directly. Consumers
+must bind the exact catalog identity/hash carried by an experiment artifact.
+
+### 17.4 Crosswalk, result, and canonical identity
+
+Each crosswalk entry contains exactly:
+
+```text
+source_actuator_id
+status = mapped | dropped
+target_actuator_id = stable ID when mapped, null when dropped
+reason_code
+source
+```
+
+Mapped entries require a target ID and reason `same_control` or `renamed_control`; dropped entries
+forbid a target and use `no_upstream_actuator`. Every source catalog ID appears exactly once.
+Every target catalog ID appears exactly once in this 90→78 profile. Duplicate source entries,
+duplicate mapped targets, unknown IDs, missing source coverage, non-surjective target coverage,
+bad disposition/target combinations, or source/target catalog hash mismatch reject construction
+or application before returning a result.
+
+The first 22 controls map by name except the explicit aliases
+`antenna_extend_left → antenna_left` and
+`antenna_extend_right → antenna_right`. For every one of the six leg regions, `coxa_abduct`,
+`coxa_twist`, `coxa`, `femur_twist`, `femur`, `tibia`, `tarsus`, and `tarsus2` map by the complete
+stable ID. That region's `tarsus3` and `tarsus4` are dropped individually. All eight adhesion
+controls map by stable name. Positional arithmetic may be used only by a caller to pair a vector
+with its already-bound source catalog; it may not select crosswalk identity or disposition.
+
+Applying the crosswalk to a complete source vector returns:
+
+- the 78 target values in declared target-catalog order;
+- 12 drop records containing source ID, exact source value, and reason;
+- source/target catalog IDs, versions, and hashes;
+- crosswalk ID, version, and hash; and
+- a canonical result SHA-256 over all authority metadata, values, and drops.
+
+Values are exact decimal lexemes; binary floats, booleans, NaN, and infinity are rejected. Vector
+length mismatch rejects without a partial result. Applying an already-78 vector is not a
+crosswalk operation and must not silently pass through this profile.
+
+### 17.5 State machine and lifecycle edges
+
+```text
+catalog/crosswalk invalid                              -> AUTHORITY_INVALID
+exact catalogs + complete validated crosswalk          -> READY
+READY + bound 90-value exact vector                    -> TRANSFORMING
+TRANSFORMING + 78 mappings + 12 recorded drops         -> COMPLETE
+TRANSFORMING + length/hash/identity/value mismatch      -> REJECTED
+COMPLETE + same authorities and source values           -> COMPLETE (identical bytes/hash)
+```
+
+| Edge/lifecycle | Required resolution |
+| --- | --- |
+| upstream XML changes under a reused URL | pinned commit and XML SHA detect it; publish a new catalog version |
+| actuator reorder with unchanged names | catalog hash changes; old artifacts retain their exact authority |
+| renamed antenna controls | only the two explicit `renamed_control` entries map them |
+| virtual tarsal values are non-zero | preserve each exact value in a drop record; never merge into `tarsus2` |
+| unknown legacy actuator | invalid/incomplete crosswalk; never drop by fallback |
+| target appears twice | reject crosswalk; never last-value-wins |
+| input has 89/91 values | reject before transformation |
+| binary float or non-finite input | reject; caller must supply exact decimals |
+| package lacks Apache license/notice | build acceptance fails |
+| old result replay | resolve exact catalog/crosswalk hashes; never `latest` |
+
+### 17.6 Scale, portability, and ownership boundary
+
+For source catalog size `S` and target size `T`, validation and application are `O(S + T)` time
+and retained state. No hard-coded 90/78 check belongs in the generic types; the named constants
+carry those cardinalities. Implementation uses immutable Python data and exact decimals only, so
+it has no MuJoCo runtime dependency and behaves the same on macOS, Linux, and Windows. MuJoCo is a
+development oracle for the pinned XML, not a package dependency or import-time authority.
+
+This slice does not implement motor-neuron mapping, muscle dynamics, simulation execution,
+DigiFly rendering, service cutover, or a general catalog registry. It does not edit or wrap the
+private service table. Read-only comparison is acceptance evidence only; the public owner is
+derived from the cited upstream source and the user-authorized FlyBrian migration semantics.
+
+### 17.7 Test-trust and acceptance gate
+
+Implementation begins with red tests for absent public catalog/crosswalk/result authorities.
+
+| Oracle | Required evidence |
+| --- | --- |
+| upstream authority | exact 78 order/names/resolved ranges match compilation of pinned XML; fixed catalog hash |
+| historical authority | exact 90 order/names/ranges match read-only historical evidence; fixed catalog hash |
+| complete mapping | 90 entries, 78 mapped, 12 dropped; every source once and every target once |
+| aliases/drops | exact two antenna renames; exact six-region `tarsus3/tarsus4` drop set |
+| application | distinctive exact values land on named targets; drops preserve IDs/values/reasons |
+| rejection | malformed catalogs/crosswalks, hash/length mismatch, floats, non-finite values all fail |
+| canonical identity | construction-order variation preserves bytes; source/range/value/disposition mutation changes hash |
+| sensitivity | replacing named lookup with the historical positional shortcut makes the distinctive-value oracle fail |
+| packaging | sdist and wheel contain Apache-2.0 license and third-party notice; clean-wheel public smoke passes |
+| quality | full pytest, Ruff, strict mypy, build, and supported-platform CI matrix pass |
+
+E4-B2 becomes verified only after the full local gate and read-only 90-table comparison pass.
+Remote supported-platform execution remains E4-12 and may not be inferred from one macOS run.
+
+### 17.8 Forecast and contract-to-diff map
+
+Expected production diff: the public embodiment module (or one narrowly named catalog module),
+stable exports, license/notice assets, focused tests, README, package metadata, and this contract.
+No web, service, Maestro, acquisition, or simulation-backend file belongs to this slice.
+
+| Changed surface | Contract authority |
+| --- | --- |
+| public catalog constants | §17.2–17.3 pinned source, stable IDs, ranges, order, and source claims |
+| crosswalk/result types and apply function | §17.4–17.5 complete named dispositions and exact canonical result |
+| package license/notice metadata | §17.2 and §17.7 archive-level compliance |
+| focused actuator tests | §17.5–17.7 lifecycle, rejection, sensitivity, and authority oracles |
+| README/public exports | §17.1 user-visible promise and single public owner |
+
+Any source mismatch, unresolved unit claim, missing disposition, license ambiguity, or need for a
+private runtime dependency returns this slice to specification state before production changes.
+
+### 17.9 E4-B2 implementation evidence — 2026-08-27
+
+- `RED`: focused test collection failed because the public catalog constants, crosswalk types,
+  result, and apply function did not exist.
+- `UPSTREAM-READONLY`: MuJoCo compiled the locally installed XML whose 65,787 bytes match the
+  pinned upstream SHA-256. All 78 public catalog names, declared order, and exact resolved control
+  ranges matched `MjModel` actuator output. MuJoCo remains absent from runtime dependencies.
+- `MIGRATION-READONLY`: all 90 public historical catalog names, body regions, joint labels, and
+  exact ranges matched the private historical table. All 90 named public dispositions matched the
+  private index oracle: 78 mapped targets and 12 dropped tarsal controls. No private source byte
+  was modified, copied, imported at runtime, or included in either distribution artifact.
+- `IDENTITY`: public catalog SHA-256 is
+  `8469956cd66465f4191e6597d823c3bd6cb08635ab1e041a94631383a971ab92`; historical catalog
+  SHA-256 is `8f24d150b6efdd3e98d5710d901ad375bf48470f7a8a7387802ac167ed192300`;
+  crosswalk SHA-256 is `08f112f8fd8d37d2bbcfc97bdfede601dd0613c7719850e250ee4828b7ac65ee`.
+  The distinctive `0..89` source vector produces result SHA-256
+  `a9935d1e014f8db697fdcb834bfec01ee3ef6af1878c19c331620f6163b3edfc`.
+- `SENSITIVITY`: temporarily replacing named target assembly with `source_values[:78]` made the
+  distinctive-vector oracle fail at `coxa_abduct_T1_right` (`30` observed instead of the named
+  source value `32`). Named assembly was restored and the focused suite returned to PASS.
+- `LICENSE`: the bundled upstream Apache-2.0 file is exactly 11,357 bytes with SHA-256
+  `c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4`. Wheel and sdist
+  inspection verified that exact file plus `THIRD_PARTY_NOTICES.md`; the notice identifies the
+  pinned source, upstream project/authors, and FlyBrian modifications.
+- `QUALITY`: all 114 tests pass in the scientific Python 3.12 environment; Ruff and strict mypy
+  pass; sdist/wheel build passes; clean-wheel import and 90→78 application smoke pass through only
+  public exports. Remote macOS/Ubuntu/Windows × Python 3.10/3.12 execution remains E4-12 and is not
+  inferred from this host.

@@ -13,6 +13,16 @@ from .acquisition import (
     RetryableAcquisitionError,
     acquire_neuprint_release,
 )
+from .actuator_catalogs import (
+    FLYBODY_78_ACTUATOR_CATALOG,
+    FLYBRIAN_HISTORICAL_90_ACTUATOR_CATALOG,
+    FLYBRIAN_HISTORICAL_90_TO_FLYBODY_78,
+    ActuatorCrosswalk,
+    ActuatorCrosswalkDrop,
+    ActuatorCrosswalkEntry,
+    ActuatorCrosswalkResult,
+    apply_actuator_crosswalk,
+)
 from .artifacts import (
     Artifact,
     ArtifactDisposition,
@@ -72,6 +82,9 @@ from .schema import ExperimentSpec, ValidationError, validate_experiment_spec
 from .version import __version__
 
 __all__ = [
+    "FLYBODY_78_ACTUATOR_CATALOG",
+    "FLYBRIAN_HISTORICAL_90_ACTUATOR_CATALOG",
+    "FLYBRIAN_HISTORICAL_90_TO_FLYBODY_78",
     "MANC_CONNECTION_NORMALIZATION_V1",
     "MANC_V121",
     "AcquisitionCancelled",
@@ -80,6 +93,10 @@ __all__ = [
     "AcquisitionResult",
     "Actuator",
     "ActuatorCatalog",
+    "ActuatorCrosswalk",
+    "ActuatorCrosswalkDrop",
+    "ActuatorCrosswalkEntry",
+    "ActuatorCrosswalkResult",
     "Artifact",
     "ArtifactDisposition",
     "ArtifactManifest",
@@ -124,6 +141,7 @@ __all__ = [
     "ValidationError",
     "__version__",
     "acquire_neuprint_release",
+    "apply_actuator_crosswalk",
     "assess_backend_compatibility",
     "iter_connections",
     "iter_motor_anatomy",
