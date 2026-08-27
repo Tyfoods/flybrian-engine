@@ -2537,3 +2537,256 @@ sdist/wheel includes the inventory module, focused tests, README, and contract; 
 and the third-party notice are byte-identical to the working tree; and a clean target install imports
 the top-level API and inventories a result fixture without using the source tree. Supported remote
 platform execution remains E4-12 and is not inferred from this host.
+
+## 22. E4-C4 reviewed historical-estate projection contract
+
+Status: **implemented and host-accepted; reviewed corpus manifests and web import remain pending**
+
+### 22.1 Parent outcome, active slice, and discovery evidence
+
+The parent outcome remains a truthful, searchable catalog from which a user can inspect, fork,
+vary, and rerun FlyBrian's historical experiments, then send compatible motor-command evidence to
+DigiFly. E4-C4 is the next independently verifiable slice: it defines the public reviewed manifest
+that converts exact E4-C3 inventory bytes into explicit experiment/run/artifact relationships. It
+does not yet write the proprietary catalog database or claim that the estate has been reviewed.
+
+Read-only discovery against the private research estate found 3,239 JSON files, of which 3,236
+parse under Python's ordinary JSON decoder, distributed across 528 top-level key signatures. Two
+files exceed 8 MB and one is malformed JSON. The largest signature cohort contains 690 force
+diagnostic objects; other large cohorts contain lists, standing assessments, and result summaries.
+The C174 result families themselves mix result JSON, NumPy arrays, video, logs, and narrative
+documents. Therefore neither extension, directory, filename, nor JSON-key similarity is authority
+for an experiment boundary or a source-to-result edge.
+
+The source and output estates are also distinct E4-C3 roots. A projection must bind a tuple of exact
+inventory identities and address a file as `(root_id, inventory_sha256, logical_path, file_sha256)`;
+joining against only a path or assuming one physical parent would be ambiguous and nonportable.
+
+Ambiguity challenge:
+
+1. "Import reviewed historical files" could mean one catalog record per admitted file, which would
+   turn videos, plots, and summaries into false experiments.
+2. It could mean one record per top-level collection and attach all descendants, which would turn
+   721 routing groups into experiment identities and cross-link unrelated runs.
+3. It could mean explicit reviewed run records whose exact source and artifact edges are checked
+   against immutable inventories. Only this interpretation preserves the requested scientific
+   provenance, so it is the E4-C4 contract.
+
+### 22.2 Behavioral contract and invariants
+
+`INV-E4-PROJ-1` — A projection is accepted only against the exact ordered inventory identities it
+declares. Missing, extra, duplicate, reordered, or hash-mismatched inventories reject the entire
+projection before a record is returned.
+
+`INV-E4-PROJ-2` — Every projected source and available artifact is an explicit evidence reference.
+The referenced root, inventory, safe logical path, file size, file hash, and E4-C3 role must match.
+No basename, prefix, collection, key-signature, label, or filename-parameter inference is allowed.
+
+`INV-E4-PROJ-3` — Each run has stable namespaced design and run IDs, a positive design version, one
+contributor, one visibility policy, one exact historical envelope reference, an explicit reviewed
+repository-relative source path, and an ordered set of artifact dispositions. Design/run IDs are
+reviewer-supplied durable identities, never array index or host path. The repository-relative path
+must equal the envelope source path; it is not derived from the inventory root's `logical_root`,
+which is a portable corpus label and is not required to mirror repository nesting.
+
+`INV-E4-PROJ-4` — Visibility is `public`, `private`, or `team`. Team visibility requires a
+namespaced scope ID; other visibility forbids one. Visibility never overrides an inventory root's
+access or redistribution authority. A projection may describe private/prohibited evidence, but an
+exporter may not emit its bytes from that fact. Inventory access/license/redistribution values are
+the byte-policy authority. Historical envelope source strings remain extraction provenance and are
+not treated as synonyms or allowed to weaken that inventory policy.
+
+`INV-E4-PROJ-5` — The referenced `HistoricalExperimentEnvelope` must be supplied at validation and
+match ID, version, SHA-256, source authority, reproducibility class, FES SHA-256, and sorted missing
+requirements exactly. A runnable claim cannot be created by writing `RUNNABLE_*` in projection
+JSON. Absent or mismatched envelope authority rejects.
+
+`INV-E4-PROJ-6` — Artifact disposition is explicit. `available` requires one exact inventory file
+reference and no reason. `unavailable` or `failed` requires a reason and forbids a file reference.
+Artifact kinds have compatible E4-C3 roles: video→video, image→image, motor commands/state→array or
+result, result/metrics→result, narrative/log→narrative, archive→archive; `other` remains
+review-required and cannot make an envelope runnable.
+
+`INV-E4-PROJ-7` — Projection JSON admission is bounded, UTF-8, object-only, schema-exact, and
+duplicate-key rejecting at every nesting level. Binary floats and non-finite constants reject;
+integers, strings, booleans, arrays, objects, and null remain JSON-safe. Unknown or missing fields
+reject rather than becoming compatibility state.
+
+`INV-E4-PROJ-8` — Canonical projection identity binds schema/profile, review authority, the exact
+ordered inventory references, contributors, and ordered run records. Import identity is
+`SHA256(canonical {inventory_sha256 tuple, projection_sha256})`. Replaying the same pair is
+idempotent; any evidence or review change creates a new import identity rather than mutating an old
+one.
+
+`INV-E4-PROJ-9` — Validation has no filesystem, network, subprocess, import, database, NumPy,
+archive, or media-decoder side effect. E4-C4 consumes already-created inventory and envelope
+objects plus bounded manifest bytes. It does not reopen private evidence.
+
+Failure is atomic: one invalid inventory authority, file edge, envelope, contributor, visibility,
+artifact disposition, ordering rule, or JSON field rejects the projection and returns no partial
+records. There is no retry or fallback inside this pure boundary. The caller may correct the
+reviewed manifest and submit it again as a new immutable input.
+
+### 22.3 Current and intended authority map
+
+| Fact | Current authority | Transport/consumer | Intended E4-C4 owner |
+| --- | --- | --- | --- |
+| file bytes/path/role | `HistoricalEstateInventory` from `historical_estate.py` | in-memory immutable receipt | unchanged; projection holds exact references only |
+| semantic experiment/options/FES | `HistoricalExperimentEnvelope` and reviewed profiles | public engine objects/canonical JSON | unchanged; projection holds and validates an envelope reference |
+| source→run→artifact edge | private filenames/directories and researcher knowledge; no portable authority | none | new reviewed projection record |
+| contributor attribution | ad-hoc research context | future catalog fields | new projection contributor authority |
+| visibility | web catalog/account layer for existing records | proprietary repository/routes | projection declares intended visibility; web remains authorization enforcer |
+| artifact availability | physical private output tree and existing engine artifact schemas | future catalog and DigiFly | projection disposition checked against inventory; actual serving remains external |
+| catalog persistence | web `experiment_designs`, versions, runs, artifacts | Cloud routes and workspace | unchanged in E4-C4; later importer consumes the public projection |
+
+Physical paths remain call-only in E4-C3 and do not enter the projection. The public engine owns the
+portable scientific/import contract. The proprietary web/service may authorize, persist, schedule,
+bill, or serve bytes, but may not reinterpret historical filenames into different scientific
+identities.
+
+### 22.4 Reuse and semantic-search record
+
+| Search/candidate | Decision |
+| --- | --- |
+| `HistoricalEstateInventory`, root/file records | Reuse as the only byte/path/classification authority; do not add a second scanner. |
+| `HistoricalExperimentEnvelope`, `HistoricalSourceAuthority`, variation and reproducibility logic | Reuse as the only semantic/runnability authority; do not duplicate FES completeness rules. |
+| `HistoricalSourceArtifact` | Keep for envelope-level source evidence; projection artifacts add availability and cross-root inventory binding, so this type cannot replace the new edge. |
+| `ArtifactManifest` | Keep for newly executed run outputs. It assumes an engine/backend execution receipt and is not a migration/review manifest for historical files. |
+| web public corpus and experiment repository | Later consumer only. The engine must not import proprietary persistence types. |
+| filename labels and JSON key signatures | Reject as authorities. They remain review aids outside the accepted manifest. |
+
+No existing projection/import-manifest type was found in the public engine. A new narrow module is
+therefore justified; it must reference, not wrap or clone, the two existing authorities.
+
+### 22.5 Intended authority, compatibility, and deletion map
+
+After this slice, `HistoricalEstateProjection` is the single accepted portable authority for
+reviewed estate linkage. E4-C3 remains the only inventory authority and historical envelopes remain
+the only semantic/runnability authority. No old public projection exists to delete.
+
+No heuristic compatibility reader is permitted. Schema/profile `1.0` accepts exactly its declared
+fields. A future schema version gets an explicit upgrader before authority admission, not a second
+runtime interpretation path. Collection-based or basename-based import helpers, if later proposed,
+must remain candidate-generation tools and may never feed the catalog without producing this exact
+reviewed manifest.
+
+### 22.6 Exact change forecast
+
+Production additions/modifications allowed in E4-C4:
+
+- `src/flybrian_engine/historical_projection.py`: immutable reviewed manifest records, strict
+  bounded JSON loader, inventory/envelope validation, canonical and import identities;
+- `src/flybrian_engine/__init__.py`: stable public exports only;
+- `README.md`: reviewed-projection usage and explicit non-inference warning;
+- `FLYBRIAN_E4_INGESTION_EMBODIMENT_CONTRACT.md`: this contract and acceptance receipts.
+
+Test addition allowed:
+
+- `tests/test_historical_projection.py`: pure boundary, malformed manifest, identity,
+  non-execution, scale, and sensitivity oracles.
+
+No web, service, Maestro, private estate, artifact, database, deployment, package metadata,
+licensing, or unrelated file may change. Discovery of a required production file outside this list
+returns the slice to contract state before editing.
+
+### 22.7 Pre-implementation test-trust audit and evidence matrix
+
+No existing test exercises reviewed cross-inventory linkage; this is a new boundary. E4-C3 tests
+are preservation evidence for inventory identity and safety, while historical-envelope tests are
+preservation evidence for semantic identity. They cannot, separately, prove their joint use.
+
+| ID | Existing evidence and limitation | Pre-change oracle | Sensitivity control | Required acceptance |
+| --- | --- | --- | --- | --- |
+| P1 | inventory exact-hash tests; no projection exists | import of new module/API is red | reorder/drop/replace one inventory | exact tuple accepted; every mutation rejects |
+| P2 | file classification tests; no edge validator | source/output fixture projection is red | wrong root/path/hash/size/role/repository path | only exact explicit edges accepted |
+| P3 | envelope hash/reproducibility tests only | joined inventory+envelope projection is red | change ID/version/hash/source/FES/class | exact authority accepted; every mismatch rejects |
+| P4 | no visibility/contributor projection test | constructor/loader cases are red | team scope missing or scope on public | exact visibility matrix accepted |
+| P5 | artifact manifest tests target new runs | historical disposition cases are red | mislabeled evidence cannot be promoted by kind text | compatible available and reasoned absent states only |
+| P6 | existing canonical hashes are separate | projection/import identity tests are red | contributor/review/edge/order mutation | stable relocation identity and mutation sensitivity |
+| P7 | no untrusted projection JSON reader | strict-loader tests are red | duplicate key, float, unknown field, oversized bytes | all reject before validation; canonical round trip passes |
+| P8 | E4-C3 10,001-file scan only | projection of multiple cardinalities is red | omitted middle record and reversed order | deterministic 0/1/40/6001 validation without product cap |
+| P9 | module-specific non-execution sentinels only | projection sentinels are red | monkeypatch filesystem/process/import/decoders to fail | valid projection never touches them |
+
+The decisive joint oracle supplies two real E4-C3 inventory objects and one real historical envelope
+object, validates one source plus multiple artifact dispositions, then mutates each cross-boundary
+identity independently. This is capable of disagreeing with both underlying modules and prevents a
+pair of separately green unit suites from being mistaken for linkage proof.
+
+### 22.8 Scale and resource horizon
+
+Scaling variables are number of inventories `I`, envelope authorities `E`, runs `R`, and available
+artifact edges `A`. Validation must be `O(total inventoried file records + E + R + A)` time and
+`O(total inventoried file records + E + R + A)` retained lookup state for one manifest admission;
+it must not perform `R × inventory_files` searches. Canonical serialization is necessarily linear
+in the accepted projection size.
+
+The JSON loader has a public default byte fuse and caller-lowerable positive limit. This is a
+fault-containment boundary for one submitted projection document, not a catalog record count or a
+claim about total historical estate capacity. There is no production `6,000`, `10,000`, or `10,800`
+record ceiling. Acceptance varies `R` over 0, 1, 40, and 6,001 with bounded fixture payloads; those
+values are test points only. Larger estates increase review-manifest bytes, validation time, and
+future database rows. Browser pagination and durable persistence remain consumer responsibilities.
+
+### 22.9 Explicit non-goals and closure gate
+
+E4-C4 does not:
+
+- infer or certify the historical experiment count;
+- generate a projection from filenames, directories, or payload similarity;
+- parse private result JSON, NumPy, video, archive, or Python during admission;
+- publish private source or artifacts, change license/access facts, or upload the estate;
+- create web catalog rows, teams ACLs, artifact-serving URLs, DigiFly replay bytes, or a daemon;
+- make C174 runnable beyond its existing truthful envelope authority;
+- solve 30→31 Hz, deploy the engine/service/web, touch Maestro, or close supported-platform CI.
+
+Closure requires red-before-green evidence for the new boundary, the joint authority oracle,
+identity sensitivity, strict JSON negative controls, 6,001-record scale without a cardinality cap,
+full pytest, Ruff, strict mypy, sdist/wheel inclusion, isolated clean-wheel smoke, diff-to-contract
+reconciliation, and a clean public-engine worktree. Only then may this section say
+"implemented and host-accepted"; the historical corpus parent remains open until reviewed manifests
+are produced and consumed by the controlled web importer.
+
+### 22.10 E4-C4 implementation and host acceptance evidence
+
+The public `historical_projection` module implements immutable inventory, evidence, envelope,
+contributor, visibility, artifact, run, review, and projection records. It admits only explicit
+reviewed edges against an exact ordered inventory tuple and exact supplied envelope authorities.
+An available artifact must match the inventoried root, inventory hash, safe path, bytes, file hash,
+and compatible role; unavailable/failed dispositions are reasoned absence states with no invented
+file reference. Runnability, FES identity, and missing requirements are copied from and checked
+against the semantic envelope rather than trusted from projection JSON.
+
+The first implementation review caught an authority error before acceptance: `logical_root` had
+been treated as a repository-path prefix even though E4-C3 defines it as a portable corpus label.
+The contract and red tests were reopened. Each run now carries an explicit reviewed
+`source_repository_path`, which must match the envelope's repository-relative source path, while
+the separate evidence reference binds the exact inventory file. Inventory access, licensing, and
+redistribution remain the governing byte-policy facts; older envelope vocabulary cannot weaken
+them or act as an implicit synonym map.
+
+The strict byte loader accepts only bounded UTF-8 JSON with an object root, exact schema fields,
+unique keys at every nesting level, integer numeric fields, and no binary float or non-finite
+constant. Canonical projection SHA-256 and import SHA-256 bind the review decision, contributors,
+ordered run records, exact file edges, and ordered inventory identities. Validation builds indexed
+inventory/envelope lookups once and never opens a source/result file, imports a historical module,
+starts a subprocess, contacts a network, decodes NumPy/media/archive content, or writes a database.
+
+Acceptance receipts:
+
+```text
+RED-1: focused collection failed because flybrian_engine.historical_projection did not exist
+RED-2: explicit repository source-path cases failed against the first implementation
+FOCUSED: 41 projection tests passed
+FULL: 258 tests passed, including Brian2 golden execution
+STATIC: Ruff clean; strict mypy clean across 38 source/test files
+SCALE: 0 / 1 / 40 / 6,001 run projections validate without a product count ceiling
+MUTATION: disabling artifact-kind/estate-role compatibility makes the decisive role test fail
+PACKAGE: fresh sdist/wheel contain module, test, README, contract, and exact license/notice bytes
+WHEEL: isolated target import plus strict-loader rejection smoke passed outside the source tree
+DIFF: only the five files forecast in §22.6 changed; no private estate, service, web, or Maestro edit
+```
+
+This closes the public reviewed-manifest boundary only. No private estate manifest was generated or
+committed, no historical file was declared an experiment from its name or payload shape, and no web
+catalog row exists from E4-C4. Candidate preparation, researcher review, controlled web import,
+artifact serving, and catalog-to-DigiFly acceptance remain subsequent slices of the open parent.

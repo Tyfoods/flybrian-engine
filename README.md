@@ -226,9 +226,33 @@ print(inventory.total_file_count, inventory.total_bytes, inventory.sha256())
 ```
 
 Inventory is not import or reproducibility. It does not guess how many experiments exist, link a
-script to an artifact, parse filename parameters, or make a private byte redistributable. A later
-reviewed projection must add stable run/design identity, visibility, lineage, FES completeness, and
-source-to-artifact edges before the controlled catalog importer can expose a historical record.
+script to an artifact, parse filename parameters, or make a private byte redistributable. The
+reviewed projection boundary must add stable run/design identity, visibility, lineage, FES
+completeness, and source-to-artifact edges before the controlled catalog importer can expose a
+historical record.
+
+That next boundary is the reviewed historical-estate projection. A projection names every design,
+run, contributor, visibility decision, semantic envelope, source edge, and artifact disposition,
+then validates each available file against the exact ordered inventory receipts. Admission also
+requires the exact `HistoricalExperimentEnvelope` objects, so projection text cannot promote an
+incomplete record to runnable. The strict JSON loader is bounded, duplicate-key rejecting, rejects
+binary floats and unknown fields, and never reopens or parses an estate file.
+
+```python
+from flybrian_engine import load_historical_estate_projection_json
+
+projection = load_historical_estate_projection_json(
+    reviewed_projection_bytes,
+    inventories=(experiment_inventory, output_inventory),
+    envelopes=(reviewed_envelope,),
+)
+print(projection.sha256(), projection.import_sha256())
+```
+
+The import identity binds both the ordered inventory hashes and projection hash, making repeat
+admission idempotent while preserving changed evidence as a new review decision. Directory names,
+JSON key signatures, and filename-encoded parameters may help a human prepare a candidate, but are
+never accepted as linkage authority.
 
 FlyBody-derived metadata is redistributed under Apache-2.0 with the bundled license and
 third-party modification notice. The runtime catalog has no MuJoCo dependency; the pinned XML and
