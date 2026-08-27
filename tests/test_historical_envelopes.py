@@ -93,7 +93,7 @@ def source_for(data: bytes) -> HistoricalSourceAuthority:
         access="public",
         redistribution="allowed",
         extractor_id="org.flybrian.static-python-extractor",
-        extractor_version="1.0",
+        extractor_version="1.1",
     )
 
 
@@ -191,12 +191,12 @@ def test_envelope_derives_truthful_reproducibility_and_canonical_identity() -> N
     neural = envelope(fes=minimal_fes())
     assert neural.reproducibility_class == "RUNNABLE_CONNECTOME"
     assert neural.sha256() == (
-        "1d531d58f7d0315ec7fc33babfd38ddcdffddc11d91c90a16dde2f9034304468"
+        "a40f4dd62d3b0fdf907c255856d9372d73e7cf6c736ec6ddaf9b46ade2f2db60"
     )
     embodied = envelope(fes=minimal_fes(embodied=True), embodied_controller=controller())
     assert embodied.reproducibility_class == "RUNNABLE_EMBODIED"
     assert embodied.sha256() == (
-        "ae01028317823a6cdca0db01577704a33785d2a13f742cc100dceb5f5455a8b5"
+        "45d9edfcab74aa0d07072fd794ffd9ceca88ce76fad7b9375dead96f6e80de0d"
     )
     assert embodied.sha256() != neural.sha256()
 
@@ -395,6 +395,7 @@ import subprocess
 CONFIGS = [{"label": "A", "gain": 1.5}]
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--mode", type=str, default="safe", choices=["safe", "fast"])
+parser.add_argument("--enabled", action="store_true")
 parser.add_argument("--dynamic", default=read_secret())
 open("/must-not-open")
 subprocess.run(["must-not-run"])
@@ -408,18 +409,20 @@ subprocess.run(["must-not-run"])
     assert [item.legacy_name for item in result.options] == [
         "--seed",
         "--mode",
+        "--enabled",
         "--dynamic",
     ]
     assert result.options[0].default_value == 42
     assert result.options[1].choices == ("safe", "fast")
-    assert result.options[2].default_value is None
+    assert result.options[2].default_value is False
+    assert result.options[3].default_value is None
     assert result.config_tables[0].name == "CONFIGS"
     assert result.config_tables[0].entry_count == 1
     assert {item.code for item in result.dispositions} == {"DYNAMIC_OPTION_DEFAULT"}
-    assert result.receipt.option_count == 3
+    assert result.receipt.option_count == 4
     assert result.receipt.config_entry_count == 1
     assert result.receipt.graph_sha256 == (
-        "af0add1299d4bbe9b30211a0166d380435b70e61e0073ed68812c502255546b1"
+        "843b0bcc3b4ed1890f6ba039391631ea5937218de5945ff05ff017cbf4e1c26f"
     )
 
 
@@ -432,6 +435,11 @@ def test_static_extractor_enforces_source_identity_and_limits() -> None:
             source,
             source_for(source),
             StaticExtractionLimits(max_source_bytes=10),
+        )
+    with pytest.raises(HistoricalEnvelopeError, match="extractor profile"):
+        extract_static_python_experiment(
+            source,
+            replace(source_for(source), extractor_version="1.0"),
         )
     dynamic = (
         b'parser.add_argument("--one", default=first())\n'

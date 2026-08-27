@@ -1853,7 +1853,7 @@ completeness, and variation APIs.
 | --- | --- |
 | canonical envelope | fixed fixture/hash; JSON key reordering stable; ordered scientific arrays sensitive |
 | source identity | byte length/SHA/revision required for runnable; local path/timestamp excluded |
-| option resolution record | exact typed values, null, ignored/unresolved demotion, alias collision, binary-float rejection; reviewed precedence application is E4-C2 |
+| option resolution record | exact typed values, null, explicit ignored evidence, unresolved demotion, alias collision, binary-float rejection; reviewed precedence application is E4-C2 |
 | controller graph | DAG/order/signal/phase/unit/profile validation; executable text and callback imports reject |
 | completeness | every missing-authority mutation demotes class; caller cannot assert runnable |
 | variation | exact before/base hash, lineage, seed visibility, FES/controller revalidation, overlap rejection, no positional entity patch |
@@ -1892,7 +1892,7 @@ The public `historical_envelopes` module now implements immutable source, option
 artifact, lineage, variation, envelope, static-declaration, disposition, limit, result, and receipt
 records. Canonical identities exclude local path, timestamp, hostname, and duration. Exact decimal
 authority rejects binary floats; canonical decimal text avoids exponent spelling for ordinary
-values. Source revision/license/access gaps and ignored or unresolved options derive missing
+values. Source revision/license/access gaps and unresolved options derive missing
 requirements, while FES validation, embodied body/environment/initial-state/controller/artifact
 evidence, and explicit migration gaps derive the runnable class. A caller cannot author the class.
 
@@ -1938,9 +1938,347 @@ embodied envelope:   ae01028317823a6cdca0db01577704a33785d2a13f742cc100dceb5f545
 synthetic extraction graph: af0add1299d4bbe9b30211a0166d380435b70e61e0073ed68812c502255546b1
 ```
 
+Those hashes and the preceding C174 graph are the immutable E4-C1/extractor-1.0 evidence from engine
+`e0e4db8`. E4-C2 corrects implicit argparse boolean defaults and therefore versions the extractor as
+1.1. Current extractor-1.1 identities are recorded in §20.11 rather than rewriting the historical
+acceptance receipt.
+
 Host OA gates passed from the evidence-bearing tree: 14 focused historical-envelope tests and 138
 full pytest tests; Ruff; strict mypy across 32 source/test files; isolated sdist/wheel build; presence
 of module, focused test, README, and contract in the sdist and module in the wheel; byte-identical
 11,357-byte Apache license and 3,042-byte third-party notice in both archives; and a clean-wheel
 public import/static-extraction smoke from an isolated target. Remote macOS/Ubuntu/Windows × Python
 3.10/3.12 execution remains E4-12 and is not inferred from this host.
+
+## 20. E4-C2 reviewed C174 selection and semantic projection contract
+
+Status: **implemented and host-accepted; supported-platform CI remains E4-12**
+
+### 20.1 Outcome and boundary
+
+E4-C2 turns the exact C174 static declaration receipt into reviewed, portable experiment manifests
+without importing or executing the private script. It publishes original MIT-licensed selection,
+resolution, and validation code plus factual option/config/controller metadata. It does not copy
+private execution code, redistribute the script, claim the historical result was reproduced, or
+promote a manifest to runnable before its dataset, connectivity, model, body, controller, executor,
+and artifact authorities are complete.
+
+One physical `run_config` invocation is one scientific manifest. The historical CLI with no
+`--index` is a batch expansion into 16 ordered manifests; it is not one ambiguous experiment.
+`--index N` resolves exactly selector `N`. Batch identity and output summaries remain orchestration
+evidence outside each scientific envelope.
+
+The public resolver consumes already parsed exact values. It never parses shell text, imports the
+historical module, opens source-declared files, mutates a global torque table, allocates Brian2 or
+MuJoCo state, or guesses a missing authority. The private service may adapt a reviewed manifest to
+legacy execution during migration, but the public manifest remains the scientific source of truth.
+
+### 20.2 Pinned source and selector authority
+
+The source authority remains the E4-C1 C174 identity at private service revision
+`d08d4a8cd20b44d54a583515ccb39586d505215d`. The reviewed selector table is:
+
+| Selector | Mode | Coxa active | Label | Force override | Angle override |
+| ---: | --- | --- | --- | ---: | ---: |
+| 0 | `lumped` | false | `baseline` | — | — |
+| 1 | `per_muscle` | false | `pm_coxaOFF` | — | — |
+| 2 | `per_muscle` | true | `pm_coxaON` | — | — |
+| 3 | `per_muscle_vrest` | false | `pmVr_coxaOFF` | — | — |
+| 4 | `per_muscle_vrest` | true | `pmVr_coxaON` | — | — |
+| 5 | `per_muscle_silence` | false | `pmSil_coxaOFF` | — | — |
+| 6 | `per_muscle_silence` | true | `pmSil_coxaON` | — | — |
+| 7 | `per_muscle_vrest` | true | `p3_snta1` | 1 | — |
+| 8 | `per_muscle_vrest` | true | `p3_snta5` | 5 | — |
+| 9 | `per_muscle` | true | `p3_signchk` | 5 | — |
+| 10 | `per_muscle_vrest` | true | `p4a_init` | — | — |
+| 11 | `per_muscle_vrest_cxneutral` | true | `p4b_cxneutral` | — | — |
+| 12 | `per_muscle_vrest_direct` | true | `p4c_direct` | — | — |
+| 13 | `per_muscle_vrest_cxneutral` | true | `p4_snpp2` | — | 2 |
+| 14 | `per_muscle_vrest_cxneutral` | true | `p4_snpp5` | — | 5 |
+| 15 | `per_muscle` | true | `p4_snpp_ctrl` | — | 2 |
+
+The historical `--index` help text says 0–4 even though the exact table has 0–15. The public
+definition advertises 0–15 and records the stale help text as a source discrepancy. Negative Python
+indices, out-of-range indices, booleans, floats, and numeric strings reject; they are not inherited
+as selector semantics.
+
+Selector mode/coxa/label are derived source constants. For selectors 7–9, force gain from the row
+overrides the parsed `--force-gain`; for selectors 13–15, angle gain from the row overrides parsed
+`--angle-gain`. If a user supplied the overridden CLI value, its resolution record preserves the
+requested value, records the row value as effective, uses origin `derived`, and identifies
+application `ignored`. The ignored request remains visible but this reviewed deterministic override
+does not by itself make the manifest incomplete.
+
+### 20.3 Reviewed 56-option definition profile
+
+The profile contains exactly one definition for each E4-C1 declaration, in source order. Each
+definition binds semantic ID, CLI spelling, kind, exact default including implicit argparse boolean
+defaults, unit, arity/choices, target domain, resolution rule, and source line.
+
+| Domain | CLI options | Reviewed target/rule |
+| --- | --- | --- |
+| selection | `index` | selector expansion; not a simulator numeric |
+| neural timing/seed | `seed`, `sim-ms` | FES random seed and total simulation time |
+| neural/synaptic model | `j-gab`, `true-adex`, `vrest-anti`, `pro-vrest` | pinned neural/synapse/model profile or missing authority |
+| stochastic drive | `poisson-n`, `no-poisson-mn` | Poisson-input profile and MN exclusion |
+| open-loop modulation | `boost-min`, `anti-boost`, `pro-suppress`, `t1-ab`, `t2-ab`, `t3-ab`, `warmup`, `l-ext-boost`, `troch-boost`, `t1-tb`, `t2-tb`, `t3-tb` | typed neural-initialization/open-loop schedule stages |
+| force routing | `ts-mult`, `t1-ts`, `t2-ts`, `t3-ts`, `zero-coxa-segs`, `coxa-scale`, `t1-cxs`, `t2-cxs`, `t3-cxs`, `femur-scale`, `tibia-scale`, `symmetrize-lr` | named muscle/DOF/actuator transform stages |
+| passive body | `ft-stiff`, `coxa-stiff`, `vd`, `abduct-bias`, `abduct-stiff`, `tarsus-friction`, `jdamp-mult`, `coxa-abd-K`, `coxa-abd-K-t1`, `coxa-abd-K-t2` | body-property override stages bound to a body profile hash |
+| initial state | `pre-settle-ms`, `init-z` | separate network pre-settle and body initial-state stages |
+| sensory feedback | `force-gain`, `angle-gain`, `pitch-K`, `pitch-tau`, `pitch-target`, `height-K`, `height-tau`, `height-target`, `height-dof`, `cs-gain`, `cs-tau` | named feedback stages with exact state/filter profiles |
+
+Units are explicit: milliseconds, millivolts, nanoamps, nanosiemens, radians, degrees, centimeters,
+newton-related historical force units, damping/stiffness/body-profile units, or dimensionless `1`.
+Where the source's physical unit is ambiguous or merely says “force unit,” the definition uses an
+explicit historical/unknown unit identifier and adds `UNIT_AUTHORITY`; it does not relabel the value
+as SI. Exact decimals are strings/`Decimal`, never binary floats.
+
+`store_true` declarations have implicit default `false`; the static extractor must report that
+semantic default. `warmup` has exactly three decimals. `zero-coxa-segs` is a non-empty ordered input
+whose accepted reviewed values are `T1`, `T2`, and `T3`; canonical effective identity is the
+deduplicated source-order-independent set. `height-dof` is one of `all`, `femur`, or
+`femur_tibia`. Nullable overrides remain null until their declared fallback rule is applied.
+
+### 20.4 Exact resolution and discrepancy rules
+
+Resolution is pure and deterministic. The reviewed rules are named and tested:
+
+```text
+coxa_stiff_effective       = coxa_stiff if non-null else ft_stiff
+T{1,2,3}_anti_boost        = tier override if non-null else anti_boost
+T{1,2,3}_torque_multiplier = tier override if non-null else ts_mult
+T{1,2,3}_coxa_scale        = tier override if non-null else coxa_scale
+T{1,2,3}_troch_boost       = tier override if non-null else troch_boost
+T1_coxa_abd_K              = t1 override if non-null else global K
+T2_coxa_abd_K              = t2 override if non-null else global K
+T3_coxa_abd_K              = global K
+initial_z                  = init-z if non-null else historical constant 0.10 cm
+force_gain                 = selector override if present else CLI/default
+angle_gain                 = selector override if present else CLI/default
+```
+
+Historical label generation used truthiness (`tier_value or global`) in some display tags while
+execution uses null checks. A literal zero tier override must therefore remain effective zero even
+if a legacy filename displayed the global fallback. Display labels are not resolution authority.
+
+The historical coxa-abduction correction computes T1/T2 effective tier values but executes the
+stage only when global `coxa-abd-K > 0`. Therefore a nonzero T1/T2 override with a nonpositive global
+value is recorded as requested but `ignored`, with effective execution value zero and discrepancy
+`GLOBAL_GATE_SUPPRESSES_TIER_OVERRIDE`. The public resolver preserves this bug-compatible truth; a
+future corrected profile requires an explicit variation and different profile hash.
+
+`tonic_iext_nA`, `t1_vrest`, `t2_vrest`, and `t3_vrest` exist in the function signature but have no
+CLI/config-table route in this source. They are source constants for this profile, not hidden user
+options. Any future UI control requires a new reviewed definition/profile version.
+
+Options whose activation condition is false remain `applied` to the resolved configuration but
+their stage records `activation_condition=false`; they are not described as executed. Options that
+the selector explicitly overrides are `ignored` at the request record and get a separate derived
+effective record. Unknown keys, duplicate aliases, wrong type, non-finite values, invalid arity,
+invalid choice, and values outside reviewed structural constraints reject before envelope creation.
+
+### 20.5 Controller DAG and mode semantics
+
+The manifest produces a declarative ordered controller/body profile with these potential stages:
+
+1. neural model and synaptic profile selection;
+2. stochastic Poisson drive and MN exclusion;
+3. per-muscle anti/pro/neutral classification plus V-rest or true-AdEx initialization;
+4. tier-specific tonic/open-loop current modulation;
+5. three-phase 0–200/200–400/400–`sim_ms` warmup schedule when supplied;
+6. network-only pre-settle before physical clock zero;
+7. angle/force sensory mapping;
+8. pitch low-pass feedback;
+9. height low-pass feedback with declared DOF filter;
+10. campaniform-sensilla contact-force low-pass feedback;
+11. spike-window-to-muscle drive or selector-12 direct-torque transformation;
+12. optional left/right output symmetrization;
+13. named tier/DOF torque scaling and coxa zero disposition;
+14. body stiffness/damping/friction/spring-reference overrides;
+15. exact initial pose/body-height setup; and
+16. result, motor-command, feedback-log, and optional video capture.
+
+Mode identity is not inferred from a label. `lumped`, `per_muscle`, `per_muscle_vrest`,
+`per_muscle_silence`, `per_muscle_vrest_cxneutral`, and `per_muscle_vrest_direct` are enumerated
+historical modes with separate profile IDs/hashes and activation rules. Selector 12 uses a direct
+torque proxy rather than the Hill muscle stage. Coxa active/zeroed is an explicit mode fact plus the
+optional tier zero set. The resolver must never flatten all six modes into a boolean “muscles on.”
+
+Feedback state includes sampling window, alpha/filter rule, initial state, targets, injection
+population, sign, saturation if any, and reset/checkpoint evidence. Any fact not recoverable from
+the reviewed source/profile produces a missing requirement. Source callbacks or code bodies never
+enter a public parameter.
+
+### 20.6 Envelope/FES projection and truthful missing facts
+
+The resolver emits a `HistoricalExperimentEnvelope` with all 56 option records, exact selector,
+ordered original invocation lexemes when available, a typed controller profile, and a partial or
+complete FES projection. Neutral fields map directly to FES. Historical controller/body facts use a
+namespaced extension referencing the separately hashed profile; executable content is forbidden.
+
+The initial C174 reviewed manifest remains `PROVENANCE_ONLY` unless and until all exact external
+authorities are supplied. Expected initial missing facts include at least:
+
+```text
+DATASET
+NEURON_SELECTION
+CONNECTIVITY
+NEURAL_PROFILE
+BODY_MODEL
+ENVIRONMENT
+CONTROLLER_EXECUTOR
+RESULT_EVIDENCE
+```
+
+`UNIT_AUTHORITY` is additionally present where a historical feedback/body unit has not been proven.
+The engine's published actuator/muscle catalogs and Hill profiles may satisfy mapping authorities
+only when their identities match this source's reviewed references. A validated partial FES, a
+complete option list, or `disposition_count=0` does not remove unrelated missing requirements.
+
+### 20.7 Public API and canonical identities
+
+Expected public API:
+
+```text
+C174_SOURCE_AUTHORITY
+C174_OPTION_PROFILE
+C174_SELECTORS
+C174_PROFILE_SHA256
+C174ConfigSelector
+C174OptionDefinition
+C174ResolutionError
+C174ResolvedExperiment
+resolve_c174_experiment(selector, requested_values, invocation=())
+resolve_c174_batch(requested_values, invocation=())
+apply_c174_variations(base, patches, new_version, invocation=None)
+```
+
+Definitions/selectors are immutable tuples. Profile SHA binds source identity, 56 ordered
+definitions, 16 ordered selectors, rule versions, controller stage profile identities, and recorded
+discrepancies. A resolved experiment hash changes with selector, requested/effective option,
+application status, controller activation/parameter, FES projection, missing fact, or source/profile
+identity. Batch ordering is selector order 0–15.
+
+C174 variation accepts generic exact option patches only when their base envelope hash and
+before-value match. It reconstructs the reviewed requested-value set, reruns every C174 fallback,
+selector override, discrepancy, controller, completeness, and canonicalization rule, then binds
+lineage and the ordered patches to the new envelope version. Selector changes select a different
+manifest rather than masquerading as an option edit. A patch suppressed by a selector or historical
+global gate rejects instead of claiming an effective change.
+
+### 20.8 Failure and lifecycle matrix
+
+| Condition | Required behavior |
+| --- | --- |
+| no selector | batch API returns 16 independent manifests; single API rejects |
+| stale help range 0–4 | definition exposes 0–15 and discrepancy; no truncation |
+| selector force/angle override | preserve request; derived effective row wins visibly |
+| tier value is exact zero | execution resolution uses zero; display-tag truthiness cannot replace it |
+| global coxa-abd K nonpositive, tier K nonzero | requested tier value ignored under bug-compatible global gate |
+| `store_true` omitted | exact default false |
+| unknown option | reject with stable code; do not hide in extension blob |
+| incomplete authority | provenance-only with sorted missing requirements |
+| source/hash/profile mismatch | reject; never resolve against “latest” |
+| direct-torque selector | direct profile; never claim Hill muscle execution |
+| feedback gain zero | disabled stage retained; no execution claim |
+| exact manifest rerun requested | run admission still requires compatible public executor/profile |
+
+### 20.9 Test-trust and acceptance gate
+
+Implementation begins with red tests for the absent profile/resolver and for the implicit boolean
+default defect. Required oracles:
+
+| Oracle | Evidence |
+| --- | --- |
+| source/profile identity | fixed source, option, selector, and profile hashes |
+| declaration parity | exactly 56 names/order/defaults/lines; implicit booleans false |
+| selector parity | all 16 rows exact; no-index expands 0–15; invalid index rejects |
+| resolution | fixed vectors for defaults, selector 7/13 override, null fallback, exact-zero tier override |
+| discrepancy | stale help and global-gate suppression remain visible and hash-sensitive |
+| option validation | unknown, alias collision, type, non-finite, arity, choice, tier set negatives |
+| controller | stage order/profile hashes/activation and direct-vs-Hill modes are sensitive |
+| completeness | every initial missing authority remains sorted and provenance-only |
+| safety | source is read only; no service import, Brian2/MuJoCo allocation, open, subprocess, or eval |
+| quality | full pytest, Ruff, strict mypy, archive inspection, clean-wheel public resolver smoke |
+
+Sensitivity mutations change selector override, boolean default, zero/null fallback, controller
+order, direct/Hill mode, global gate, unit, source hash, option order, and missing requirement. If the
+relevant profile/resolved identity or application status does not change, closure is blocked.
+
+### 20.10 Contract-to-diff forecast and non-goals
+
+Expected E4-C2 diff is one public C174 profile/resolver module, stable exports, focused tests,
+README, and this evidence ledger. The generic extractor may change only to represent reviewed
+argparse implicit defaults correctly. No private service, web production, Maestro, cloud, catalog
+database, renderer, account, billing, or unrelated file changes are permitted.
+
+E4-C2 does not execute or reproduce C174, import the full historical estate, solve the deferred
+30→31 Hz regression, render DigiFly, publish the package, or claim supported-platform acceptance.
+Those remain separately gated. Any copied private execution body, silent override, invented SI
+unit, opaque controller code, or runnable claim without external authorities blocks closure.
+
+### 20.11 E4-C2 implementation and host acceptance evidence
+
+The public `historical_c174` module implements the 56-definition profile, 16 immutable selectors,
+exact value validation, null/tier/global fallbacks, selector overrides, discrepancy evidence,
+controller/body DAG construction, single/batch resolution, provenance-only envelope projection,
+and exact option variation with controller recomputation and lineage. It exposes no private code or
+file path and performs no service import, source open, Brian2 allocation, or MuJoCo allocation.
+
+The generic static extractor is now profile `org.flybrian.static-python-extractor@1.1`. It derives
+the argparse defaults `false` for omitted `store_true` and `true` for omitted `store_false`, while
+rejecting a source authority that names an unsupported extractor version. This semantic correction
+is versioned because it changes declaration-graph and envelope identities; it is not silently
+treated as extractor 1.0 output.
+
+Read-only AST acceptance against the untouched private source proves:
+
+```text
+source bytes:                 144,532
+source SHA-256:               35b2cf1e2e18fe0ef512a567dc474c279a02c0f6f8cb08adbd990eb9c89f4038
+AST nodes:                    18,970
+declarations:                 56
+reviewed name/default/line:   56 / 56 / 56 exact
+implicit boolean defaults:   false for no-poisson-mn, true-adex, symmetrize-lr
+config selectors:             16 / 16 exact via AST literal evidence
+dispositions:                 0
+extractor-1.1 graph SHA-256:  48931a350f7422b6978326570f4ce469e47408ee17af163ac52d413c01057186
+```
+
+The reviewed profile records the stale 0–4 help range, selector force/angle overrides, legacy
+display truthiness versus execution null checks, and the nonpositive global coxa-abduction gate that
+suppresses tier overrides. Selector rows are exact 0–15. Omitted index expands to 16 independent
+manifests; invalid and negative Python indices reject. Exact zero tier values remain zero. A
+selector-suppressed variation rejects rather than claiming an effective change; clearing a nullable
+tier override recomputes its declared global fallback.
+
+Controller output separates neural initialization, open-loop schedule, angle/force, pitch, height,
+campaniform, muscle-drive or direct-torque, named torque transform, general body override,
+coxa-abduction correction, initial condition, and artifact capture. Disabled feedback/correction
+stages remain explicit with `activation_condition=false`. Selector 12 omits the muscle-drive stage
+and uses the direct-torque path; lumped and all per-muscle modes retain distinct profile identities.
+
+Fixed current identities are:
+
+```text
+C174 reviewed profile:       e40b92239962417e718dc81c22368ef5326d74e6a6069d812e131d22bfe1aa94
+selector 4 resolved record:  1d1cea52dad5b301ff1de0bb3d3588953cb674eb09ac5da8f32c13b93e88d579
+selector 12 resolved record: 1683db8e64045cca2f24f7cb6e244572c728b46e5e2d1598e5b12a00522043cc
+connectome envelope fixture: a40f4dd62d3b0fdf907c255856d9372d73e7cf6c736ec6ddaf9b46ade2f2db60
+embodied envelope fixture:   45d9edfcab74aa0d07072fd794ffd9ceca88ce76fad7b9375dead96f6e80de0d
+synthetic extractor graph:   843b0bcc3b4ed1890f6ba039391631ea5937218de5945ff05ff017cbf4e1c26f
+```
+
+Host behavior and static gates pass: 21 focused C174 tests, 35 combined historical tests, 159 full
+pytest tests, Ruff, and strict mypy across 34 source/test files. Tests cover every selector/name/line,
+implicit booleans, source/profile hashes, selector overrides, ignored-versus-missing behavior,
+null/zero fallbacks, global-gate and display discrepancies, controller mode/activation/order,
+warmup phase boundaries, invocation preservation, segment canonicalization, duplicate aliases,
+unknown/type/non-finite/arity/choice/structural negatives, source-open sentinel, exact variation,
+nullable clearing, suppressed variation, base/before mismatch, and lineage. Archive and clean-wheel
+gates also pass: isolated sdist/wheel build; presence of both historical modules/tests, README, and
+contract in the sdist and both modules in the wheel; byte-identical 11,357-byte Apache license and
+3,042-byte third-party notice in both archives; and clean-wheel 56-definition/16-selector resolve,
+provenance-only envelope, exact seed variation, controller recomputation, and lineage smoke from an
+isolated target. Remote macOS/Ubuntu/Windows × Python 3.10/3.12 execution remains E4-12 and is not
+inferred from this host.

@@ -162,11 +162,41 @@ source = HistoricalSourceAuthority(
     access="public",
     redistribution="allowed",
     extractor_id="org.flybrian.static-python-extractor",
-    extractor_version="1.0",
+    extractor_version="1.1",
 )
 draft = extract_static_python_experiment(source_bytes, source)
 print(draft.receipt.option_count, draft.dispositions)
 ```
+
+The first reviewed historical profile is C174. It publishes all 56 declared controls and all 16
+selector rows as inspectable facts. Resolution is pure: omitting the historical index expands into
+16 independent manifests, while selecting one row preserves requested values, effective values,
+selector overrides, null fallbacks, and known historical discrepancies. The resulting records stay
+`PROVENANCE_ONLY` until their private dataset/connectivity, neural, body, environment, controller
+executor, unit, and result authorities are supplied; a complete option form alone is not a rerun
+claim.
+
+```python
+from flybrian_engine import resolve_c174_batch, resolve_c174_experiment
+
+manifest = resolve_c174_experiment(
+    7,
+    {"--force-gain": "9", "--anti-boost": "1.5"},
+    invocation=("--index", "7", "--force-gain", "9", "--anti-boost", "1.5"),
+)
+force = next(
+    option for option in manifest.options if option.option_id == "c174.feedback.force_gain"
+)
+print(force.requested_value, force.effective_value, force.application)
+print(manifest.envelope.reproducibility_class, manifest.envelope.missing_requirements)
+
+all_historical_rows = resolve_c174_batch({"--seed": 42})
+assert len(all_historical_rows) == 16
+```
+
+The resolver does not import the private script or allocate Brian2/MuJoCo state. The script remains
+private and is not packaged; only original public resolution code and reviewed factual metadata are
+published.
 
 FlyBody-derived metadata is redistributed under Apache-2.0 with the bundled license and
 third-party modification notice. The runtime catalog has no MuJoCo dependency; the pinned XML and

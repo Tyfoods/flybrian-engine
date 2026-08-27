@@ -72,6 +72,8 @@ _EXECUTABLE_PARAMETER_NAMES = {
     "script",
     "source_code",
 }
+STATIC_PYTHON_EXTRACTOR_ID = "org.flybrian.static-python-extractor"
+STATIC_PYTHON_EXTRACTOR_VERSION = "1.1"
 
 
 class HistoricalEnvelopeError(ValueError):
@@ -668,9 +670,7 @@ class HistoricalExperimentEnvelope:
         derived_missing: set[str] = set(self.missing_requirements)
         if self.source.revision.casefold() in {"unknown", "uncommitted"}:
             derived_missing.add("SOURCE_REVISION")
-        if any(
-            item.application in {"ignored", "unresolved"} for item in self.options
-        ):
+        if any(item.application == "unresolved" for item in self.options):
             derived_missing.add("OPTION_RESOLUTION")
         if self.fes is None:
             if self.expected_fes_sha256 is not None:
@@ -1291,6 +1291,11 @@ def extract_static_python_experiment(
     """Extract bounded literal declarations without importing or executing source."""
     if not isinstance(source_bytes, bytes):
         raise HistoricalEnvelopeError("historical source bytes must be bytes")
+    if (
+        source.extractor_id != STATIC_PYTHON_EXTRACTOR_ID
+        or source.extractor_version != STATIC_PYTHON_EXTRACTOR_VERSION
+    ):
+        raise HistoricalEnvelopeError("historical source extractor profile is unsupported")
     if len(source_bytes) > limits.max_source_bytes:
         raise HistoricalEnvelopeError("historical source exceeds maximum source bytes")
     if len(source_bytes) != source.byte_length or (
@@ -1391,6 +1396,10 @@ def extract_static_python_experiment(
                         f"action for {legacy_name} is not static literal",
                     )
                 )
+        if default_node is None and action == "store_true":
+            default = False
+        elif default_node is None and action == "store_false":
+            default = True
         nargs_node = _keyword(node, "nargs")
         nargs: int | str | None = None
         if nargs_node is not None:
