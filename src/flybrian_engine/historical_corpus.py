@@ -9,7 +9,7 @@ import re
 import unicodedata
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Literal, NoReturn, cast
+from typing import Literal, NoReturn, TypeGuard, cast
 
 from .historical_envelopes import HistoricalExperimentEnvelope, ReproducibilityClass
 from .historical_projection import (
@@ -27,6 +27,18 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _NAMESPACE = re.compile(
     r"^[A-Za-z0-9][A-Za-z0-9_-]*(?:[.:][A-Za-z0-9][A-Za-z0-9_.:-]*)+$"
 )
+
+
+def _is_catalog_visibility(value: object) -> TypeGuard[CatalogVisibility]:
+    return value == "public" or value == "private" or value == "team"
+
+
+def _is_reproducibility_class(value: object) -> TypeGuard[ReproducibilityClass]:
+    return value in (
+        "PROVENANCE_ONLY",
+        "RUNNABLE_CONNECTOME",
+        "RUNNABLE_EMBODIED",
+    )
 
 
 class HistoricalCatalogExportError(ValueError):
@@ -346,13 +358,9 @@ class HistoricalCatalogExportRecord:
             raise HistoricalCatalogExportError("catalog_record.source must be import")
         visibility = record["visibility"]
         reproducibility = record["reproducibilityClass"]
-        if visibility not in {"public", "private", "team"}:
+        if not _is_catalog_visibility(visibility):
             raise HistoricalCatalogExportError("catalog_record.visibility is unsupported")
-        if reproducibility not in {
-            "PROVENANCE_ONLY",
-            "RUNNABLE_CONNECTOME",
-            "RUNNABLE_EMBODIED",
-        }:
+        if not _is_reproducibility_class(reproducibility):
             raise HistoricalCatalogExportError(
                 "catalog_record.reproducibility_class is unsupported"
             )
@@ -374,8 +382,8 @@ class HistoricalCatalogExportRecord:
                 _text(item, "catalog_record.tags item", maximum=128)
                 for item in _array(record["tags"], "catalog_record.tags")
             ),
-            visibility=cast(CatalogVisibility, visibility),
-            reproducibility_class=cast(ReproducibilityClass, reproducibility),
+            visibility=visibility,
+            reproducibility_class=reproducibility,
             missing_requirements=tuple(
                 _text(item, "catalog_record.missingRequirements item", maximum=255)
                 for item in _array(

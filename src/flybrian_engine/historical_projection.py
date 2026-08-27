@@ -8,7 +8,7 @@ import re
 import unicodedata
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Literal, NoReturn, cast
+from typing import Literal, NoReturn, TypeGuard, cast
 
 from .historical_envelopes import HistoricalExperimentEnvelope, ReproducibilityClass
 from .historical_estate import (
@@ -56,6 +56,37 @@ _ARTIFACT_ROLE_COMPATIBILITY: dict[ProjectedArtifactKind, frozenset[str]] = {
         {"source", "result", "array", "video", "image", "narrative", "archive", "unknown"}
     ),
 }
+
+
+def _is_estate_candidate_role(value: object) -> TypeGuard[EstateCandidateRole]:
+    return value in (
+        "source",
+        "result",
+        "array",
+        "video",
+        "image",
+        "narrative",
+        "archive",
+        "unknown",
+    )
+
+
+def _is_reproducibility_class(value: object) -> TypeGuard[ReproducibilityClass]:
+    return value in (
+        "PROVENANCE_ONLY",
+        "RUNNABLE_CONNECTOME",
+        "RUNNABLE_EMBODIED",
+    )
+
+
+def _is_projection_visibility(value: object) -> TypeGuard[ProjectionVisibility]:
+    return value == "public" or value == "private" or value == "team"
+
+
+def _is_projected_artifact_availability(
+    value: object,
+) -> TypeGuard[ProjectedArtifactAvailability]:
+    return value == "available" or value == "unavailable" or value == "failed"
 
 
 class HistoricalProjectionError(ValueError):
@@ -242,16 +273,7 @@ class HistoricalEvidenceReference:
             ),
         )
         role = record["candidate_role"]
-        if role not in {
-            "source",
-            "result",
-            "array",
-            "video",
-            "image",
-            "narrative",
-            "archive",
-            "unknown",
-        }:
+        if not _is_estate_candidate_role(role):
             raise HistoricalProjectionError("evidence.candidate_role is unsupported")
         return cls(
             root_id=_namespaced(record["root_id"], "evidence.root_id"),
@@ -265,7 +287,7 @@ class HistoricalEvidenceReference:
                 record["byte_length"], "evidence.byte_length"
             ),
             file_sha256=_sha256(record["file_sha256"], "evidence.file_sha256"),
-            candidate_role=cast(EstateCandidateRole, role),
+            candidate_role=role,
         )
 
 
@@ -344,11 +366,7 @@ class HistoricalEnvelopeReference:
             ),
         )
         reproducibility = record["reproducibility_class"]
-        if reproducibility not in {
-            "PROVENANCE_ONLY",
-            "RUNNABLE_CONNECTOME",
-            "RUNNABLE_EMBODIED",
-        }:
+        if not _is_reproducibility_class(reproducibility):
             raise HistoricalProjectionError(
                 "envelope_reference.reproducibility_class is unsupported"
             )
@@ -367,7 +385,7 @@ class HistoricalEnvelopeReference:
             envelope_sha256=_sha256(
                 record["envelope_sha256"], "envelope_reference.envelope_sha256"
             ),
-            reproducibility_class=cast(ReproducibilityClass, reproducibility),
+            reproducibility_class=reproducibility,
             fes_sha256=_optional_sha256(
                 record["fes_sha256"], "envelope_reference.fes_sha256"
             ),
@@ -437,12 +455,12 @@ class HistoricalVisibilityPolicy:
             frozenset({"visibility", "scope_id"}),
         )
         visibility = record["visibility"]
-        if visibility not in {"public", "private", "team"}:
+        if not _is_projection_visibility(visibility):
             raise HistoricalProjectionError("visibility.visibility is unsupported")
         scope = record["scope_id"]
         if scope is not None and not isinstance(scope, str):
             raise HistoricalProjectionError("visibility.scope_id must be a string or null")
-        return cls(cast(ProjectionVisibility, visibility), scope)
+        return cls(visibility, scope)
 
 
 @dataclass(frozen=True)
@@ -493,7 +511,7 @@ class HistoricalProjectedArtifact:
         availability = record["availability"]
         if kind not in _ARTIFACT_ROLE_COMPATIBILITY:
             raise HistoricalProjectionError("projected_artifact.kind is unsupported")
-        if availability not in {"available", "unavailable", "failed"}:
+        if not _is_projected_artifact_availability(availability):
             raise HistoricalProjectionError(
                 "projected_artifact.availability is unsupported"
             )
@@ -504,7 +522,7 @@ class HistoricalProjectedArtifact:
                 record["artifact_id"], "projected_artifact.artifact_id"
             ),
             kind=kind,
-            availability=cast(ProjectedArtifactAvailability, availability),
+            availability=availability,
             evidence=(
                 None
                 if raw_evidence is None

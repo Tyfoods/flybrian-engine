@@ -1,6 +1,6 @@
 # FlyBrian E3 Public Brian Scientific Adapter — OA Behavioral Specification
 
-Status: **public v0.1.0 released; v0.1.1 compatibility patch in verification; mixed connections and private-consumer cutover open**
+Status: **public v0.1.1 typing receipt revoked by CI; v0.1.2 compatibility patch in verification; mixed connections and private-consumer cutover open**
 
 Parent authorities:
 
@@ -381,10 +381,10 @@ work.
 | E3-08 | Python/CLI/HTTP pre-allocation incompatibility and runtime failure behavior | PARTIAL — accepted Python/CLI/HTTP and missing-dependency rejection pass; injected runtime failure/partial-output oracle remains open |
 | E3-09 | Manifest 1.1 standardized-results identity/checksum/disposition | PASS — public result validator plus verified artifact/disposition |
 | E3-10 | Base/Brian package, lint, typing, test, build, clean-install, and mutation gates | PARTIAL — macOS and three-OS CI definition pass; real Windows/Linux runtime remains E5/E6 |
-| E3-11 | Released public package consumed by private service | PARTIAL — immutable v0.1.0 tag exists; v0.1.1 service pin and production-consumer evidence remain open |
-| E3-12 | Superseded private authority removed after consumer proof | OPEN — deletion requires verified v0.1.1 consumer migration |
-| E3-13 | Optional embodiment mapping has an explicit absent/null/nonempty/invalid value-domain contract | PASS in 0.1.1 source candidate — isolated v0.1.0 negative control rejects null; preservation and six invalid-domain cases pass in the 271-test suite |
-| E3-14 | Strict typing passes on the current supported mypy release without hiding failures behind a checker cap | PASS in 0.1.1 source candidate — mypy 1.20.2 checks all 41 source/test files with no issues; focused runtime guard oracles remain green |
+| E3-11 | Released public package consumed by private service | PARTIAL — immutable v0.1.1 exists but failed public CI; v0.1.2 green release and service pin remain open |
+| E3-12 | Superseded private authority removed after consumer proof | OPEN — deletion requires verified v0.1.2 consumer migration |
+| E3-13 | Optional embodiment mapping has an explicit absent/null/nonempty/invalid value-domain contract | PASS in source — isolated v0.1.0 negative control rejects null; preservation and six invalid-domain cases pass in the 271-test suite |
+| E3-14 | Strict typing passes across supported local/public checker releases without hiding failures behind a checker cap | PASS in v0.1.2 source candidate — mypy 1.20.2 and CI-resolved 2.3.1 both check 41 files with no issues; exact-tag public CI remains release evidence |
 
 ## 14. Principles compliance review
 
@@ -441,7 +441,7 @@ work.
   numerical equivalence, runtime failure/partial-output normalization, private service cutover,
   package publication, Windows/Linux runtime evidence, or local/cloud equivalence.
 
-## 17. v0.1.1 hosted-embodiment compatibility and current-toolchain addendum
+## 17. v0.1.2 hosted-embodiment compatibility and current-toolchain addendum
 
 This addendum is an implementation contract for a backward-compatible public patch discovered
 while wiring the released package into the private service. It does not authorize private service
@@ -492,7 +492,7 @@ authority and is prohibited.
   four current-toolchain typing sites in `results.py`, `artifacts.py`,
   `historical_projection.py`, and `historical_corpus.py`.
 - Expected test edits: the null-domain schema oracle and version/hash expectations caused solely
-  by the 0.1.1 package identity. Existing invalid-input tests are retained as negative controls.
+  by the patch package identity. Existing invalid-input tests are retained as negative controls.
 - Expected documentation edits: this contract, the parent extraction ledger, and README release
   coordinates. No scientific equations, backend compatibility claims, dataset authorities,
   runner lifecycle, or private code enter this patch.
@@ -500,7 +500,7 @@ authority and is prohibited.
   clean-wheel import/validation, real Brian golden smoke, immutable tag/archive checksum, and
   public CI. Service consumption remains a separate E3-D/SC ledger.
 
-### Source-candidate verification receipt — 2026-08-27
+### Revoked v0.1.1 source-candidate receipt and v0.1.2 reopening — 2026-08-27
 
 - An isolated worktree at public v0.1.0 commit `4022fa3` rejects the canonical hosted specimen
   with `embodied_config.mapping_id must be a non-empty string`; this is the decisive RED control.
@@ -515,5 +515,15 @@ authority and is prohibited.
 - The wheel executes the public Brian golden FES, produces a scientific manifest and standardized
   results at engine 0.1.1, and emits exactly six spikes. The 174,421-byte wheel and 305,101-byte
   source distribution were removed after verification.
-- Still open for release acceptance: immutable v0.1.1 tag/archive checksum and the public
-  macOS/Windows/Linux CI result on that exact commit. Private service consumption remains open.
+- The immutable v0.1.1 tag was published at commit `489a204` with observed archive SHA-256
+  `c17f4887864b185f0472c62c741dd3e17cf5f3d6056132a1aa5d8cbefcd17fb6`, but all twelve push/tag
+  jobs stopped at mypy. Public CI's checker generation rejected seven casts as redundant while
+  local mypy 1.20.2 required explicit narrowing. The local typing receipt is therefore revoked;
+  v0.1.1 is preserved as failure evidence and is not an accepted service coordinate.
+- v0.1.2 replaces cast-based narrowing with runtime-validated `TypeGuard` predicates. Acceptance
+  requires the same runtime invalid-value oracles, local current mypy, the public-CI checker
+  generation, all 271 tests, package/Brian smoke, and green six-job public CI on the exact tag.
+  Private service consumption remains open until that evidence exists.
+- The v0.1.2 source candidate passes all 271 tests, Ruff 0.16.4, local mypy 1.20.2, and a
+  disposable mypy 2.3.1 target matching the failed CI resolver. Both type-checker generations
+  report no issues across 41 files. Exact-tag package/Brian and public CI evidence remain open.

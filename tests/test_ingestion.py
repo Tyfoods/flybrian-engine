@@ -310,7 +310,7 @@ def test_connection_normalization_canonical_receipt_and_idempotence(tmp_path: Pa
         "92123fdbf30851dbc3ff6f175fbbc000911b18429b5a2ccc3b0f2a4e6a51f2dc"
     )
     assert result.receipt.sha256() == (
-        "f86ab27f6b5f7524ab0d38c92166061719a18c3666f8942df74b1c019bb372fb"
+        "f02c4221c4dc31e929fb1273764381757f393b84ce4701a6f4d1f13486aee0bf"
     )
     assert MANC_CONNECTION_NORMALIZATION_V1.sha256() == (
         "648aa3bd382a5bcd7e09d778f154c1a6ca209d521f6ff0399ad048768f2a020d"

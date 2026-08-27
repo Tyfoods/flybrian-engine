@@ -8,7 +8,7 @@ import os
 import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Literal, cast
+from typing import Literal, TypeGuard
 
 ArtifactStatus = Literal["available", "unavailable", "failed"]
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -16,6 +16,10 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _MEDIA_TYPE = re.compile(
     r"^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$"
 )
+
+
+def _is_artifact_status(value: object) -> TypeGuard[ArtifactStatus]:
+    return value == "available" or value == "unavailable" or value == "failed"
 
 
 def _identifier(value: object, path: str) -> str:
@@ -206,7 +210,7 @@ class ArtifactDisposition:
     def from_dict(cls, value: object) -> ArtifactDisposition:
         record = _object(value, "disposition")
         raw_status = record.get("status")
-        if raw_status not in {"available", "unavailable", "failed"}:
+        if not _is_artifact_status(raw_status):
             raise ValueError("disposition.status is invalid")
         artifact_keys = tuple(
             _identifier(item, "disposition.artifact_keys item")
@@ -217,7 +221,7 @@ class ArtifactDisposition:
             raise ValueError("disposition.reason must be a string or null")
         return cls(
             kind=_identifier(record.get("kind"), "disposition.kind"),
-            status=cast(ArtifactStatus, raw_status),
+            status=raw_status,
             artifact_keys=artifact_keys,
             reason=reason,
         )
