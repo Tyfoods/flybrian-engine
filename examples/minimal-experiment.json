@@ -1,0 +1,22 @@
+{
+  "dataset": "fixture:v1",
+  "metadata": {
+    "description": "Deterministic engine contract fixture",
+    "name": "Minimal contract experiment"
+  },
+  "neurons": {
+    "lif": {
+      "1": {
+        "external_currents": [],
+        "model_type": "lif",
+        "neuron_id": 1,
+        "poisson_inputs": [],
+        "record_spikes": true,
+        "record_variables": true
+      }
+    }
+  },
+  "random_seed": 42,
+  "sim_time_ms": 10,
+  "spec_version": "1.0"
+}
