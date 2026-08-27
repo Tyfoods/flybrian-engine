@@ -147,6 +147,10 @@ freezes its equations, fixtures, and numerical tolerances.
 - Move direct-actuator and muscle-mediated transforms plus motor-command artifacts.
 - Keep hosted renderer isolation/storage/queueing private; optional local rendering remains public only if dependency/licensing checks pass.
 
+The release/checksum manifest, streaming normalization, explicit direct/muscle transformation,
+unknown-anatomy disposition, acquisition credential, and licensing rules are frozen in
+`FLYBRIAN_E4_INGESTION_EMBODIMENT_CONTRACT.md` before extraction begins.
+
 ### E5 — Durable cross-platform runner
 
 - Versioned health/capabilities, durable jobs, status/reconnect/cancel, artifact retrieval, bounded concurrency, clean shutdown, update, and uninstall-preserves-data behavior.

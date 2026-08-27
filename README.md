@@ -67,5 +67,8 @@ The staged extraction and cross-platform acceptance contract is recorded in
 [`FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md`](FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md).
 The public biological execution and private-consumer cutover behavior is specified in
 [`FLYBRIAN_E3_BRIAN_ADAPTER_CONTRACT.md`](FLYBRIAN_E3_BRIAN_ADAPTER_CONTRACT.md).
+The release-verified dataset normalization and explicit embodiment transformation behavior is
+specified in
+[`FLYBRIAN_E4_INGESTION_EMBODIMENT_CONTRACT.md`](FLYBRIAN_E4_INGESTION_EMBODIMENT_CONTRACT.md).
 The durable lifecycle, security, portability, and cross-platform acceptance behavior is specified
 in [`FLYBRIAN_E5_DURABLE_RUNNER_CONTRACT.md`](FLYBRIAN_E5_DURABLE_RUNNER_CONTRACT.md).
