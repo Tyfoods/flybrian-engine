@@ -12,6 +12,8 @@ from typing import Any
 
 from packaging.specifiers import InvalidSpecifier, SpecifierSet
 
+from .model_catalog import PUBLIC_MODEL_DEFINITIONS, UNIT_DIMENSIONS
+
 JsonObject = dict[str, Any]
 
 
@@ -89,6 +91,22 @@ def _validate_parameter_map(value: Any, path: str, *, allow_scalar: bool = False
         _validate_parameter(parameter, f"{path}.{name}", allow_scalar=allow_scalar)
 
 
+def _validate_parameter_dimension(value: Any, path: str, dimension: str) -> None:
+    _validate_parameter(value, path)
+    parameter = _object(value, path)
+    unit = str(parameter["unit"])
+    if UNIT_DIMENSIONS.get(unit) != dimension:
+        raise ValidationError(f"{path}.unit must have {dimension} dimension")
+
+
+def _parameter_value(value: Any, path: str, dimension: str) -> float:
+    _validate_parameter_dimension(value, path, dimension)
+    parameter = _object(value, path)
+    if "value" not in parameter:
+        raise ValidationError(f"{path} must use a fixed value")
+    return _finite_number(parameter["value"], f"{path}.value")
+
+
 def _validate_neurons(value: Any) -> set[int]:
     families = _object(value, "neurons")
     if not families:
@@ -134,10 +152,10 @@ def _validate_neurons(value: Any) -> set[int]:
                     f"neurons.{family_name}.{key}.compartments",
                 )
                 for compartment_key, raw_compartment in compartments.items():
-                    if not compartment_key.isdigit():
-                        raise ValidationError(
-                            f"neurons.{family_name}.{key}.compartments keys must be integers"
-                        )
+                    _nonempty_string(
+                        compartment_key,
+                        f"neurons.{family_name}.{key}.compartments key",
+                    )
                     compartment = _object(
                         raw_compartment,
                         f"neurons.{family_name}.{key}.compartments.{compartment_key}",
@@ -164,7 +182,36 @@ def _validate_neuron_models(value: Any, neuron_groups: JsonObject) -> None:
     for model_id, raw_model in models.items():
         model = _object(raw_model, f"neuron_models.{model_id}")
         family = _nonempty_string(model.get("family"), f"neuron_models.{model_id}.family")
-        _validate_parameter_map(model.get("parameters", {}), f"neuron_models.{model_id}.parameters")
+        parameters = _object(
+            model.get("parameters", {}),
+            f"neuron_models.{model_id}.parameters",
+        )
+        _validate_parameter_map(parameters, f"neuron_models.{model_id}.parameters")
+        definition_id = model.get("model_id")
+        definition = None
+        if definition_id is not None:
+            definition_id = _nonempty_string(
+                definition_id,
+                f"neuron_models.{model_id}.model_id",
+            )
+            definition = PUBLIC_MODEL_DEFINITIONS.get(definition_id)
+        if definition is not None:
+            if family != definition.family:
+                raise ValidationError(
+                    f"neuron_models.{model_id}.family must equal {definition.family!r} "
+                    f"for {definition.model_id!r}"
+                )
+            if set(parameters) != set(definition.parameters):
+                raise ValidationError(
+                    f"neuron_models.{model_id}.parameters must exactly match "
+                    f"{definition.model_id!r}"
+                )
+            for parameter_name, parameter_definition in definition.parameters.items():
+                _validate_parameter_dimension(
+                    parameters[parameter_name],
+                    f"neuron_models.{model_id}.parameters.{parameter_name}",
+                    parameter_definition.dimension,
+                )
         if family == "compartmental":
             neurons = _object(neuron_groups[model_id], f"neurons.{model_id}")
             for neuron_id, raw_neuron in neurons.items():
@@ -178,6 +225,112 @@ def _validate_neuron_models(value: Any, neuron_groups: JsonObject) -> None:
                         f"neurons.{model_id}.{neuron_id}.compartments must not be empty "
                         "for a compartmental model"
                     )
+                if definition is not None and set(compartments) != set(
+                    definition.compartment_ids
+                ):
+                    raise ValidationError(
+                        f"neurons.{model_id}.{neuron_id}.compartments must exactly match "
+                        f"{definition.model_id!r}"
+                    )
+        if definition is not None:
+            neurons = _object(neuron_groups[model_id], f"neurons.{model_id}")
+            for neuron_id, raw_neuron in neurons.items():
+                neuron = _object(raw_neuron, f"neurons.{model_id}.{neuron_id}")
+                if neuron["record_spikes"] is True and not definition.supports_spikes:
+                    raise ValidationError(
+                        f"neurons.{model_id}.{neuron_id}.record_spikes is unsupported "
+                        f"for {definition.model_id!r}"
+                    )
+                overrides = neuron.get("parameter_overrides")
+                if isinstance(overrides, dict):
+                    for parameter_name, parameter in overrides.items():
+                        override_definition = definition.parameters.get(parameter_name)
+                        if override_definition is None:
+                            raise ValidationError(
+                                f"neurons.{model_id}.{neuron_id}.parameter_overrides."
+                                f"{parameter_name} is unsupported"
+                            )
+                        _validate_parameter_dimension(
+                            parameter,
+                            f"neurons.{model_id}.{neuron_id}.parameter_overrides."
+                            f"{parameter_name}",
+                            override_definition.dimension,
+                        )
+
+
+def _time_seconds(value: Any, path: str) -> float:
+    numeric = _parameter_value(value, path, "time")
+    unit = str(_object(value, path)["unit"])
+    factors = {"s": 1.0, "ms": 0.001, "us": 0.000001}
+    return numeric * factors[unit]
+
+
+def _validate_simulation(value: Any, sim_time_ms: float) -> None:
+    simulation = _object(value, "simulation")
+    _nonempty_string(simulation.get("integration_method"), "simulation.integration_method")
+    time_step_seconds = _time_seconds(simulation.get("time_step"), "simulation.time_step")
+    if time_step_seconds <= 0:
+        raise ValidationError("simulation.time_step.value must be greater than zero")
+    if time_step_seconds > sim_time_ms * 0.001:
+        raise ValidationError("simulation.time_step must not exceed sim_time_ms")
+
+
+def _validate_stimuli(value: Any, root: JsonObject, neuron_ids: set[int]) -> None:
+    stimuli = _array(value, "stimuli")
+    seen_ids: set[str] = set()
+    neurons = _object(root["neurons"], "neurons")
+    neuron_by_id: dict[int, JsonObject] = {}
+    for family_value in neurons.values():
+        family = _object(family_value, "neurons family")
+        for neuron_value in family.values():
+            neuron = _object(neuron_value, "neuron")
+            neuron_by_id[int(neuron["neuron_id"])] = neuron
+    sim_time_seconds = float(root["sim_time_ms"]) * 0.001
+    target_dimensions = {"external_current": "current", "input_rate": "rate"}
+    for index, raw_stimulus in enumerate(stimuli):
+        path = f"stimuli[{index}]"
+        stimulus = _object(raw_stimulus, path)
+        stimulus_id = _nonempty_string(stimulus.get("id"), f"{path}.id")
+        if stimulus_id in seen_ids:
+            raise ValidationError("stimuli ids must be unique")
+        seen_ids.add(stimulus_id)
+        if stimulus.get("waveform") != "constant":
+            raise ValidationError(f"{path}.waveform must equal 'constant'")
+        target = _object(stimulus.get("target"), f"{path}.target")
+        neuron_id = target.get("neuron_id")
+        invalid_neuron_id = (
+            isinstance(neuron_id, bool)
+            or not isinstance(neuron_id, int)
+            or neuron_id not in neuron_ids
+        )
+        if invalid_neuron_id:
+            raise ValidationError(
+                f"{path}.target.neuron_id references unknown neuron {neuron_id!r}"
+            )
+        assert isinstance(neuron_id, int) and not isinstance(neuron_id, bool)
+        variable = _nonempty_string(target.get("variable"), f"{path}.target.variable")
+        dimension = target_dimensions.get(variable)
+        if dimension is None:
+            raise ValidationError(f"{path}.target.variable is unsupported")
+        _parameter_value(stimulus.get("amplitude"), f"{path}.amplitude", dimension)
+        start = _time_seconds(stimulus.get("start_time"), f"{path}.start_time")
+        end = _time_seconds(stimulus.get("end_time"), f"{path}.end_time")
+        if start < 0 or end <= start or end > sim_time_seconds:
+            raise ValidationError(f"{path} time window must fall within the simulation")
+        compartment_id = target.get("compartment_id")
+        if compartment_id is not None:
+            compartment_id = _nonempty_string(compartment_id, f"{path}.target.compartment_id")
+            compartments = _object(
+                neuron_by_id[neuron_id].get("compartments"),
+                f"neurons containing {neuron_id}.compartments",
+            )
+            if compartment_id not in compartments:
+                raise ValidationError(
+                    f"{path}.target.compartment_id references unknown compartment "
+                    f"{compartment_id!r}"
+                )
+        elif neuron_by_id[neuron_id].get("compartments") and variable == "external_current":
+            raise ValidationError(f"{path}.target.compartment_id is required")
 
 
 def _validate_weighted_links(
@@ -371,7 +524,7 @@ def validate_experiment_spec(value: Any) -> ExperimentSpec:
     metadata = _object(root.get("metadata"), "metadata")
     _nonempty_string(metadata.get("name"), "metadata.name")
     _nonempty_string(root.get("dataset"), "dataset")
-    _finite_number(root.get("sim_time_ms"), "sim_time_ms", positive=True)
+    sim_time_ms = _finite_number(root.get("sim_time_ms"), "sim_time_ms", positive=True)
     seed = root.get("random_seed")
     if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
         raise ValidationError("random_seed must be a non-negative integer")
@@ -379,6 +532,10 @@ def validate_experiment_spec(value: Any) -> ExperimentSpec:
     if "neuron_models" in root:
         neurons = _object(root["neurons"], "neurons")
         _validate_neuron_models(root["neuron_models"], neurons)
+    if "simulation" in root:
+        _validate_simulation(root["simulation"], sim_time_ms)
+    if "stimuli" in root:
+        _validate_stimuli(root["stimuli"], root, neuron_ids)
     if "embodied_config" in root:
         _validate_embodiment(root["embodied_config"], neuron_ids)
     if "execution" in root:

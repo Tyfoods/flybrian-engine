@@ -19,10 +19,13 @@ class BackendCapabilities:
     backend_version: str
     experiment_spec_versions: tuple[str, ...]
     neuron_model_families: tuple[str, ...]
+    neuron_model_ids: tuple[str, ...]
     embodiment_modes: tuple[str, ...]
     artifact_kinds: tuple[str, ...]
     deterministic_for_fixed_seed: bool
     scientific_execution: bool
+    availability: str = "available"
+    unavailable_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -37,6 +40,8 @@ class Backend(Protocol):
     def capabilities(self) -> BackendCapabilities: ...
 
     def run(self, spec: ExperimentSpec, output_dir: Path, run_id: str) -> ArtifactManifest: ...
+
+    def compatibility_issues(self, spec: ExperimentSpec) -> tuple[CompatibilityIssue, ...]: ...
 
 
 class BackendRegistry:
@@ -101,7 +106,7 @@ def assess_backend_compatibility(
                     f"selected backend is {capabilities.backend_id!r}"
                 ),
             ))
-        else:
+        elif capabilities.availability == "available":
             backend_constraint = execution.get("backend_version")
             if isinstance(backend_constraint, str) and Version(
                 capabilities.backend_version
@@ -136,6 +141,13 @@ def assess_backend_compatibility(
                     path=f"neuron_models.{model_id}.family",
                     message=f"backend does not support model family {family!r}",
                 ))
+            definition_id = raw_model.get("model_id")
+            if capabilities.neuron_model_ids and definition_id not in capabilities.neuron_model_ids:
+                issues.append(CompatibilityIssue(
+                    code="unsupported_model_definition",
+                    path=f"neuron_models.{model_id}.model_id",
+                    message=f"backend does not support model definition {definition_id!r}",
+                ))
     else:
         for family in spec.model_families:
             if family not in capabilities.neuron_model_families:
@@ -144,4 +156,10 @@ def assess_backend_compatibility(
                     path=f"neurons.{family}",
                     message=f"backend does not support model family {family!r}",
                 ))
+    if capabilities.availability != "available":
+        issues.append(CompatibilityIssue(
+            code="backend_unavailable",
+            path="execution.backend_id",
+            message=capabilities.unavailable_reason or "selected backend is unavailable",
+        ))
     return tuple(sorted(issues, key=lambda issue: (issue.path, issue.code)))

@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from .backends import BackendRegistry, CompatibilityIssue, assess_backend_compatibility
+from .brian2_backend import Brian2Backend
 from .reference import ReferenceBackend
 from .schema import ValidationError, validate_experiment_spec
 from .version import __version__
@@ -40,6 +41,7 @@ def _validated_identifier(value: object, name: str) -> str:
 def default_registry() -> BackendRegistry:
     registry = BackendRegistry()
     registry.register(ReferenceBackend())
+    registry.register(Brian2Backend())
     return registry
 
 
@@ -60,7 +62,7 @@ def run_experiment(
         spec,
         backend.capabilities,
         engine_version=__version__,
-    )
+    ) + backend.compatibility_issues(spec)
     if issues:
         raise CompatibilityError(issues)
     manifest = backend.run(spec, output_dir, resolved_run_id)

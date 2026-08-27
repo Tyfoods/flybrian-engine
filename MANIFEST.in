@@ -1,4 +1,5 @@
 include FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md
 include FLYBRIAN_E2_ARTIFACT_CONTRACT.md
+include FLYBRIAN_E3_BRIAN_ADAPTER_CONTRACT.md
 recursive-include docs *.md
 recursive-include examples *.json

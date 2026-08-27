@@ -14,6 +14,11 @@ from .backends import (
     CompatibilityIssue,
     assess_backend_compatibility,
 )
+from .results import (
+    ResultsValidationError,
+    StandardizedResults,
+    validate_standardized_results,
+)
 from .runner import CompatibilityError
 from .schema import ExperimentSpec, ValidationError, validate_experiment_spec
 from .version import __version__
@@ -30,8 +35,11 @@ __all__ = [
     "CompatibilityIssue",
     "DatasetReference",
     "ExperimentSpec",
+    "ResultsValidationError",
+    "StandardizedResults",
     "ValidationError",
     "__version__",
     "assess_backend_compatibility",
     "validate_experiment_spec",
+    "validate_standardized_results",
 ]

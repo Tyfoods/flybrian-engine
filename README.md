@@ -9,6 +9,12 @@ This alpha establishes the package and protocol boundary. Its built-in `referenc
 is deterministic contract verification, not a biological simulator. Brian2/NEURON adapters
 must register through the same interface and declare their scientific/version provenance.
 
+The optional `brian2` backend is the first real biological adapter. Its frozen offline oracle
+covers public `lif.basic.v1`, `rate.first_order.v1`, and
+`compartmental.passive_two.v1` definitions and emits standardized scientific results. It does
+not yet claim public inter-model connections, MANC ingestion, or historical private-model
+equivalence.
+
 FES 1.0 accepts additive simulator-neutral descriptors for heterogeneous neuron models,
 unit-bearing values or distributions, direct or muscle-mediated embodiment, backend/version
 constraints, requested artifacts, resource hints, and namespaced extensions. See
@@ -27,13 +33,17 @@ can remain replayable when video rendering fails without inventing an MP4 URL.
 
 ```text
 python -m venv .venv
-.venv/bin/python -m pip install -e .
+.venv/bin/python -m pip install -e '.[brian2]'
 .venv/bin/flybrian-engine health
 .venv/bin/flybrian-engine validate examples/minimal-experiment.json
 .venv/bin/flybrian-engine run examples/minimal-experiment.json --output flybrian-runs
+.venv/bin/flybrian-engine run examples/brian2-golden-experiment.json --backend brian2 --output flybrian-runs
 ```
 
 On Windows, use `.venv\Scripts\python.exe` and `.venv\Scripts\flybrian-engine.exe`.
+The base install remains useful without the optional extra: schema validation and the
+`reference` backend continue working, while health reports `brian2` as `not_installed` with
+the exact installation remedy instead of failing import or substituting reference output.
 
 Start the loopback runner with `flybrian-engine serve`. The command prints a bearer token
 when one is not supplied. `GET /v1/health` is public; `/v1/capabilities` and `POST /v1/runs`

@@ -1,6 +1,6 @@
 # FlyBrian Engine Extraction and Local Runner — OA Implementation Contract
 
-Status: **active; E0–E2 source-verified and E3 public Brian behavior specified**
+Status: **active; E0–E2 and the first public E3 Brian oracle source-verified**
 
 Canonical stakeholder intent: `/Users/tyroachford/Projects/flybrian-web-p14/FLYBRIAN_LAUNCH_PRODUCT_SPEC.md`, especially invariants 8–12, sections 9–12, scenarios S5–S7, and acceptance A15–A19.
 
@@ -182,8 +182,8 @@ Mutation/sensitivity evidence must show that removing each new validation or adm
 | ENG01 | Independent public package has license/docs/build/test/typed API | PASS — local E0 commit `2dd9a2b`; publication pending separately |
 | ENG02 | Heterogeneous FES data round-trips losslessly | PASS — E1 LIF/rate/compartmental + direct/muscle fixtures |
 | ENG03 | Structured schema/backend compatibility with no silent loss | PASS — E1 Python/CLI/HTTP pre-allocation rejection |
-| ENG04 | Public artifact contract spans results/motor/video/provenance | PARTIAL — manifest 1.1 identity/dispositions source-verified; biological producers and private consumers pending |
-| ENG05 | Public Brian adapter reproduces declared golden fixtures | OPEN — detailed E3 behavior specified; equations/fixtures/tolerances must be frozen next |
+| ENG04 | Public artifact contract spans results/motor/video/provenance | PARTIAL — manifest 1.1 plus validated biological standardized results source-verified; motor/video producers and private consumers pending |
+| ENG05 | Public Brian adapter reproduces declared golden fixtures | PASS — LIF/rate/passive-compartment analytic fixture under declared tolerances |
 | ENG06 | Public ingestion reconstructs declared dataset releases/checksums | OPEN |
 | ENG07 | Direct and muscle-mediated embodiment transforms are public | OPEN |
 | ENG08 | Private service consumes released engine and duplicates are deleted | OPEN |

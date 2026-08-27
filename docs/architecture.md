@@ -23,6 +23,19 @@ backend is assessed against those requirements before it can create a run direct
 contract and packaging verification, but it never stands in for Brian2, NEURON, or another
 scientific adapter.
 
+The optional Brian2 adapter imports Brian only at execution time, so the base package and
+reference backend remain usable without scientific extras. Discovery reports `available`,
+`not_installed`, or `incompatible_runtime` independently from model compatibility. The first
+public release accepts three checksumable offline model definitions—LIF, first-order rate, and
+passive two-compartment—and rejects all unadvertised model IDs and connection semantics before
+allocation. Equations, analytic checkpoints, and tolerance bands are frozen in
+[`brian2-golden-models.md`](brian2-golden-models.md).
+
+The corresponding standardized-results schema is validated independently of the manifest file
+checksum. It requires immutable engine/backend/experiment identity, ordered global neuron and
+spike identities, finite unit-bearing continuous series, duration bounds, and exact network
+counts. Brian monitor objects never cross this JSON boundary.
+
 Artifact manifest 1.1 is the portable completion envelope. It contains no hosted URLs or
 credentials. Consumers may decorate its checksummed artifact records with authorized storage
 locations, while explicit dispositions preserve the difference between unavailable, failed,

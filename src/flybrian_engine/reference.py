@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 from .artifacts import Artifact, ArtifactDisposition, ArtifactManifest, DatasetReference
-from .backends import BackendCapabilities
+from .backends import BackendCapabilities, CompatibilityIssue
 from .schema import ExperimentSpec
 from .version import __version__
 
@@ -19,6 +19,7 @@ class ReferenceBackend:
             backend_version="1.0.0",
             experiment_spec_versions=("1.0",),
             neuron_model_families=("lif",),
+            neuron_model_ids=(),
             embodiment_modes=("none",),
             artifact_kinds=("summary",),
             deterministic_for_fixed_seed=True,
@@ -65,3 +66,6 @@ class ReferenceBackend:
         )
         manifest.write(run_dir / "manifest.json")
         return manifest
+
+    def compatibility_issues(self, spec: ExperimentSpec) -> tuple[CompatibilityIssue, ...]:
+        return ()

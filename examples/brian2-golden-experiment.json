@@ -1,0 +1,233 @@
+{
+  "artifact_requests": [
+    "standardized_results"
+  ],
+  "dataset": "fixture:brian2-golden-v1",
+  "execution": {
+    "backend_id": "brian2",
+    "backend_version": ">=2.7,<3",
+    "engine_version": ">=0.1,<1"
+  },
+  "metadata": {
+    "description": "Offline analytic oracle for the public Brian2 adapter",
+    "name": "Brian2 LIF, rate, and passive-compartment golden",
+    "tags": [
+      "brian2",
+      "compartmental",
+      "golden",
+      "lif",
+      "rate"
+    ]
+  },
+  "neuron_models": {
+    "compartmental_passive": {
+      "family": "compartmental",
+      "model_id": "compartmental.passive_two.v1",
+      "parameters": {
+        "capacitance_dendrite": {
+          "unit": "pF",
+          "value": 10
+        },
+        "capacitance_soma": {
+          "unit": "pF",
+          "value": 10
+        },
+        "coupling_conductance": {
+          "unit": "nS",
+          "value": 0.5
+        },
+        "initial_v_dendrite": {
+          "unit": "mV",
+          "value": -65
+        },
+        "initial_v_soma": {
+          "unit": "mV",
+          "value": -65
+        },
+        "leak_conductance_dendrite": {
+          "unit": "nS",
+          "value": 1
+        },
+        "leak_conductance_soma": {
+          "unit": "nS",
+          "value": 1
+        },
+        "v_rest": {
+          "unit": "mV",
+          "value": -65
+        }
+      }
+    },
+    "lif_basic": {
+      "family": "lif",
+      "model_id": "lif.basic.v1",
+      "parameters": {
+        "initial_v": {
+          "unit": "mV",
+          "value": -65
+        },
+        "refractory_period": {
+          "unit": "ms",
+          "value": 2
+        },
+        "resistance": {
+          "unit": "Mohm",
+          "value": 100
+        },
+        "tau_m": {
+          "unit": "ms",
+          "value": 20
+        },
+        "v_reset": {
+          "unit": "mV",
+          "value": -65
+        },
+        "v_rest": {
+          "unit": "mV",
+          "value": -65
+        },
+        "v_threshold": {
+          "unit": "mV",
+          "value": -50
+        }
+      }
+    },
+    "rate_first_order": {
+      "family": "rate",
+      "model_id": "rate.first_order.v1",
+      "parameters": {
+        "gain": {
+          "unit": "1",
+          "value": 1
+        },
+        "initial_rate": {
+          "unit": "Hz",
+          "value": 0
+        },
+        "tau": {
+          "unit": "ms",
+          "value": 10
+        }
+      }
+    }
+  },
+  "neurons": {
+    "compartmental_passive": {
+      "3": {
+        "compartments": {
+          "dendrite": {
+            "external_currents": [],
+            "poisson_inputs": [],
+            "record_spikes": false,
+            "record_variables": true
+          },
+          "soma": {
+            "external_currents": [],
+            "poisson_inputs": [],
+            "record_spikes": false,
+            "record_variables": true
+          }
+        },
+        "external_currents": [],
+        "model_type": "compartmental_passive",
+        "neuron_id": 3,
+        "poisson_inputs": [],
+        "record_spikes": false,
+        "record_variables": true
+      }
+    },
+    "lif_basic": {
+      "1": {
+        "external_currents": [],
+        "model_type": "lif_basic",
+        "neuron_id": 1,
+        "poisson_inputs": [],
+        "record_spikes": true,
+        "record_variables": true
+      }
+    },
+    "rate_first_order": {
+      "2": {
+        "external_currents": [],
+        "model_type": "rate_first_order",
+        "neuron_id": 2,
+        "poisson_inputs": [],
+        "record_spikes": false,
+        "record_variables": true
+      }
+    }
+  },
+  "random_seed": 6172,
+  "sim_time_ms": 100,
+  "simulation": {
+    "integration_method": "exact",
+    "time_step": {
+      "unit": "ms",
+      "value": 0.1
+    }
+  },
+  "spec_version": "1.0",
+  "stimuli": [
+    {
+      "amplitude": {
+        "unit": "nA",
+        "value": 0.3
+      },
+      "end_time": {
+        "unit": "ms",
+        "value": 100
+      },
+      "id": "lif-current",
+      "start_time": {
+        "unit": "ms",
+        "value": 0
+      },
+      "target": {
+        "neuron_id": 1,
+        "variable": "external_current"
+      },
+      "waveform": "constant"
+    },
+    {
+      "amplitude": {
+        "unit": "Hz",
+        "value": 50
+      },
+      "end_time": {
+        "unit": "ms",
+        "value": 100
+      },
+      "id": "rate-input",
+      "start_time": {
+        "unit": "ms",
+        "value": 0
+      },
+      "target": {
+        "neuron_id": 2,
+        "variable": "input_rate"
+      },
+      "waveform": "constant"
+    },
+    {
+      "amplitude": {
+        "unit": "pA",
+        "value": 10
+      },
+      "end_time": {
+        "unit": "ms",
+        "value": 100
+      },
+      "id": "dendrite-current",
+      "start_time": {
+        "unit": "ms",
+        "value": 0
+      },
+      "target": {
+        "compartment_id": "dendrite",
+        "neuron_id": 3,
+        "variable": "external_current"
+      },
+      "waveform": "constant"
+    }
+  ]
+}

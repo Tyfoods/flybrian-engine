@@ -1,6 +1,6 @@
 # FlyBrian E3 Public Brian Scientific Adapter — OA Behavioral Specification
 
-Status: **approved outcome; specification complete; implementation and private-consumer cutover open**
+Status: **E3-A and first E3-B biological oracle source-verified; mixed connections and private-consumer cutover open**
 
 Parent authorities:
 
@@ -374,15 +374,15 @@ work.
 | ID | Oracle | Status |
 | --- | --- | --- |
 | E3-01 | Specification describes behavior, invariants, states, derivations, lifecycle, edge cases, scenarios, parity, and segmented gates | PASS — this document |
-| E3-02 | Golden equations/fixtures/tolerances frozen before adapter implementation | OPEN |
-| E3-03 | Base install remains usable and reports missing Brian truthfully | OPEN |
-| E3-04 | Public LIF execution and standardized result golden | OPEN |
-| E3-05 | Public rate execution and standardized result golden | OPEN |
-| E3-06 | Public compartmental execution and standardized result golden | OPEN |
+| E3-02 | Golden equations/fixtures/tolerances frozen before adapter implementation | PASS — independent analytic oracle and per-output tolerances |
+| E3-03 | Base install remains usable and reports missing Brian truthfully | PASS — clean base wheel health/reference run and pre-allocation rejection |
+| E3-04 | Public LIF execution and standardized result golden | PASS — six events under per-cycle quantization oracle |
+| E3-05 | Public rate execution and standardized result golden | PASS — analytic 10/20/50 ms checkpoints |
+| E3-06 | Public compartmental execution and standardized result golden | PASS — analytic soma/dendrite 10/20/50 ms checkpoints |
 | E3-07 | Declared mixed-family connection path | OPEN |
-| E3-08 | Python/CLI/HTTP pre-allocation incompatibility and runtime failure behavior | OPEN |
-| E3-09 | Manifest 1.1 standardized-results identity/checksum/disposition | OPEN |
-| E3-10 | Base/Brian package, lint, typing, test, build, clean-install, and mutation gates | OPEN |
+| E3-08 | Python/CLI/HTTP pre-allocation incompatibility and runtime failure behavior | PARTIAL — accepted Python/CLI/HTTP and missing-dependency rejection pass; injected runtime failure/partial-output oracle remains open |
+| E3-09 | Manifest 1.1 standardized-results identity/checksum/disposition | PASS — public result validator plus verified artifact/disposition |
+| E3-10 | Base/Brian package, lint, typing, test, build, clean-install, and mutation gates | PARTIAL — macOS and three-OS CI definition pass; real Windows/Linux runtime remains E5/E6 |
 | E3-11 | Released public package consumed by private service | BLOCKED — no publication coordinate/credential |
 | E3-12 | Superseded private authority removed after consumer proof | BLOCKED with E3-11 |
 
@@ -415,3 +415,28 @@ work.
   contract-to-diff review, clean commit, and honest non-claims.
 - E3 completion cannot close parent launch acceptance A17–A20; local/cloud equivalence, durable
   runner lifecycle, cross-platform runtime, and production rehearsal remain later segments.
+
+## 16. E3-A / first E3-B quality evidence — 2026-08-26
+
+- Pre-change focused tests failed because named compartments, explicit simulation/stimulus
+  dimensions, registered Brian capabilities, and biological execution did not exist.
+- `docs/brian2-golden-models.md` freezes equations, units, integration settings, analytic
+  checkpoints, and tolerance bands independently of adapter output. The one implementation
+  discovery—per-cycle event quantization—updated the oracle to constrain first-event and every
+  inter-spike interval rather than allowing accumulated absolute-phase error.
+- One offline FES attempt executes LIF, rate, and passive two-compartment models through real
+  Brian 2.10.1. It emits six LIF spikes, the analytic rate/voltage checkpoints, and a validated
+  standardized-results artifact under manifest 1.1 with `scientific_execution: true`.
+- Base-package discovery imports no Brian, reports exact `not_installed` guidance, keeps schema
+  and reference execution usable, and rejects a Brian submission before output allocation.
+- Python, CLI, and authenticated loopback HTTP produce the same experiment identity and public
+  disposition. Fixed release/seed repeats produce equal normalized result content after run ID
+  normalization.
+- 54 tests pass. Ruff and strict mypy pass across 16 source/test files. Wheel/sdist build; the
+  source distribution contains this contract, the oracle, and the fixture. Clean base and Brian
+  wheel installs pass; uninstall leaves the completed run manifest in place.
+- Mutation evidence: skipping only the `tau_m` dimension guard makes exactly the targeted
+  malformed-unit oracle fail while the other three boundary cases remain green.
+- Not claimed: public connection semantics, MANC/FlyWire ingestion, historical private-model
+  numerical equivalence, runtime failure/partial-output normalization, private service cutover,
+  package publication, Windows/Linux runtime evidence, or local/cloud equivalence.
