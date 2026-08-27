@@ -45,12 +45,27 @@ The base install remains useful without the optional extra: schema validation an
 `reference` backend continue working, while health reports `brian2` as `not_installed` with
 the exact installation remedy instead of failing import or substituting reference output.
 
-Start the loopback runner with `flybrian-engine serve`. The command prints a bearer token
-when one is not supplied. `GET /v1/health` is public; `/v1/capabilities` and `POST /v1/runs`
-require that token. The default bind is `127.0.0.1`, never a public interface.
+Start the durable loopback runner with `flybrian-engine serve`. The command prints one
+machine-readable connection record containing a process bearer token when one is not supplied.
+The default bind is `127.0.0.1`; the only other accepted bind is IPv6 loopback `::1`.
+
+`GET /v1/health` is the only unauthenticated endpoint. Authorized clients submit durable work
+with `POST /v1/jobs`, reconnect with `GET /v1/jobs/{run_id}`, cancel with
+`POST /v1/jobs/{run_id}/cancel`, and retrieve the validated manifest or a manifest-declared
+artifact below that job. `--workers` and `--max-queued` provide explicit bounded concurrency.
+The original synchronous `POST /v1/runs` remains temporarily available for protocol-1 alpha
+compatibility.
+
+Direct browser-origin and preflight requests are denied even when they carry a valid token.
+FlyBrian must connect through a trusted same-origin server or a separately paired desktop
+connector; a website cannot acquire local execution authority merely by reaching localhost.
+Job records and outputs live under the user-selected `--output` directory, not the package
+installation, so package update or uninstall preserves research data.
 
 See [architecture](docs/architecture.md) for dependency and compatibility rules.
 The staged extraction and cross-platform acceptance contract is recorded in
 [`FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md`](FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md).
 The public biological execution and private-consumer cutover behavior is specified in
 [`FLYBRIAN_E3_BRIAN_ADAPTER_CONTRACT.md`](FLYBRIAN_E3_BRIAN_ADAPTER_CONTRACT.md).
+The durable lifecycle, security, portability, and cross-platform acceptance behavior is specified
+in [`FLYBRIAN_E5_DURABLE_RUNNER_CONTRACT.md`](FLYBRIAN_E5_DURABLE_RUNNER_CONTRACT.md).

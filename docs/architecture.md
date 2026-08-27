@@ -41,7 +41,13 @@ credentials. Consumers may decorate its checksummed artifact records with author
 locations, while explicit dispositions preserve the difference between unavailable, failed,
 and unknown output. Manifest writes use same-directory atomic replacement.
 
-The alpha local server is intentionally synchronous and loopback-only. Durable scheduling,
-tenancy, billing, and autoscaling belong to private `flybrian-serve`; a future desktop daemon
-may add durable local jobs behind the versioned `/v1` protocol without changing engine
-execution semantics.
+The public local server is loopback-only and persists protocol-1 jobs independently from the
+package installation. Accepted requests are immutable, bounded workers run through argument-array
+subprocesses using the active Python interpreter, queued jobs survive restart, and an interrupted
+running job becomes `outcome_unknown` unless a terminal worker receipt proves its result. Completed
+manifests and artifact bytes are revalidated at retrieval. Browser Origin/preflight requests are
+denied; a trusted same-origin or desktop connector must hold the process bearer token.
+
+Tenancy, billing, autoscaling, hosted artifact locations, and abuse controls still belong to
+private `flybrian-serve`. The local runner and private service must converge on the same public
+experiment, adapter, result, and manifest semantics without moving cloud policy into this package.

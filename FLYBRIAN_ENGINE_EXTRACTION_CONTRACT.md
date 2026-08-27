@@ -187,7 +187,7 @@ Mutation/sensitivity evidence must show that removing each new validation or adm
 | ENG06 | Public ingestion reconstructs declared dataset releases/checksums | OPEN |
 | ENG07 | Direct and muscle-mediated embodiment transforms are public | OPEN |
 | ENG08 | Private service consumes released engine and duplicates are deleted | OPEN |
-| ENG09 | Durable origin-safe local runner lifecycle | OPEN |
+| ENG09 | Durable origin-safe local runner lifecycle | PARTIAL — atomic records, bounded isolated workers, queued/running recovery semantics, queued and real running cancellation, reconnect, validated manifest/artifact retrieval, loopback-only binding, and browser-Origin denial are implemented under the E5 contract; forced termination uncertainty, multi-worker restart stress, and trusted connector evidence remain open |
 | ENG10 | macOS/Windows/Linux clean install and uninstall-preserves-data | PARTIAL — macOS alpha smoke and CI definition only |
 | ENG11 | Local/cloud scientific equivalence under declared tolerance | OPEN |
 | ENG12 | Public release/tag/package/docs/security evidence | OPEN |
@@ -207,3 +207,17 @@ This child contract may advance but cannot close the parent FlyBrian launch goal
   requested output root.
 - Not claimed: biological Brian/NEURON execution, private-service consumption, durable local
   job lifecycle, package publication, or Windows/Linux runtime evidence. Those remain E3–E6.
+
+## 11. E5 durable-runner checkpoint — 2026-08-27
+
+- `FLYBRIAN_E5_DURABLE_RUNNER_CONTRACT.md` freezes the durable state machine, record layout,
+  worker isolation, HTTP/security behavior, portability rules, edge matrix, and acceptance ledger.
+- Pre-change tests failed because the durable module and endpoints did not exist.
+- Atomic immutable admission, legal revisioned transitions, queued recovery, interrupted-running
+  uncertainty, bounded subprocess execution, queued cancellation, duplicate/overflow rejection,
+  and checksum-tamper rejection are covered by focused tests.
+- Authorized HTTP tests cover submit, disconnect-style polling/reconnect, manifest and artifact
+  retrieval, unknown-field and duplicate rejection, Origin/preflight denial even with a valid
+  token, IPv4 loopback restriction, and IPv6 loopback construction when the host supports it.
+- Publication, trusted FlyBrian connector consumption, running-worker cancellation race coverage,
+  real Windows/Linux runtime evidence, and local/cloud equivalence remain open.

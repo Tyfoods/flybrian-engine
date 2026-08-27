@@ -8,7 +8,7 @@ import secrets
 from collections.abc import Sequence
 from pathlib import Path
 
-from .runner import CompatibilityError, default_registry, run_experiment, serve
+from .runner import CompatibilityError, create_server, default_registry, run_experiment
 from .schema import ValidationError, validate_experiment_spec
 from .version import __version__
 
@@ -33,6 +33,8 @@ def parser() -> argparse.ArgumentParser:
     local.add_argument("--port", default=8765, type=int)
     local.add_argument("--token")
     local.add_argument("--output", type=Path, default=Path("flybrian-runs"))
+    local.add_argument("--workers", default=1, type=int)
+    local.add_argument("--max-queued", default=64, type=int)
     return root
 
 
@@ -40,12 +42,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
         if args.command == "health":
-            print(json.dumps({
-                "status": "healthy",
-                "engine_version": __version__,
-                "protocol_version": "1",
-                "backends": [item.__dict__ for item in default_registry().capabilities()],
-            }, sort_keys=True))
+            print(
+                json.dumps(
+                    {
+                        "status": "healthy",
+                        "engine_version": __version__,
+                        "protocol_version": "1",
+                        "backends": [item.__dict__ for item in default_registry().capabilities()],
+                    },
+                    sort_keys=True,
+                )
+            )
         elif args.command == "validate":
             spec = validate_experiment_spec(_load(args.experiment))
             print(json.dumps({"valid": True, "sha256": spec.sha256()}, sort_keys=True))
@@ -54,14 +61,35 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(result, sort_keys=True))
         else:
             token = args.token or secrets.token_urlsafe(32)
-            connection = {"host": args.host, "port": args.port, "token": token}
+            server = create_server(
+                host=args.host,
+                port=args.port,
+                token=token,
+                output_dir=args.output,
+                max_workers=args.workers,
+                max_queued=args.max_queued,
+            )
+            connection = {
+                "host": args.host,
+                "port": server.server_port,
+                "token": token,
+                "protocol_version": "1",
+            }
             print(json.dumps(connection, sort_keys=True), flush=True)
-            serve(host=args.host, port=args.port, token=token, output_dir=args.output)
+            try:
+                server.serve_forever()
+            finally:
+                server.server_close()
     except CompatibilityError as error:
-        print(json.dumps({
-            "error": "experiment is incompatible with the selected backend",
-            "issues": [issue.__dict__ for issue in error.issues],
-        }, sort_keys=True))
+        print(
+            json.dumps(
+                {
+                    "error": "experiment is incompatible with the selected backend",
+                    "issues": [issue.__dict__ for issue in error.issues],
+                },
+                sort_keys=True,
+            )
+        )
         return 2
     except (OSError, ValueError, KeyError, json.JSONDecodeError, ValidationError) as error:
         print(json.dumps({"error": str(error)}, sort_keys=True))
