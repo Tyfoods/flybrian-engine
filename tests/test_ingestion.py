@@ -245,7 +245,9 @@ def _connection_dataset(tmp_path: Path, files: dict[str, str]) -> VerifiedDatase
     entries: list[dict[str, object]] = []
     for name, content in files.items():
         path = root / name
-        path.write_text(content, encoding="utf-8")
+        # Preserve the fixture's exact LF bytes on Windows so the source
+        # manifest and its receipt identity are platform-neutral.
+        path.write_bytes(content.encode("utf-8"))
         entries.append(
             file_entry(
                 path,

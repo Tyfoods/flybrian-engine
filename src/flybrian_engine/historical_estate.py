@@ -497,6 +497,7 @@ def _scan_directory(
     for entry in entries:
         logical_parts = (*relative_parts, entry.name)
         logical_path = "/".join(logical_parts)
+        entry_path = Path(entry.path)
         _safe_logical_path(
             logical_path,
             "historical estate logical path",
@@ -511,12 +512,15 @@ def _scan_directory(
                 raise HistoricalEstateError(
                     f"historical estate symlink is forbidden: {logical_path}"
                 )
-            entry_stat = entry.stat(follow_symlinks=False)
+            # DirEntry.stat() is cached and reports zero for st_ino/st_dev on
+            # Windows.  A fresh path stat preserves the identity fields that
+            # os.fstat() returns after the file is opened, so the race guard is
+            # both portable and meaningful.
+            entry_stat = entry_path.stat(follow_symlinks=False)
         except OSError as error:
             raise HistoricalEstateError(
                 f"failed to inspect historical estate entry: {logical_path}"
             ) from error
-        entry_path = Path(entry.path)
         try:
             entry_path.resolve(strict=True).relative_to(root)
         except (OSError, ValueError) as error:
