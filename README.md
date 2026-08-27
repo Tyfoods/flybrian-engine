@@ -134,6 +134,40 @@ frame = step_historical_hill_leg(
 print(frame.torques, frame.sha256())
 ```
 
+Historical Python experiments enter the public boundary through static envelopes, not by importing
+or executing their scripts. An envelope binds exact source bytes/revision, declared and effective
+options, controller stages, FES projection, artifacts, missing requirements, and lineage. Its
+reproducibility class is derived: incomplete records remain `PROVENANCE_ONLY`; only complete,
+validated records become `RUNNABLE_CONNECTOME` or `RUNNABLE_EMBODIED`.
+
+The bounded AST extractor reads literal `argparse` declarations and config tables without imports,
+function calls, filesystem access, or subprocesses. Dynamic facts become dispositions for manual
+review. Exact variations require the base envelope hash and before-value, apply a visible patch,
+then recompute FES validity and completeness.
+
+```python
+from flybrian_engine import (
+    HistoricalSourceAuthority,
+    extract_static_python_experiment,
+)
+
+source_bytes = historical_script.read_bytes()
+source = HistoricalSourceAuthority(
+    repository="https://example.org/research/fly-history",
+    revision="0123456789abcdef0123456789abcdef01234567",
+    logical_path="experiments/example.py",
+    byte_length=len(source_bytes),
+    sha256=source_sha256,
+    license_id="MIT",
+    access="public",
+    redistribution="allowed",
+    extractor_id="org.flybrian.static-python-extractor",
+    extractor_version="1.0",
+)
+draft = extract_static_python_experiment(source_bytes, source)
+print(draft.receipt.option_count, draft.dispositions)
+```
+
 FlyBody-derived metadata is redistributed under Apache-2.0 with the bundled license and
 third-party modification notice. The runtime catalog has no MuJoCo dependency; the pinned XML and
 MuJoCo compilation are development/acceptance authorities.

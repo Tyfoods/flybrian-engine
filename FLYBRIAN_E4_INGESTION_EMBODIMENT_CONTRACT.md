@@ -1534,3 +1534,413 @@ Host OA gates passed from the accepted source tree: 124 pytest tests; Ruff; stri
 source files; isolated sdist/wheel build; byte-identical 11,357-byte Apache license and 3,042-byte
 notice in both archives; and clean-wheel public import plus 15-state/6-torque step. Remote
 macOS/Ubuntu/Windows × Python 3.10/3.12 execution remains E4-12 and is not inferred from this host.
+
+## 19. E4-C1 static historical experiment envelope and variation contract
+
+Status: **implemented and host-accepted; reviewed C174 projection remains E4-C2 and supported-platform CI remains E4-12**
+
+### 19.1 Outcome and scope boundary
+
+A historical FlyBrian experiment becomes a portable, inspectable record without importing or
+executing its Python script. The record preserves exact source identity, invocation/config inputs,
+requested-versus-effective values, controller/body stages, result evidence, missing requirements,
+and any canonical FES projection. A complete record can be rerun or forked through the same public
+engine contract as a newly authored experiment; an incomplete record remains searchable
+`PROVENANCE_ONLY` evidence and cannot acquire a runnable label from UI metadata.
+
+E4-C1 is the migration/envelope boundary, not a promise that all historical scripts are already
+converted. It establishes the static format, derived completeness authority, safe extractor
+boundary, and exact variation semantics, then accepts the exact representative C174 source through
+the non-executing extractor. E4-C2 performs the separately reviewed semantic option/controller/FES
+projection; subsequent batches apply that reviewed contract to the larger estate. This split keeps
+an extraction receipt from being mislabeled as a runnable experiment.
+
+The canonical experiment remains FES 1.0. The envelope does not create a second simulator schema:
+
+- neutral neural, timing, dataset, embodiment, artifact, backend, and resource data project into
+  FES;
+- strictly typed controller/body behavior not yet neutral belongs in the namespaced
+  `org.flybrian.historical-controller` FES extension plus a separately hashed controller profile;
+- unresolved script behavior becomes a missing requirement, never an opaque executable string;
+- exact recorded motor-command artifacts remain the preferred physical replay authority; and
+- FES validation plus backend compatibility remain the final run-admission authorities.
+
+### 19.2 Read-only estate census and representative source
+
+The untouched service checkout currently contains 259 top-level experiment Python files. Static
+search finds 238 files using config-table/append idioms and 155 containing argparse/CLI surfaces.
+Those counts describe source-shape complexity, not authoritative run count. The product corpus
+count must come from imported manifests/design versions and presently spans recovered estimates
+from 8,300+ through roughly 10,800 experiments; it must not be relabeled as exactly 6,000.
+
+Representative source for the first envelope:
+
+```text
+logical path: experiments/c174_phase1_per_muscle.py
+bytes:        144,532
+SHA-256:      35b2cf1e2e18fe0ef512a567dc474c279a02c0f6f8cb08adbd990eb9c89f4038
+CLI options:  56 statically declared argparse options
+```
+
+Its declared surface crosses at least these semantic groups:
+
+| Group | Representative options/behavior |
+| --- | --- |
+| neural execution | `seed`, `j-gab`, `sim-ms`, `poisson-n`, `no-poisson-mn`, `true-adex` |
+| muscle drive | `boost-min`, `anti-boost`, `pro-suppress`, T1/T2/T3 overrides, `warmup`, `vrest-anti`, `pro-vrest` |
+| force routing | `ts-mult`, T1/T2/T3 torque overrides, zero-coxa segments, coxa/femur/tibia scales, L/R symmetrization |
+| body physics | femur/tibia/coxa stiffness, damping, abduction bias/stiffness, tarsus friction, initial height, joint-damping multiplier |
+| feedback | force/angle, pitch, height, campaniform-sensilla, coxa-abduction spring reference |
+| initialization | network-only pre-settle and three-phase absolute anti-boost warmup |
+| targeted modulation | left extensor boost and per-tier trochanter boost |
+
+The source also contains derived fallback/override behavior. For example, per-segment values may
+replace global values, `coxa_stiff=None` means use femur/tibia stiffness, and historical builders
+have documented option names that differed from effective keys. Recording only command tokens is
+therefore insufficient: both requested and effective values plus the resolution rule are required.
+
+### 19.3 Public envelope identity
+
+The public immutable `HistoricalExperimentEnvelope` has:
+
+```text
+schema_version = "1.0"
+envelope_id                         stable namespaced identity
+version                             immutable envelope version
+source                              exact source authority record
+selector                            static config-table key/index, or null
+invocation                          ordered original argument lexemes
+options                             ordered declared option resolutions
+controller_profile                  typed stages, or null with missing requirement
+fes                                 complete canonical FES object, or null
+expected_fes_sha256                 required when FES is present
+source_artifacts                    checksummed input/result evidence
+missing_requirements                explicit deduplicated requirements
+reproducibility_class               derived, never caller asserted
+lineage                             import/fork/variation parent identity
+```
+
+The source authority includes repository URL/identity, immutable revision when known, logical path,
+byte length, SHA-256, declared license/access/redistribution facts, and extractor ID/version.
+Extraction timestamp and optional source-tree dirty/unknown disposition belong in non-canonical
+import evidence rather than this scientific identity. A local absolute path is not portable
+identity and must not enter canonical bytes. If no immutable source revision or byte hash is known,
+exact rerun is impossible.
+
+Canonical JSON uses sorted keys, UTF-8, no insignificant whitespace, exact decimal strings for
+scientific/config values, ordered invocation/stage/phase arrays, and lowercase SHA-256. Timestamps,
+local paths, hostnames, and extraction duration are non-canonical receipt evidence. The envelope
+SHA changes if source bytes, selector, invocation, resolved option, stage parameter/order, FES,
+artifact hash, missing requirement, or lineage changes.
+
+### 19.4 Static option resolution
+
+Every declared `HistoricalOptionResolution` contains:
+
+```text
+option_id              stable semantic ID, not only a CLI spelling
+legacy_names           ordered CLI/config aliases
+value_kind             boolean | integer | decimal | text | decimal_list | text_list | null
+unit                    explicit unit or "1"; null only for text/boolean/null
+default_value           source-declared default
+requested_value         exact config/CLI input, or null when omitted
+effective_value         value actually used after known resolution, or null when unresolved
+origin                  default | config_table | invocation | derived | source_constant
+application             applied | ignored | unresolved | not_applicable
+resolution_rule         stable rule/profile ID
+target                  FES JSON pointer or controller-profile JSON pointer, or null
+notes                   factual migration note, never executable code
+```
+
+The extractor's `StaticOptionDeclaration` separately retains the source declaration line. Reviewed
+resolution records remain canonical scientific facts and do not duplicate file-local coordinates.
+
+Option IDs are unique case-sensitively and case-folded. Legacy aliases may map to one semantic option
+only. Decimal values reject binary float at the authority boundary. Booleans are not integers.
+List arity, enumerated values, nullability, ranges, and conditional applicability are declared by a
+separate option definition profile and validated before resolution.
+
+Precedence is explicit and deterministic:
+
+```text
+source constant < declared default < selected config-table value < invocation value < declared derived rule
+```
+
+A derived rule may reference only earlier resolved option IDs, must be a named public rule (for
+example `per_segment_or_global.v1`), and returns an exact value plus input evidence. E4-C1 does not
+evaluate arbitrary expressions. Cycles, undeclared dependencies, two values at the same precedence,
+one alias targeting two option IDs, or an advertised option unused by the source produce an
+`unresolved`/`ignored` record and a missing requirement. They never silently choose a winner.
+
+### 19.5 Controller and body stage profile
+
+The controller profile is a declarative ordered pipeline. Each `HistoricalControllerStage` has a
+stable stage ID, stage kind, profile ID/version/hash, declared inputs/outputs, exact unit-bearing
+parameters, activation condition, and zero or more bounded phases. Supported E4-C1 kinds are:
+
+```text
+neural_initialization
+open_loop_schedule
+sensor_feedback
+muscle_drive
+joint_torque_transform
+body_property_override
+initial_condition
+artifact_capture
+```
+
+Stages form a directed acyclic graph through named signals. Inputs must be produced by FES/backend
+state or an earlier stage; outputs are unique unless an explicit reducer profile combines them.
+Ordering is canonical and scientific. A feedback stage declares sampling window, latency, filter,
+target population/DOF, sign, saturation, and reset/checkpoint state. A schedule declares absolute
+phase boundaries and values. A torque transform declares named muscle/DOF/actuator authorities,
+scales, units, clipping/rejection policy, and whether it is a historical proxy. A body override
+declares exact target model/profile hash; it cannot mutate an unknown XML by substring.
+
+Phase intervals are half-open `[start_ms, end_ms)`, ordered, non-overlapping, and within total
+simulation time. The final phase may use total simulation time explicitly; infinity and omitted
+implicit tails are forbidden. Filters and controllers with memory expose initial state and durable
+checkpoint representation. A stage containing source code, lambda/expression text, import path,
+shell command, pickle, or environment-variable expansion rejects.
+
+The representative C174 envelope must separate, rather than flatten:
+
+- 0–200/200–400/400–simulation-end warmup schedule;
+- network-only pre-settle from embodied simulation time;
+- sigmoid muscle drive from anti/pro population current modulation;
+- segment/DOF torque scaling and optional L/R symmetrization;
+- pitch, height, force, angle, campaniform-sensilla, and spring-reference feedback stages;
+- body friction/stiffness/damping/initial-height overrides; and
+- artifact/log capture.
+
+Disabled zero-gain stages may be retained for faithful configuration display but must declare
+`activation_condition=false` and cannot be described as executed.
+
+### 19.6 Completeness and reproducibility derivation
+
+`reproducibility_class` is derived from envelope evidence:
+
+| Class | Required evidence |
+| --- | --- |
+| `PROVENANCE_ONLY` | source evidence may exist; one or more required execution authorities are missing/unresolved |
+| `RUNNABLE_CONNECTOME` | exact source plus validated FES, dataset/model/backend authorities, deterministic seed/config, and no embodied requirement |
+| `RUNNABLE_EMBODIED` | all connectome requirements plus exact body/environment, mapping, actuator/muscle/controller profiles, initial state, motor-command artifact contract, and compatible executor |
+| `ARCHIVED` | catalog lifecycle projection only; never authored into the scientific envelope |
+
+The envelope derives a sorted `missing_requirements` tuple from at least:
+
+```text
+SOURCE_REVISION, SOURCE_BYTES, LICENSE_ACCESS, DATASET,
+NEURON_SELECTION, NEURON_MODELS, CONNECTIVITY, STIMULI,
+SIMULATION_TIMING, RANDOM_SEED, BACKEND_PROFILE,
+BODY_MODEL, ENVIRONMENT, EMBODIMENT_MAPPING, CONTROLLER_PROFILE,
+INITIAL_STATE, ARTIFACT_CONTRACT, EXECUTOR_COMPATIBILITY,
+RESULT_EVIDENCE
+```
+
+Unknown result evidence does not necessarily block rerun, but blocks claims that a historical
+result was reproduced. Missing video does not block scientific execution if the artifact contract
+truthfully records video unavailable; missing motor commands blocks DigiFly replay but not a
+connectome-only run. A caller-supplied class that disagrees with derived evidence rejects.
+
+`CONFIG_RESOLVED` may appear as UI progress text but is not a product reproducibility class and may
+not enable a run button by itself.
+
+### 19.7 Safe static extraction and manual review
+
+The extractor parses Python with the standard AST and may read only bounded literal structures:
+
+- module-level literal assignments and literal dict/list/tuple/set values;
+- `argparse.add_argument` calls whose option name, default, choices, nargs, action, and primitive
+  type are statically literal/name-resolvable;
+- config-table selection by a literal key/index; and
+- source spans and exact byte hashes.
+
+It never imports the module, resolves imports, calls functions, evaluates comprehensions, accesses
+attributes, expands environment variables, follows filesystem paths from source, opens declared
+artifacts, or runs a subprocess. Dynamic values become extraction dispositions with source spans.
+Maximum file bytes, AST nodes, nesting depth, collection length, string length, and diagnostics are
+explicit public limits; exceeding a limit returns a bounded rejection rather than partial trust.
+
+Static extraction creates a draft envelope only. Promotion to runnable requires a reviewed mapping
+from every effective option and controller stage to FES/profile authorities plus validation against
+an executor. The extractor receipt records parsed option/config counts, unresolved counts/codes,
+source hash, extractor hash/version, and draft envelope hash. Repeating the same bytes/profile is
+idempotent.
+
+### 19.8 Exact rerun and variation semantics
+
+`rerun exact` references the same immutable envelope/FES/controller hashes and preserves the seed.
+Runtime resource selection may differ only where backend compatibility proves it scientifically
+neutral; the run receipt records the actual executor/platform.
+
+`create variation` produces a new immutable envelope with one or more ordered
+`HistoricalVariationPatch` records:
+
+```text
+base_envelope_sha256
+patch_id
+target_kind = option | fes | controller
+target_id or RFC 6901 JSON pointer
+before_canonical_value
+after_canonical_value
+reason
+author evidence (non-scientific identity, catalog-owned)
+```
+
+The patch applies only when the base hash and exact before-value match. Unknown paths, array-index
+identity for scientific entities, duplicate targets, overlapping parent/child paths, removal of
+required identity, non-exact numerics, or changed value without a patch reject. After application,
+all option resolution, FES validation, profile hashes, completeness, and backend compatibility are
+recomputed. A seed change is a visible patch. Changing a model family, direct/muscle drive,
+controller profile, body model, dataset release, or backend may create new missing requirements and
+remove runnable status until explicitly resolved.
+
+Catalog design/version/ACL state remains proprietary product metadata. The portable envelope keeps
+scientific lineage through parent envelope/version/hash only; it contains no private account token,
+email, workspace ID, billing state, or cloud credential.
+
+### 19.9 Failure/lifecycle matrix
+
+```text
+SOURCE_BYTES + extractor profile                     -> EXTRACTING
+EXTRACTING + bounded static facts                    -> DRAFT_PROVENANCE
+DRAFT_PROVENANCE + reviewed option/stage mappings    -> RESOLVING
+RESOLVING + valid FES/profiles + no missing run facts -> RUNNABLE_* derived
+any draft + unresolved/dynamic/identity mismatch      -> PROVENANCE_ONLY + dispositions
+RUNNABLE_* + exact rerun                              -> FES/backend admission
+immutable envelope + valid patches                    -> new draft version -> revalidation
+any failure                                           -> prior envelope remains unchanged
+```
+
+| Edge | Required result |
+| --- | --- |
+| script imports successfully but static facts are incomplete | do not import/execute; provenance-only |
+| config table uses append/comprehension/function result | extract bounded literal facts; disposition for dynamic remainder |
+| documented option differs from effective key | requested/effective/application evidence; never relabel |
+| duplicate option alias or config key | reject resolution |
+| unknown controller callback | missing `CONTROLLER_PROFILE`; no opaque callback |
+| controller phase ends beyond simulation | reject |
+| disabled zero-gain controller | retained as disabled; not execution claim |
+| recorded result lacks source/config hash | result evidence unbound; no reproduction claim |
+| FES validates but backend lacks controller profile | provenance-only for that executor; compatibility issue |
+| motor commands exist but body/actuator catalog differs | replay rejects until explicit crosswalk |
+| variation changes only display metadata | scientific envelope hash unchanged; catalog version may change separately |
+
+### 19.10 Non-goals, scale, and retirement
+
+E4-C1 does not execute legacy Python, infer biological meaning from option spelling, claim all 259
+files are unique experiment families, count runs from scripts, convert every controller, render UI,
+publish the package, change the private service, or close DigiFly W06. It does not solve the deferred
+30→31 Hz regression.
+
+For source bytes `B`, AST nodes `A`, options/config entries `O`, stages `S`, and patches `P`, static
+extraction is `O(B + A + O)` bounded time; validation/canonicalization is `O(O + S + P)` and does
+not load the corpus. Catalog pagination remains the web repository's responsibility.
+
+After reviewed migration and consumer cutover, config tables/CLI scripts may remain as historical
+evidence but cease to be execution authorities. Duplicate web-only reproducibility classifiers and
+opaque legacy parameter blobs are retired once the portable envelope is the catalog source. Private
+service adapters may consume public envelope/FES/profile data but may not rewrite its scientific
+identity.
+
+### 19.11 Test-trust and acceptance gate
+
+Implementation begins with red tests for absent envelope, option/stage, extraction receipt,
+completeness, and variation APIs.
+
+| Oracle | Required evidence |
+| --- | --- |
+| canonical envelope | fixed fixture/hash; JSON key reordering stable; ordered scientific arrays sensitive |
+| source identity | byte length/SHA/revision required for runnable; local path/timestamp excluded |
+| option resolution record | exact typed values, null, ignored/unresolved demotion, alias collision, binary-float rejection; reviewed precedence application is E4-C2 |
+| controller graph | DAG/order/signal/phase/unit/profile validation; executable text and callback imports reject |
+| completeness | every missing-authority mutation demotes class; caller cannot assert runnable |
+| variation | exact before/base hash, lineage, seed visibility, FES/controller revalidation, overlap rejection, no positional entity patch |
+| extractor safety | replace `open` with a failing sentinel; executable-looking calls remain unexecuted; dynamic AST yields disposition; limits bound adversarial source |
+| C174 acceptance | 144,532 bytes/source hash, 56 options, zero dynamic dispositions; reviewed representative mappings and truthful controller gaps are E4-C2 |
+| FES projection | supplied complete projection validates and hash matches; incomplete embodied authority cannot run; reviewed C174 projection is E4-C2 |
+| quality | full pytest, Ruff, strict mypy, sdist/wheel, clean-wheel public smoke, mutation evidence |
+
+Sensitivity review mutates source bytes, option precedence, ignored/effective status, controller
+phase boundary/order, completeness requirement, variation before-value, and source hash. Any
+mutation that leaves the corresponding canonical/result identity unchanged blocks closure.
+
+Remote supported-platform acceptance remains E4-12. No local host result is promoted to Windows or
+Linux evidence.
+
+### 19.12 Contract-to-diff forecast
+
+Expected E4-C1 diff:
+
+- one public historical-envelope module with immutable records, canonical hashes, completeness,
+  variation application, and bounded static extraction;
+- stable exports, a read-only representative C174 host acceptance receipt, focused tests, README,
+  and this evidence ledger;
+- no service, web production, Maestro, cloud, renderer, account, or catalog database edit.
+
+The representative fixture may quote option declarations/config facts but must not copy proprietary
+service execution code. Public original extraction/validation code remains MIT. Source/license facts
+for any redistributed historical data are explicit before packaging.
+
+Any changed file outside this map, opaque executable field, caller-asserted runnable class, dynamic
+source evaluation, or missing contract behavior blocks E4-C1 closure.
+
+### 19.13 E4-C1 implementation and host acceptance evidence
+
+The public `historical_envelopes` module now implements immutable source, option, controller,
+artifact, lineage, variation, envelope, static-declaration, disposition, limit, result, and receipt
+records. Canonical identities exclude local path, timestamp, hostname, and duration. Exact decimal
+authority rejects binary floats; canonical decimal text avoids exponent spelling for ordinary
+values. Source revision/license/access gaps and ignored or unresolved options derive missing
+requirements, while FES validation, embodied body/environment/initial-state/controller/artifact
+evidence, and explicit migration gaps derive the runnable class. A caller cannot author the class.
+
+Variation application binds the base envelope hash and exact before-value, records lineage, makes
+seed changes visible, revalidates the resulting FES, and recomputes completeness. Duplicate and
+parent/child-overlapping FES/controller targets reject. A decimal variation crossing the current
+FES numeric-storage boundary is accepted only if it round-trips exactly through that representation;
+otherwise it rejects rather than silently rounding. Scientific array positions are not variation
+identity. Controller stages enforce ordered signal production, unique outputs, exact unit-bearing
+parameters, non-overlapping bounded phases, and rejection of executable parameter forms.
+
+The extractor uses only UTF-8 decoding and Python AST parsing. It bounds source bytes, AST nodes,
+iteratively measured AST depth, option count, config-entry count, collection length, and string
+length. It extracts literal `add_argument` and module config-table facts, preserves decimal source
+lexemes, and emits dispositions for dynamic facts. It never imports the historical module or calls
+its functions. Focused safety tests replace `open` with a failing sentinel while the parsed source
+contains `open` and subprocess calls; extraction succeeds without invoking either source call.
+
+Read-only acceptance against the untouched private representative source at service revision
+`d08d4a8cd20b44d54a583515ccb39586d505215d` produced:
+
+```text
+logical path:       experiments/c174_phase1_per_muscle.py
+source bytes:       144,532
+source SHA-256:     35b2cf1e2e18fe0ef512a567dc474c279a02c0f6f8cb08adbd990eb9c89f4038
+AST nodes:          18,970
+options:            56
+config tables:      0
+dispositions:       0
+graph SHA-256:      d3a62bcfabc7aac6c5af3ecd609f535c8df4261b38f74adcfeb224abe4b72a83
+```
+
+The private script is not redistributed by the public package. The receipt proves stable static
+extraction, not reviewed biological mapping or runnable equivalence. E4-C2 must map all 56 options,
+controller stages, derived rules, FES targets, body/environment facts, and unresolved behavior
+before the representative record may advance beyond truthful provenance-only status.
+
+Fixed public test identities are:
+
+```text
+connectome envelope: 1d531d58f7d0315ec7fc33babfd38ddcdffddc11d91c90a16dde2f9034304468
+embodied envelope:   ae01028317823a6cdca0db01577704a33785d2a13f742cc100dceb5f5455a8b5
+synthetic extraction graph: af0add1299d4bbe9b30211a0166d380435b70e61e0073ed68812c502255546b1
+```
+
+Host OA gates passed from the evidence-bearing tree: 14 focused historical-envelope tests and 138
+full pytest tests; Ruff; strict mypy across 32 source/test files; isolated sdist/wheel build; presence
+of module, focused test, README, and contract in the sdist and module in the wheel; byte-identical
+11,357-byte Apache license and 3,042-byte third-party notice in both archives; and a clean-wheel
+public import/static-extraction smoke from an isolated target. Remote macOS/Ubuntu/Windows × Python
+3.10/3.12 execution remains E4-12 and is not inferred from this host.
