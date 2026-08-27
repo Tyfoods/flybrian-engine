@@ -17,8 +17,11 @@ class ReferenceBackend:
             backend_id="reference",
             backend_version="1.0.0",
             experiment_spec_versions=("1.0",),
-            neuron_model_families=("contract-only",),
+            neuron_model_families=("lif",),
             embodiment_modes=("none",),
+            artifact_kinds=("summary",),
+            deterministic_for_fixed_seed=True,
+            scientific_execution=False,
         )
 
     def run(self, spec: ExperimentSpec, output_dir: Path, run_id: str) -> ArtifactManifest:

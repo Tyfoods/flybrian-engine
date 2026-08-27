@@ -1,0 +1,170 @@
+{
+  "artifact_requests": [
+    "standardized_results",
+    "motor_commands",
+    "video"
+  ],
+  "dataset": "manc:v1.2.1",
+  "embodied_config": {
+    "closed_loop": true,
+    "drive_mode": "muscle_mediated",
+    "enabled": true,
+    "environment": {
+      "id": "flat-ground",
+      "initial_conditions": {
+        "heading_degrees": 0
+      },
+      "version": "1"
+    },
+    "firing_rate_window_ms": 32,
+    "flybody": {
+      "id": "dm_control.fly",
+      "version": "1"
+    },
+    "mapping_id": "manc-muscle-v1",
+    "muscle_mediated": {
+      "muscle_to_actuator": [
+        {
+          "actuator_id": "joint_L1_coxa_flexion",
+          "muscle_id": "L1_coxa_flexor",
+          "weight": 1
+        }
+      ],
+      "muscles": {
+        "L1_coxa_flexor": {
+          "model": "hill",
+          "parameters": {
+            "activation_tau": {
+              "unit": "ms",
+              "value": 20
+            }
+          }
+        }
+      },
+      "neuron_to_muscle": [
+        {
+          "muscle_id": "L1_coxa_flexor",
+          "neuron_id": 3,
+          "weight": 0.8
+        }
+      ]
+    },
+    "playback_speed": 1,
+    "video_fps": 30,
+    "video_resolution": [
+      1280,
+      720
+    ]
+  },
+  "execution": {
+    "backend_id": "brian2",
+    "backend_version": ">=2.7,<3",
+    "engine_version": ">=0.1,<1"
+  },
+  "extensions": {
+    "org.flybrian.walking-search": {
+      "generation": 6172,
+      "objective": "forward locomotion"
+    }
+  },
+  "metadata": {
+    "description": "Schema fixture spanning heterogeneous neural and embodied execution",
+    "name": "Heterogeneous walking contract",
+    "tags": [
+      "lif",
+      "rate",
+      "compartmental",
+      "muscle-mediated"
+    ]
+  },
+  "neuron_models": {
+    "compartmental_motor": {
+      "family": "compartmental",
+      "parameters": {
+        "axial_resistance": {
+          "unit": "ohm*cm",
+          "value": 150
+        }
+      }
+    },
+    "lif_interneuron": {
+      "family": "lif",
+      "parameters": {
+        "tau_m": {
+          "unit": "ms",
+          "value": 20
+        },
+        "threshold": {
+          "unit": "mV",
+          "value": -50
+        }
+      }
+    },
+    "rate_controller": {
+      "family": "rate",
+      "parameters": {
+        "gain": {
+          "distribution": {
+            "kind": "normal",
+            "mean": 1,
+            "standard_deviation": 0.1
+          },
+          "unit": "1"
+        }
+      }
+    }
+  },
+  "neurons": {
+    "compartmental_motor": {
+      "3": {
+        "compartments": {
+          "0": {
+            "external_currents": [],
+            "poisson_inputs": [],
+            "record_spikes": true,
+            "record_variables": true
+          }
+        },
+        "external_currents": [],
+        "model_type": "compartmental_motor",
+        "neuron_id": 3,
+        "poisson_inputs": [],
+        "record_spikes": true,
+        "record_variables": true
+      }
+    },
+    "lif_interneuron": {
+      "1": {
+        "external_currents": [],
+        "model_type": "lif_interneuron",
+        "neuron_id": 1,
+        "parameter_overrides": {
+          "tau_m": {
+            "unit": "ms",
+            "value": 18
+          }
+        },
+        "poisson_inputs": [],
+        "record_spikes": true,
+        "record_variables": true
+      }
+    },
+    "rate_controller": {
+      "2": {
+        "external_currents": [],
+        "model_type": "rate_controller",
+        "neuron_id": 2,
+        "poisson_inputs": [],
+        "record_spikes": false,
+        "record_variables": true
+      }
+    }
+  },
+  "random_seed": 6172,
+  "resource_hints": {
+    "cpu_cores": 4,
+    "memory_gib": 8
+  },
+  "sim_time_ms": 1000,
+  "spec_version": "1.0"
+}

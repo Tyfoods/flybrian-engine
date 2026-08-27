@@ -9,6 +9,15 @@ This alpha establishes the package and protocol boundary. Its built-in `referenc
 is deterministic contract verification, not a biological simulator. Brian2/NEURON adapters
 must register through the same interface and declare their scientific/version provenance.
 
+FES 1.0 accepts additive simulator-neutral descriptors for heterogeneous neuron models,
+unit-bearing values or distributions, direct or muscle-mediated embodiment, backend/version
+constraints, requested artifacts, resource hints, and namespaced extensions. See
+`examples/heterogeneous-experiment.json` and `examples/direct-actuator-experiment.json`.
+Validation proves that a document is well formed. Execution is a separate compatibility
+decision: every backend reports its supported model families, embodiment modes, artifacts,
+determinism, and whether it performs scientific execution. Unsupported combinations return
+structured issues before allocating output.
+
 ## Install and verify
 
 ```text
@@ -26,3 +35,5 @@ when one is not supplied. `GET /v1/health` is public; `/v1/capabilities` and `PO
 require that token. The default bind is `127.0.0.1`, never a public interface.
 
 See [architecture](docs/architecture.md) for dependency and compatibility rules.
+The staged extraction and cross-platform acceptance contract is recorded in
+[`FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md`](FLYBRIAN_ENGINE_EXTRACTION_CONTRACT.md).

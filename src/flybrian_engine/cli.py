@@ -8,9 +8,9 @@ import secrets
 from collections.abc import Sequence
 from pathlib import Path
 
-from . import __version__
-from .runner import default_registry, run_experiment, serve
+from .runner import CompatibilityError, default_registry, run_experiment, serve
 from .schema import ValidationError, validate_experiment_spec
+from .version import __version__
 
 
 def _load(path: Path) -> object:
@@ -57,6 +57,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             connection = {"host": args.host, "port": args.port, "token": token}
             print(json.dumps(connection, sort_keys=True), flush=True)
             serve(host=args.host, port=args.port, token=token, output_dir=args.output)
+    except CompatibilityError as error:
+        print(json.dumps({
+            "error": "experiment is incompatible with the selected backend",
+            "issues": [issue.__dict__ for issue in error.issues],
+        }, sort_keys=True))
+        return 2
     except (OSError, ValueError, KeyError, json.JSONDecodeError, ValidationError) as error:
         print(json.dumps({"error": str(error)}, sort_keys=True))
         return 2

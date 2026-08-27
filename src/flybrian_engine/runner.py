@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import secrets
 import uuid
 from http import HTTPStatus
@@ -10,9 +11,30 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from .backends import BackendRegistry
+from .backends import BackendRegistry, CompatibilityIssue, assess_backend_compatibility
 from .reference import ReferenceBackend
 from .schema import ValidationError, validate_experiment_spec
+from .version import __version__
+
+
+class CompatibilityError(ValueError):
+    """A valid experiment cannot be executed by the selected backend."""
+
+    def __init__(self, issues: tuple[CompatibilityIssue, ...]) -> None:
+        self.issues = issues
+        super().__init__("; ".join(issue.message for issue in issues))
+
+
+_RUN_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
+
+
+def _validated_identifier(value: object, name: str) -> str:
+    if not isinstance(value, str) or _RUN_ID.fullmatch(value) is None:
+        raise ValidationError(
+            f"{name} must be a 1-64 character opaque identifier using "
+            "letters, digits, '.', '_', or '-'"
+        )
+    return value
 
 
 def default_registry() -> BackendRegistry:
@@ -28,8 +50,20 @@ def run_experiment(
     run_id: str | None = None,
 ) -> dict[str, object]:
     spec = validate_experiment_spec(value)
-    resolved_run_id = run_id or f"run_{uuid.uuid4().hex}"
-    manifest = default_registry().get(backend_id).run(spec, output_dir, resolved_run_id)
+    resolved_run_id = _validated_identifier(
+        run_id if run_id is not None else f"run_{uuid.uuid4().hex}",
+        "run_id",
+    )
+    resolved_backend_id = _validated_identifier(backend_id, "backend_id")
+    backend = default_registry().get(resolved_backend_id)
+    issues = assess_backend_compatibility(
+        spec,
+        backend.capabilities,
+        engine_version=__version__,
+    )
+    if issues:
+        raise CompatibilityError(issues)
+    manifest = backend.run(spec, output_dir, resolved_run_id)
     return manifest.to_dict()
 
 
@@ -86,6 +120,11 @@ def create_server(*, host: str, port: int, token: str, output_dir: Path) -> Thre
                     run_id=body.get("run_id"),
                 )
                 self._json(HTTPStatus.CREATED, result)
+            except CompatibilityError as error:
+                self._json(HTTPStatus.UNPROCESSABLE_ENTITY, {
+                    "error": "experiment is incompatible with the selected backend",
+                    "issues": [issue.__dict__ for issue in error.issues],
+                })
             except (ValidationError, ValueError, KeyError, json.JSONDecodeError) as error:
                 self._json(HTTPStatus.BAD_REQUEST, {"error": str(error)})
 

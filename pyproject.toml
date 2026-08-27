@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{ name = "FlyBrian contributors" }]
+dependencies = ["packaging>=24,<27"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Operating System :: MacOS",

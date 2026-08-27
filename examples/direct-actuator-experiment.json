@@ -1,0 +1,57 @@
+{
+  "artifact_requests": [
+    "standardized_results",
+    "motor_commands"
+  ],
+  "dataset": "fixture:v1",
+  "embodied_config": {
+    "direct_actuator": {
+      "links": [
+        {
+          "actuator_id": "joint_L1_coxa_flexion",
+          "neuron_id": 1,
+          "weight": 1
+        }
+      ]
+    },
+    "drive_mode": "direct_actuator",
+    "enabled": true,
+    "firing_rate_window_ms": 32,
+    "mapping_id": "fixture-direct-v1"
+  },
+  "extensions": {
+    "org.flybrian.direct-drive": {
+      "purpose": "contract fixture"
+    }
+  },
+  "metadata": {
+    "description": "Direct neuron-to-actuator schema fixture",
+    "name": "Direct actuator contract"
+  },
+  "neuron_models": {
+    "lif": {
+      "family": "lif",
+      "parameters": {
+        "tau_m": {
+          "unit": "ms",
+          "value": 20
+        }
+      }
+    }
+  },
+  "neurons": {
+    "lif": {
+      "1": {
+        "external_currents": [],
+        "model_type": "lif",
+        "neuron_id": 1,
+        "poisson_inputs": [],
+        "record_spikes": true,
+        "record_variables": true
+      }
+    }
+  },
+  "random_seed": 42,
+  "sim_time_ms": 10,
+  "spec_version": "1.0"
+}

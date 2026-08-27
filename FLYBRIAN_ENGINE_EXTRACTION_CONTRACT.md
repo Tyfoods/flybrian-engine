@@ -1,6 +1,6 @@
 # FlyBrian Engine Extraction and Local Runner — OA Implementation Contract
 
-Status: **active; E0 boundary bootstrap verified, E1 rich-schema compatibility admission next**
+Status: **active; E0 boundary bootstrap and E1 rich-schema compatibility admission source-verified**
 
 Canonical stakeholder intent: `/Users/tyroachford/Projects/flybrian-web-p14/FLYBRIAN_LAUNCH_PRODUCT_SPEC.md`, especially invariants 8–12, sections 9–12, scenarios S5–S7, and acceptance A15–A19.
 
@@ -112,6 +112,14 @@ No bulk copy is accepted. Every row requires a source census, dependency graph, 
 - Produce structured compatibility issues and prevent unsupported reference-backend allocation.
 - Preserve accepted existing snake_case FES payloads and canonical hashes.
 
+Source closure evidence (2026-08-26): the unchanged minimal specimen retains SHA-256
+`243c9724d250eaeca11e884d091d7b236e1255646c64a88bc4f90f0f6f8af625`; explicit LIF,
+rate, compartmental, direct-actuator, and muscle-mediated specimens round-trip; malformed
+units, distributions, neuron/muscle references, core neuron fields, compartments, extension
+owners, version constraints, and run IDs fail at their contract boundary. Python, CLI, and
+HTTP reject valid-but-unsupported science before output allocation with structured issues.
+The reference capability explicitly reports `scientific_execution: false`.
+
 ### E2 — Public scientific result/artifact contract
 
 - Reconcile standardized spikes/topology, motor commands, metrics/logs, video/render status, provenance, and checksums into a versioned manifest.
@@ -162,8 +170,8 @@ Mutation/sensitivity evidence must show that removing each new validation or adm
 | ID | Oracle | Status |
 | --- | --- | --- |
 | ENG01 | Independent public package has license/docs/build/test/typed API | PASS — local E0 commit `2dd9a2b`; publication pending separately |
-| ENG02 | Heterogeneous FES data round-trips losslessly | OPEN |
-| ENG03 | Structured schema/backend compatibility with no silent loss | OPEN |
+| ENG02 | Heterogeneous FES data round-trips losslessly | PASS — E1 LIF/rate/compartmental + direct/muscle fixtures |
+| ENG03 | Structured schema/backend compatibility with no silent loss | PASS — E1 Python/CLI/HTTP pre-allocation rejection |
 | ENG04 | Public artifact contract spans results/motor/video/provenance | OPEN |
 | ENG05 | Public Brian adapter reproduces declared golden fixtures | OPEN |
 | ENG06 | Public ingestion reconstructs declared dataset releases/checksums | OPEN |
@@ -175,3 +183,17 @@ Mutation/sensitivity evidence must show that removing each new validation or adm
 | ENG12 | Public release/tag/package/docs/security evidence | OPEN |
 
 This child contract may advance but cannot close the parent FlyBrian launch goal by itself.
+
+## 10. E1 quality evidence — 2026-08-26
+
+- Pre-change oracles failed on absent rich-schema accessors/validation and absent compatibility error API.
+- 27 tests pass; Ruff passes; strict mypy passes across 10 source files.
+- Removing the negative-standard-deviation guard in a disposable mutation copy makes the
+  targeted malformed-science oracle fail while its five sibling cases remain green.
+- Wheel and source distribution build. The source distribution contains this contract,
+  architecture documentation, and all three examples.
+- A separate clean environment installs the wheel, reports truthful capabilities, validates
+  the heterogeneous specimen, and rejects its reference-backend run without creating the
+  requested output root.
+- Not claimed: biological Brian/NEURON execution, private-service consumption, durable local
+  job lifecycle, package publication, or Windows/Linux runtime evidence. Those remain E3–E6.
