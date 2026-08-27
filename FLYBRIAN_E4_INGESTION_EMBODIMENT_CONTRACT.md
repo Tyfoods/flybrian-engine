@@ -566,3 +566,154 @@ editing.
 No E4-B edit implements muscle dynamics, a licensed historical catalog distribution, provider
 acquisition, positional 90→78 crosswalk, private service cutover, web form behavior, or DigiFly
 rendering. Those remain governed by open E4/parent rows rather than implied by graph construction.
+
+## 15. E4-C official NeuPrint acquisition implementation contract
+
+Status: **implementation contract; production implementation not yet started**
+
+### 15.1 Primary-source and current-authority record
+
+Primary sources checked on 2026-08-27:
+
+- Janelia's MANC page identifies the dataset as CC BY, names NeuPrint Python/R programmatic access,
+  links a public flat-file bucket, and records the v1.2 release date:
+  `https://www.janelia.org/node/68782`.
+- Current neuprint-python documentation declares explicit server/dataset selection, token argument
+  or `NEUPRINT_APPLICATION_CREDENTIALS`, and custom query support:
+  `https://connectome-neuprint.github.io/neuprint-python/docs/client.html`.
+- The official neuPrintHTTP repository documents the custom JSON endpoint and Bearer-token header:
+  `https://github.com/connectome-neuprint/neuPrintHTTP`.
+- CC BY 4.0 permits sharing/adaptation with attribution, license link, and change indication:
+  `https://creativecommons.org/licenses/by/4.0/`.
+
+The public Google bucket currently exposes MANC v1.0 exports, not a confirmed v1.2.1 flat
+connection/motor pair matching FlyBrian's historical normalized sources. E4-C therefore uses the
+version-selected NeuPrint API for the initial v1.2.1 candidate and records the public bucket as a
+future direct-download adapter. It does not relabel v1.0 bytes as v1.2.1.
+
+The private fetcher is read-only evidence. It constructs a global neuprint-python client, sets a
+900-second session timeout, logs broad exceptions, and contains a dataset-specific placeholder; it
+does not provide page identity, exact resume, byte manifests, credential-log oracles, or promotion
+atomicity. It is not reused as a public authority.
+
+### 15.2 Intended owner and non-goals
+
+One public acquisition module owns release profiles, provider snapshots, fixed queries, page
+validation, resumable staging, candidate manifest/receipt construction, and atomic promotion. It
+depends on an injected transport contract; the optional neuprint-python transport is one adapter,
+not the scientific data model.
+
+E4-C does not bundle a token, run an unaudited arbitrary Cypher string, download multi-gigabyte
+synapse/morphology assets, install pandas in the base package, mutate private data, or claim live
+MANC acceptance without credentials. Provider SDK and network access remain optional extras; all
+manifest verification/normalization stays dependency-free and offline.
+
+### 15.3 Acquisition state machine
+
+States: `NEW`, `SNAPSHOTTED`, `CONNECTIONS`, `MOTOR_ANATOMY`, `VERIFYING`, `PROMOTED`, `STALE`,
+`FAILED_RETRYABLE`, `FAILED_TERMINAL`.
+
+```text
+NEW + compatible provider snapshot                  -> SNAPSHOTTED
+SNAPSHOTTED + first committed connection page       -> CONNECTIONS
+CONNECTIONS + next valid page                        -> CONNECTIONS
+CONNECTIONS + empty terminal page                    -> MOTOR_ANATOMY
+MOTOR_ANATOMY + next valid page                      -> MOTOR_ANATOMY
+MOTOR_ANATOMY + empty terminal page                  -> VERIFYING
+VERIFYING + unchanged snapshot + verified files     -> PROMOTED
+any active state + retryable transport failure       -> FAILED_RETRYABLE
+FAILED_RETRYABLE + matching request/snapshot resume  -> prior active state
+any active state + changed provider snapshot         -> STALE (never promoted)
+any state + schema/order/auth/request conflict       -> FAILED_TERMINAL
+```
+
+`PROMOTED` is idempotent: rerunning the identical request verifies and returns the existing
+manifest/receipt. A different request or provider snapshot never appends to the existing staging
+estate.
+
+### 15.4 Release profile and fixed provider rows
+
+The initial profile is exactly `manc:v1.2.1`, provider `Janelia Research Campus`, server
+`https://neuprint.janelia.org`, CC BY 4.0, redistribution allowed, and citation DOI
+`10.7554/eLife.97769.1`. The profile records that API-extracted CSV is a transformed representation
+and retains the query/profile version. A later corrected citation or release produces a new profile
+version; it does not mutate old receipts.
+
+Connection pages are ordered by `(preId, postId)` and contain exactly the initial E4-A connection
+schema fields. Motor-anatomy pages are ordered by `bodyid` and contain exactly the initial E4-A
+motor schema fields. Provider results must be objects with exact known keys; boolean, binary-float,
+negative, missing, out-of-order, repeated cursor, or duplicate identity values fail the page.
+Large identifiers are admitted only as exact integers or exact integral decimal strings and are
+written without binary-float conversion.
+
+Pagination is keyset-based. Page size controls one request/commit unit, not total dataset capacity.
+The default target is 10,000 rows; 1–50,000 is the transport containment range. A full page is not
+terminal; an empty page after the last cursor is the only completion signal.
+
+### 15.5 Durable resume and atomic promotion
+
+The caller supplies an exact staging directory. The acquisition owner creates only these names:
+
+```text
+.flybrian-acquisition.json
+connectivity.csv.part
+motor-anatomy.csv.part
+connectivity.csv                 (promotion only)
+motor-anatomy.csv                (promotion only)
+dataset-manifest.json            (promotion only)
+acquisition-receipt.json         (promotion only)
+```
+
+The journal canonical-hashes the request and initial provider snapshot, and records per stream:
+committed byte offset, data-row count, last keyset cursor, completion, and update time. For each
+page the file is flushed and fsynced before an atomic journal replacement. Resume truncates each
+`.part` file to its journaled offset before refetching, so a crash after bytes but before journal
+commit cannot duplicate rows. Journal advancement before durable bytes is prohibited.
+
+Finalization flushes files, obtains a second provider snapshot, and requires exact equality with
+the first. It then constructs manifest 1.0 with computed SHA-256/size/row counts, verifies through
+the E4-A owner, writes the canonical acquisition receipt and manifest atomically, and renames part
+files without overwriting an existing final. No final artifact appears before all checks pass.
+
+### 15.6 Credential and failure contract
+
+- The token enters only the optional transport constructor, explicitly or from
+  `NEUPRINT_APPLICATION_CREDENTIALS`; it is never stored on request/profile/journal/receipt objects.
+- Exceptions, request summaries, URLs, file names, and repr strings must not contain the token or
+  Authorization header. Tests use a sentinel and search all persisted/output text.
+- TLS verification defaults on and cannot be disabled by the release profile.
+- `401/403` are terminal authorization failures; `404`/unknown dataset/schema are terminal release
+  failures; timeout/429/5xx are retryable without journal advancement.
+- Backoff is owned by the caller/CLI and honors provider retry metadata; acquisition state itself
+  stores no secret-bearing raw response.
+- A short/invalid/out-of-order page, cursor non-advance, changed snapshot, checksum mismatch, or
+  staging escape fails closed with exact stream/page/cursor evidence.
+
+### 15.7 Scale and responsiveness
+
+For `N` source rows and page size `P`, requests are `O(N/P)`, work is `O(N)`, and retained memory is
+`O(P)` plus small journal state. Output disk is `O(N)` and is the first intended resource
+constraint. There is no total-row maximum. Each network call and page commit is independently
+bounded; a transport implementation must not accumulate prior pages. Cancellation is observed
+between pages and leaves the exact resume point durable.
+
+### 15.8 Forecast, red oracles, and acceptance
+
+Expected production: one acquisition module, an optional `neuprint` dependency group, stable
+exports, README installation/acquisition text. Expected tests: one filesystem integration module
+with scripted transport pages/failures. No web/service/Maestro file belongs to E4-C.
+
+| Invariant | Pre-change result | Decisive oracle and sensitivity |
+| --- | --- | --- |
+| fixed ordered page admission | owner absent | valid two-page acquisition; duplicate/out-of-order/float page rejects |
+| crash-safe resume | owner absent | inject failure after durable page bytes and before journal replacement; resume truncates/refetches without duplication |
+| immutable snapshot | owner absent | start/end snapshot mismatch produces no final files |
+| credential isolation | private client accepts/logs broad exceptions | sentinel token absent from every persisted file, exception, and captured log |
+| atomic manifest promotion | owner absent | verified final manifest/receipt only after both streams; mutation of pre-promotion verify blocks all finals |
+| idempotence/conflict | owner absent | identical promoted request returns same hashes; changed request fails without overwrite |
+| optional real adapter | private-only dependency | fixed Cypher/JSON adapter tests; live token-backed MANC rehearsal remains `BLOCKED-LIVE` on this host |
+
+Implementation begins with failing tests because the acquisition owner is absent. At least one
+journal-order or snapshot guard is temporarily removed after implementation to prove the
+filesystem oracle detects duplicate or stale promotion. Official live acceptance cannot become
+PASS until an authorized token is available and no secret appears in evidence.
