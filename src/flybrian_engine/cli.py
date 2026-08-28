@@ -16,6 +16,7 @@ from .historical_standing import (
     C148_PHASE0_RESULT_PATH,
     C148_PHASE0_SOURCE_PATH,
     build_c148_phase0_normalization_bundle,
+    execute_c148_phase0_selection,
 )
 from .reviewed_champions import build_reviewed_c174_normalization_bundle
 from .runner import CompatibilityError, create_server, default_registry, run_experiment
@@ -58,6 +59,19 @@ def parser() -> argparse.ArgumentParser:
     normalize_standing.add_argument("--repository-root", type=Path, required=True)
     normalize_standing.add_argument("--revision", required=True)
     normalize_standing.add_argument("--output", type=Path, required=True)
+    run_standing = commands.add_parser("run-historical-standing")
+    run_standing.add_argument("collection", choices=["c148-phase0"])
+    run_standing.add_argument("--repository-root", type=Path, required=True)
+    run_standing.add_argument("--python", type=Path, required=True)
+    run_standing.add_argument("--revision", required=True)
+    run_standing.add_argument("--config", required=True)
+    run_standing.add_argument("--seed", type=int, required=True)
+    run_standing.add_argument(
+        "--route",
+        choices=["standalone", "flybrian_local"],
+        default="standalone",
+    )
+    run_standing.add_argument("--output", type=Path, required=True)
     local = commands.add_parser("serve")
     local.add_argument("--host", default="127.0.0.1", choices=["127.0.0.1", "::1"])
     local.add_argument("--port", default=8765, type=int)
@@ -153,6 +167,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                     sort_keys=True,
                 )
             )
+        elif args.command == "run-historical-standing":
+            receipt = execute_c148_phase0_selection(
+                source_root=args.repository_root,
+                output_dir=args.output,
+                python_executable=args.python,
+                revision=args.revision,
+                config_name=args.config,
+                seed=args.seed,
+                route=args.route,
+            )
+            print(json.dumps(receipt, sort_keys=True))
         else:
             token = args.token or secrets.token_urlsafe(32)
             server = create_server(

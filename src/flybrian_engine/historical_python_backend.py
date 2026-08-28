@@ -120,6 +120,38 @@ def materialize_packaged_historical_inputs(
     return tuple(produced)
 
 
+def validate_historical_input_references(
+    inputs: Sequence[HistoricalInputReference],
+    *,
+    source_root: Path,
+) -> None:
+    """Require every declared historical input to match its exact file or tree identity."""
+
+    root = source_root.resolve()
+    for declared_input in inputs:
+        input_path = _safe_path(root, declared_input.logical_path)
+        if declared_input.kind == "file":
+            if not input_path.is_file():
+                raise HistoricalExecutionError(
+                    f"declared input is missing: {declared_input.logical_path}"
+                )
+            count, byte_length, digest = 1, input_path.stat().st_size, _file_sha256(input_path)
+        else:
+            if not input_path.is_dir():
+                raise HistoricalExecutionError(
+                    f"declared input tree is missing: {declared_input.logical_path}"
+                )
+            count, byte_length, digest = _tree_identity(input_path)
+        if (
+            count != declared_input.file_count
+            or byte_length != declared_input.byte_length
+            or digest != declared_input.sha256
+        ):
+            raise HistoricalExecutionError(
+                f"declared input identity differs: {declared_input.logical_path}"
+            )
+
+
 @dataclass(frozen=True)
 class HistoricalProducedArtifact:
     artifact_id: str
@@ -228,28 +260,7 @@ def execute_locked_python_recipe(
         raise HistoricalNormalizationError(
             "execution received inputs other than the recipe's declared set"
         )
-    for declared_input in selected_inputs.values():
-        input_path = _safe_path(root, declared_input.logical_path)
-        if declared_input.kind == "file":
-            if not input_path.is_file():
-                raise HistoricalExecutionError(
-                    f"declared input is missing: {declared_input.logical_path}"
-                )
-            count, byte_length, digest = 1, input_path.stat().st_size, _file_sha256(input_path)
-        else:
-            if not input_path.is_dir():
-                raise HistoricalExecutionError(
-                    f"declared input tree is missing: {declared_input.logical_path}"
-                )
-            count, byte_length, digest = _tree_identity(input_path)
-        if (
-            count != declared_input.file_count
-            or byte_length != declared_input.byte_length
-            or digest != declared_input.sha256
-        ):
-            raise HistoricalExecutionError(
-                f"declared input identity differs: {declared_input.logical_path}"
-            )
+    validate_historical_input_references(tuple(selected_inputs.values()), source_root=root)
     selected = {item.artifact_id: item for item in artifacts}
     if set(recipe.artifact_ids) != set(selected):
         raise HistoricalNormalizationError(

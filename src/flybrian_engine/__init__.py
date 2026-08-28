@@ -168,14 +168,17 @@ from .historical_python_backend import (
     compare_historical_execution_artifacts,
     execute_locked_python_recipe,
     materialize_packaged_historical_inputs,
+    validate_historical_input_references,
 )
 from .historical_standing import (
     C148_PHASE0_DURATION_MS,
+    C148_PHASE0_ORIGINAL_PATH,
     C148_PHASE0_RESULT_PATH,
     C148_PHASE0_RESULT_SHA256,
     C148_PHASE0_SOURCE_PATH,
     C148_PHASE0_SOURCE_SHA256,
     build_c148_phase0_normalization_bundle,
+    execute_c148_phase0_selection,
 )
 from .ingestion import (
     MANC_CONNECTION_NORMALIZATION_V1,
@@ -238,6 +241,7 @@ from .version import __version__
 __all__ = [
     "BUNDLED_REVIEWED_CHAMPIONS_EXPORT_SHA256",
     "C148_PHASE0_DURATION_MS",
+    "C148_PHASE0_ORIGINAL_PATH",
     "C148_PHASE0_RESULT_PATH",
     "C148_PHASE0_RESULT_SHA256",
     "C148_PHASE0_SOURCE_PATH",
@@ -412,6 +416,7 @@ __all__ = [
     "build_reviewed_champions_export",
     "classify_historical_estate_file",
     "compare_historical_execution_artifacts",
+    "execute_c148_phase0_selection",
     "execute_locked_python_recipe",
     "extract_static_python_experiment",
     "initial_historical_leg_states",
@@ -435,5 +440,6 @@ __all__ = [
     "transform_muscle_mediated",
     "validate_experiment_spec",
     "validate_historical_estate_projection",
+    "validate_historical_input_references",
     "validate_standardized_results",
 ]
