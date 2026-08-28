@@ -1627,7 +1627,7 @@ def project_c174_normalized_execution() -> tuple[
             definition_sha256=definition.scientific_identity_sha256,
             route=route,
             executor_id="org.flybrian.executor.locked-python-source",
-            executor_version="1.0",
+            executor_version="1.1",
             source=C174_MINIMAL_SOURCE_AUTHORITY,
             argv=invocation,
             input_ids=input_ids,

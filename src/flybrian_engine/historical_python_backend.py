@@ -261,7 +261,7 @@ def execute_locked_python_recipe(
             raise HistoricalExecutionError(
                 f"ephemeral source checkout already contains {artifact.logical_path}"
             )
-    interpreter = python_executable.resolve()
+    interpreter = python_executable.absolute()
     if not interpreter.is_file():
         raise HistoricalExecutionError("Python interpreter does not exist")
     target = output_dir.resolve()

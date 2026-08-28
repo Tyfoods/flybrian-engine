@@ -308,11 +308,11 @@ boundaries without fabricating live-provider evidence.
 
 ## Install and verify
 
-Install the reviewed public v0.1.3 release on macOS or Linux:
+Install the reviewed public v0.1.4 release on macOS or Linux:
 
 ```text
 python3 -m venv .venv
-.venv/bin/python -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.3.zip"
+.venv/bin/python -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.4.zip"
 .venv/bin/flybrian-engine health
 ```
 
@@ -320,11 +320,12 @@ On Windows PowerShell:
 
 ```text
 py -m venv .venv
-.venv\Scripts\python.exe -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.3.zip"
+.venv\Scripts\python.exe -m pip install "flybrian-engine[brian2] @ https://github.com/Tyfoods/flybrian-engine/archive/refs/tags/v0.1.4.zip"
 .venv\Scripts\flybrian-engine.exe health
 ```
 
-v0.1.3 adds the immutable C174 minimal-champion definition, its exact historical input closure,
+v0.1.4 preserves the selected virtual-environment interpreter boundary for locked historical
+recipes. v0.1.3 added the immutable C174 minimal-champion definition, its exact historical input closure,
 and locked standalone, local, and hosted execution recipes. v0.1.2 was a backward-compatible
 schema patch for hosted and local consumers: an explicit
 `embodied_config.mapping_id: null` now means that no named mapping is selected and is preserved
