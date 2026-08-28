@@ -353,6 +353,23 @@ def execute_c148_phase0_selection(
         raise HistoricalNormalizationError(
             "C148 phase-0 selection does not identify exactly one retained run"
         )
+    row_index = records.index(matching[0])
+    bundle = build_c148_phase0_normalization_bundle(
+        source_bytes=source_bytes,
+        result_bytes=result_bytes,
+        revision=revision,
+    )
+    selected_definition = next(
+        definition
+        for definition in bundle.definitions
+        if definition.scientific_configuration["selector"] == {"config": config_name}
+        and definition.scientific_configuration["random_seed"] == seed
+    )
+    selected_recipe = next(
+        recipe
+        for recipe in bundle.recipes
+        if recipe.definition_id == selected_definition.definition_id and recipe.route == route
+    )
     target = output_dir.resolve()
     target.mkdir(parents=True, exist_ok=False)
     artifact_dir = target / "artifacts"
@@ -425,6 +442,9 @@ def execute_c148_phase0_selection(
     receipt: dict[str, object] = {
         "schema_version": "1.0",
         "family_id": "org.flybrian.family.c148-phase0-standing-test",
+        "definition_id": selected_definition.definition_id,
+        "recipe_id": selected_recipe.recipe_id,
+        "recipe_sha256": selected_recipe.sha256,
         "route": route,
         "source_revision": revision,
         "source_sha256": C148_PHASE0_SOURCE_SHA256,
@@ -438,18 +458,39 @@ def execute_c148_phase0_selection(
             "retained_scientific_sha256": canonical_sha256(retained_science),
             "fresh_scientific_sha256": canonical_sha256(fresh_science),
         },
-        "artifacts": {
-            "fresh_result": str(fresh_path.relative_to(target)),
-            "fresh_result_sha256": _digest(fresh_path.read_bytes()),
-            "scientific_result": str(scientific_result_path.relative_to(target)),
-            "scientific_result_sha256": _digest(scientific_result_path.read_bytes()),
-            "retained_result_sha256": C148_PHASE0_RESULT_SHA256,
-            "qpos_trajectory": str(qpos_path.relative_to(target)),
-            "qpos_trajectory_sha256": _digest(qpos_path.read_bytes()),
-            "qpos_frame_interval_ms": 32,
-            "motor_commands": str(motor_commands_path.relative_to(target)),
-            "motor_commands_sha256": _digest(motor_commands_path.read_bytes()),
-        },
+        "artifacts": [
+            {
+                "artifact_id": (
+                    f"org.flybrian.artifact.c148-phase0-row-{row_index}-motor-commands"
+                ),
+                "kind": "motor_commands",
+                "captured_path": str(motor_commands_path.relative_to(target)),
+                "sha256": _digest(motor_commands_path.read_bytes()),
+                "frame_interval_ms": 32,
+            },
+            {
+                "artifact_id": (
+                    f"org.flybrian.artifact.c148-phase0-row-{row_index}-qpos-trajectory"
+                ),
+                "kind": "qpos_trajectory",
+                "captured_path": str(qpos_path.relative_to(target)),
+                "sha256": _digest(qpos_path.read_bytes()),
+                "frame_interval_ms": 32,
+            },
+            {
+                "artifact_id": next(
+                    artifact.artifact_id
+                    for artifact in bundle.artifacts
+                    if artifact.definition_id == selected_definition.definition_id
+                    and artifact.kind == "scientific_result"
+                ),
+                "kind": "scientific_result",
+                "captured_path": str(scientific_result_path.relative_to(target)),
+                "sha256": _digest(scientific_result_path.read_bytes()),
+                "frame_interval_ms": None,
+            },
+        ],
+        "retained_result_sha256": C148_PHASE0_RESULT_SHA256,
         "stdout_path": str(stdout_path.relative_to(target)),
         "stderr_path": str(stderr_path.relative_to(target)),
     }
