@@ -23,7 +23,7 @@ def test_reference_backend_emits_verified_manifest(tmp_path: Path) -> None:
     manifest = run_experiment(experiment, tmp_path, run_id="run_fixture")
     assert manifest["backend_id"] == "reference"
     assert manifest["schema_version"] == "1.1"
-    assert manifest["engine_version"] == "0.1.2"
+    assert manifest["engine_version"] == "0.1.3"
     assert manifest["experiment_spec_version"] == "1.0"
     assert manifest["random_seed"] == 42
     assert manifest["scientific_execution"] is False

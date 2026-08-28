@@ -23,6 +23,12 @@ from .historical_envelopes import (
     OptionOrigin,
     OptionValueKind,
 )
+from .historical_normalization import (
+    HistoricalArtifactReference,
+    HistoricalExecutionRecipe,
+    HistoricalInputReference,
+    NormalizedExperimentDefinition,
+)
 
 
 class C174ResolutionError(ValueError):
@@ -226,6 +232,19 @@ C174_SOURCE_AUTHORITY = HistoricalSourceAuthority(
     redistribution="not-allowed",
     extractor_id="org.flybrian.static-python-extractor",
     extractor_version="1.1",
+)
+
+C174_MINIMAL_SOURCE_AUTHORITY = HistoricalSourceAuthority(
+    repository="flybrian-serve",
+    revision="91fd3ed7828f215770a748d007491ec29acffc7b",
+    logical_path="experiments/test_champion_minimal.py",
+    byte_length=28_839,
+    sha256="bc13ba814255935a5a3ed3325d5f4fcb1d93d8711bfb5388751edb2a01c5ac00",
+    license_id="proprietary-unpublished",
+    access="private",
+    redistribution="not-allowed",
+    extractor_id="org.flybrian.locked-python-source",
+    extractor_version="1.0",
 )
 
 C174_OPTION_PROFILE = (
@@ -1458,3 +1477,162 @@ def apply_c174_variations(
         variation_patches=tuple(patches),
     )
     return replace(resolved, envelope=envelope)
+
+
+_C174_NORMALIZED_DEFINITION_ID = "org.flybrian.definition.c174-minimal-champion-s42"
+
+
+def project_c174_normalized_execution() -> tuple[
+    NormalizedExperimentDefinition,
+    tuple[HistoricalInputReference, ...],
+    tuple[HistoricalArtifactReference, ...],
+    tuple[HistoricalExecutionRecipe, ...],
+]:
+    """Project the bound C174 minimal-champion run and its immutable closure."""
+    definition = NormalizedExperimentDefinition(
+        definition_id=_C174_NORMALIZED_DEFINITION_ID,
+        version="1.0",
+        family_id="org.flybrian.family.c174-per-muscle-closed-loop",
+        scientific_configuration={
+            "schema_version": "1.0",
+            "mode": "per_muscle_vrest",
+            "requested_duration_ms": 5_000,
+            "effective_duration_ms": 5_024,
+            "closed_loop_window_ms": 32,
+            "closed_loop_window_count": 157,
+            "qpos_frame_interval_ms": 2,
+            "qpos_frame_count": 2_512,
+            "random_seed": 42,
+            "coxa_active": True,
+            "j_gab_nS": "0.04",
+            "femur_tibia_stiffness": "0",
+            "coxa_stiffness": "0",
+            "torque_scale_multiplier": "7.75",
+            "poisson_count": 10,
+            "poisson_excludes_motor_neurons": True,
+            "anti_boost_nA": "1",
+            "pro_suppress_fraction": "1",
+            "antigravity_vrest_mV": "-48",
+            "minimum_drive": "0.5",
+            "velocity_damping": "-0.01",
+            "initial_body_height": "0.10",
+            "adhesion": "0.4",
+            "leg_actuator_range": [22, 70],
+            "femur_length": "0.077",
+        },
+        source=C174_MINIMAL_SOURCE_AUTHORITY,
+    )
+    input_ids = (
+        "org.flybrian.input.c174.dependency-lock",
+        "org.flybrian.input.c174.flybody-model-tree",
+        "org.flybrian.input.c174.module-memberships",
+        "org.flybrian.input.c174.per-joint-pathway-atlas",
+        "org.flybrian.input.c174.premotor-selection",
+    )
+    inputs = (
+        HistoricalInputReference(
+            input_id=input_ids[0],
+            kind="file",
+            logical_path="flybrian/requirements.txt",
+            byte_length=2_195,
+            sha256="6dbeb0e52b2694f2a5171ef0b799dfbbc772424592d086b879b3b20ce40df4fb",
+            file_count=1,
+            provenance=("Exact dependency lock committed with the pinned C174 source revision."),
+        ),
+        HistoricalInputReference(
+            input_id=input_ids[1],
+            kind="tree",
+            logical_path="flybrian/digifly/flybody_model",
+            byte_length=143_550_793,
+            sha256="656a2bbd04207267df806370b4e2d843551e128f255e4eada17b0591b01fede3",
+            file_count=94,
+            provenance=(
+                "mujoco_menagerie a03e87bf13502b0b48ebbf2808928fd96ebf9cf3 "
+                "flybody tree with the two retained actuator-filter substitutions and "
+                "non-scientific GLB derivatives retained outside this identity."
+            ),
+        ),
+        HistoricalInputReference(
+            input_id=input_ids[2],
+            kind="file",
+            logical_path=("scripts/output/d3_cycle119_module_discovery/module_memberships.json"),
+            byte_length=37_958,
+            sha256="4f6c540ee42b08fd4f2326c33a4d36418d853f505a26f935ac4c2b41a7f0f6cd",
+            file_count=1,
+            provenance="Retained D3/C119 motor-module membership output consumed by C174.",
+            packaged_resource="c174_module_memberships.json.b64",
+            packaged_resource_encoding="base64",
+        ),
+        HistoricalInputReference(
+            input_id=input_ids[3],
+            kind="file",
+            logical_path="output/c139_phase1/per_joint_pathway_atlas.json",
+            byte_length=244_612,
+            sha256="9f0dbf5837b16afe5f5b9edc98de9fddf76d47b7678e123a51bd459f27a08cbb",
+            file_count=1,
+            provenance="Retained C139 joint sensory-pathway atlas consumed by C174.",
+            packaged_resource="c174_per_joint_pathway_atlas.json.b64",
+            packaged_resource_encoding="base64",
+        ),
+        HistoricalInputReference(
+            input_id=input_ids[4],
+            kind="file",
+            logical_path="output/c153_phase0/premn_ids_strong.json",
+            byte_length=20_610,
+            sha256="6369919ccc6decf2920978e6327db57cbc80835ba18b4fe6273be5526fb72d8a",
+            file_count=1,
+            provenance=("Retained C153 premotor-selection output consumed verbatim by C174."),
+            packaged_resource="c174_premn_ids_strong.json.b64",
+            packaged_resource_encoding="base64",
+        ),
+    )
+    artifact_ids = (
+        "org.flybrian.artifact.c174-minimal.qpos-trajectory",
+        "org.flybrian.artifact.c174-minimal.result",
+    )
+    bound_reason = (
+        "The retained artifact was created after the unchanged source bytes and is reproduced "
+        "exactly by the source revision and declared dependency closure."
+    )
+    artifacts = (
+        HistoricalArtifactReference(
+            artifact_id=artifact_ids[0],
+            definition_id=definition.definition_id,
+            kind="qpos_trajectory",
+            logical_path="output/test_champion_minimal/qpos_minimal_s42.npy",
+            byte_length=2_190_592,
+            sha256="bf7d0cf560c5827f1e2d1d4f6051b1494578ceda0084dcf2ddea652d0a2fffe8",
+            disposition="bound",
+            disposition_reason=bound_reason,
+            frame_interval_ms=2,
+        ),
+        HistoricalArtifactReference(
+            artifact_id=artifact_ids[1],
+            definition_id=definition.definition_id,
+            kind="result",
+            logical_path="output/test_champion_minimal/result_minimal_s42.json",
+            byte_length=371,
+            sha256="467b3a3dcf52a42a14cb8dfe038746f4757962f6b24d951ae96ac7555e5b439e",
+            disposition="bound",
+            disposition_reason=bound_reason,
+            comparison="canonical_json",
+            excluded_json_fields=("sim_time_s",),
+        ),
+    )
+    invocation = (C174_MINIMAL_SOURCE_AUTHORITY.logical_path,)
+    recipes = tuple(
+        HistoricalExecutionRecipe(
+            recipe_id=f"org.flybrian.recipe.c174-minimal.{route.replace('_', '-')}",
+            definition_id=definition.definition_id,
+            definition_sha256=definition.scientific_identity_sha256,
+            route=route,
+            executor_id="org.flybrian.executor.locked-python-source",
+            executor_version="1.0",
+            source=C174_MINIMAL_SOURCE_AUTHORITY,
+            argv=invocation,
+            input_ids=input_ids,
+            artifact_ids=artifact_ids,
+        )
+        for route in ("standalone", "flybrian_local", "flybrian_cloud")
+    )
+    return definition, inputs, artifacts, recipes

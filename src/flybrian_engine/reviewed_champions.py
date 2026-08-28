@@ -7,7 +7,10 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Literal
 
-from .historical_c174 import resolve_c174_experiment
+from .historical_c174 import (
+    project_c174_normalized_execution,
+    resolve_c174_experiment,
+)
 from .historical_corpus import (
     HistoricalCatalogExport,
     HistoricalCatalogExportError,
@@ -27,6 +30,11 @@ from .historical_estate import (
     HistoricalEstateInventory,
     HistoricalEstateRoot,
     classify_historical_estate_file,
+)
+from .historical_normalization import (
+    HistoricalClaim,
+    HistoricalNormalizationBundle,
+    HistoricalRunOccurrence,
 )
 from .historical_projection import (
     HistoricalContributor,
@@ -327,7 +335,7 @@ def _envelopes_by_champion() -> dict[str, HistoricalExperimentEnvelope]:
     }
 
 
-_CATALOG_TEXT: dict[str, tuple[str, str, tuple[str, ...]]] = {
+REVIEWED_CHAMPION_CATALOG_TEXT: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "C104_self_coupling_breakthrough": (
         ("C104_self_coupling_breakthrough: Self-coupling stride regularity (s9_x1 breakthrough)"),
         (
@@ -577,6 +585,44 @@ def reviewed_champions_authorities() -> tuple[
     return (inventory,), envelopes, projection
 
 
+def build_reviewed_c174_normalization_bundle() -> HistoricalNormalizationBundle:
+    """Build the first source-and-result-bound C174 normalization bundle."""
+    definition, inputs, artifacts, recipes = project_c174_normalized_execution()
+    claim = HistoricalClaim(
+        claim_id="org.flybrian.claim.c174-minimal-champion-reproduction",
+        definition_id=definition.definition_id,
+        name="C174 minimal champion reproduction",
+        description=(
+            "The fixed seed-42, 5,000 ms per-muscle standing experiment whose retained "
+            "trajectory and canonical result are reproduced exactly from the coherent "
+            "historical source and dependency closure."
+        ),
+        tags=("champion", "historical", "reproduced", "standing"),
+    )
+    occurrence = HistoricalRunOccurrence(
+        occurrence_id="org.flybrian.occurrence.c174-minimal-s42-2026-05-06",
+        definition_id=definition.definition_id,
+        claim_ids=(claim.claim_id,),
+        evidence=(
+            "source mtime 2026-05-06T13:42:12-04:00 precedes retained output mtime",
+            "retained qpos SHA-256 "
+            "bf7d0cf560c5827f1e2d1d4f6051b1494578ceda0084dcf2ddea652d0a2fffe8",
+            "retained result SHA-256 "
+            "467b3a3dcf52a42a14cb8dfe038746f4757962f6b24d951ae96ac7555e5b439e",
+        ),
+    )
+    return HistoricalNormalizationBundle(
+        bundle_id="org.flybrian.normalization.reviewed-c174-minimal",
+        version="1.0",
+        definitions=(definition,),
+        claims=(claim,),
+        occurrences=(occurrence,),
+        inputs=inputs,
+        artifacts=artifacts,
+        recipes=recipes,
+    )
+
+
 def build_reviewed_champions_export() -> HistoricalCatalogExport:
     """Build the deterministic public catalog export from reviewed engine authorities."""
 
@@ -584,11 +630,11 @@ def build_reviewed_champions_export() -> HistoricalCatalogExport:
     metadata: list[HistoricalCatalogMetadata] = []
     champion_by_design = {
         f"org.flybrian.historical.champion.{_slug(champion_id)}": champion_id
-        for champion_id in _CATALOG_TEXT
+        for champion_id in REVIEWED_CHAMPION_CATALOG_TEXT
     }
     for run in projection.runs:
         champion_id = champion_by_design[run.design_id]
-        name, description, tags = _CATALOG_TEXT[champion_id]
+        name, description, tags = REVIEWED_CHAMPION_CATALOG_TEXT[champion_id]
         metadata.append(
             HistoricalCatalogMetadata(
                 design_id=run.design_id,

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flybrian-engine"
-version = "0.1.2"
+version = "0.1.3"
 description = "Open experiment schema, execution adapters, artifacts, and local runner for FlyBrian"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,7 +36,7 @@ flybrian-engine = "flybrian_engine.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-flybrian_engine = ["py.typed", "data/*.json"]
+flybrian_engine = ["py.typed", "data/*.json", "data/*.b64"]
 
 [tool.setuptools.data-files]
 "." = ["THIRD_PARTY_NOTICES.md"]

@@ -8,6 +8,8 @@ import secrets
 from collections.abc import Sequence
 from pathlib import Path
 
+from .historical_python_backend import HistoricalExecutionError, execute_locked_python_recipe
+from .reviewed_champions import build_reviewed_c174_normalization_bundle
 from .runner import CompatibilityError, create_server, default_registry, run_experiment
 from .schema import ValidationError, validate_experiment_spec
 from .version import __version__
@@ -28,6 +30,16 @@ def parser() -> argparse.ArgumentParser:
     run.add_argument("experiment", type=Path)
     run.add_argument("--backend", default="reference")
     run.add_argument("--output", type=Path, default=Path("flybrian-runs"))
+    historical = commands.add_parser("run-historical")
+    historical.add_argument("bundle_id", choices=["reviewed-c174"])
+    historical.add_argument(
+        "--route",
+        choices=["standalone", "flybrian_local", "flybrian_cloud"],
+        default="flybrian_local",
+    )
+    historical.add_argument("--source-root", type=Path, required=True)
+    historical.add_argument("--python", type=Path, required=True)
+    historical.add_argument("--output", type=Path, required=True)
     local = commands.add_parser("serve")
     local.add_argument("--host", default="127.0.0.1", choices=["127.0.0.1", "::1"])
     local.add_argument("--port", default=8765, type=int)
@@ -59,6 +71,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "run":
             result = run_experiment(_load(args.experiment), args.output, args.backend)
             print(json.dumps(result, sort_keys=True))
+        elif args.command == "run-historical":
+            bundle = build_reviewed_c174_normalization_bundle()
+            recipe = next(item for item in bundle.recipes if item.route == args.route)
+            receipt = execute_locked_python_recipe(
+                recipe,
+                bundle.inputs,
+                bundle.artifacts,
+                source_root=args.source_root,
+                output_dir=args.output,
+                python_executable=args.python,
+            )
+            print(json.dumps(receipt.to_dict(), sort_keys=True))
         else:
             token = args.token or secrets.token_urlsafe(32)
             server = create_server(
@@ -91,7 +115,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         )
         return 2
-    except (OSError, ValueError, KeyError, json.JSONDecodeError, ValidationError) as error:
+    except (
+        HistoricalExecutionError,
+        OSError,
+        ValueError,
+        KeyError,
+        json.JSONDecodeError,
+        ValidationError,
+    ) as error:
         print(json.dumps({"error": str(error)}, sort_keys=True))
         return 2
     return 0
