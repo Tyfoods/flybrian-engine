@@ -169,6 +169,14 @@ from .historical_python_backend import (
     execute_locked_python_recipe,
     materialize_packaged_historical_inputs,
 )
+from .historical_standing import (
+    C148_PHASE0_DURATION_MS,
+    C148_PHASE0_RESULT_PATH,
+    C148_PHASE0_RESULT_SHA256,
+    C148_PHASE0_SOURCE_PATH,
+    C148_PHASE0_SOURCE_SHA256,
+    build_c148_phase0_normalization_bundle,
+)
 from .ingestion import (
     MANC_CONNECTION_NORMALIZATION_V1,
     ConnectionNormalizationError,
@@ -229,6 +237,11 @@ from .version import __version__
 
 __all__ = [
     "BUNDLED_REVIEWED_CHAMPIONS_EXPORT_SHA256",
+    "C148_PHASE0_DURATION_MS",
+    "C148_PHASE0_RESULT_PATH",
+    "C148_PHASE0_RESULT_SHA256",
+    "C148_PHASE0_SOURCE_PATH",
+    "C148_PHASE0_SOURCE_SHA256",
     "C174_MINIMAL_SOURCE_AUTHORITY",
     "C174_OPTION_PROFILE",
     "C174_PROFILE_SHA256",
@@ -392,6 +405,7 @@ __all__ = [
     "apply_c174_variations",
     "apply_historical_variations",
     "assess_backend_compatibility",
+    "build_c148_phase0_normalization_bundle",
     "build_historical_catalog_export",
     "build_historical_census",
     "build_reviewed_c174_normalization_bundle",
