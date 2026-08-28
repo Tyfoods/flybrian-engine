@@ -8,6 +8,8 @@ import secrets
 from collections.abc import Sequence
 from pathlib import Path
 
+from .historical_census import build_historical_census
+from .historical_estate import HistoricalEstateRoot, inventory_historical_estate
 from .historical_python_backend import HistoricalExecutionError, execute_locked_python_recipe
 from .reviewed_champions import build_reviewed_c174_normalization_bundle
 from .runner import CompatibilityError, create_server, default_registry, run_experiment
@@ -40,6 +42,11 @@ def parser() -> argparse.ArgumentParser:
     historical.add_argument("--source-root", type=Path, required=True)
     historical.add_argument("--python", type=Path, required=True)
     historical.add_argument("--output", type=Path, required=True)
+    census = commands.add_parser("census-historical")
+    census.add_argument("--repository-root", type=Path, required=True)
+    census.add_argument("--output-root", type=Path, required=True)
+    census.add_argument("--revision", required=True)
+    census.add_argument("--output", type=Path, required=True)
     local = commands.add_parser("serve")
     local.add_argument("--host", default="127.0.0.1", choices=["127.0.0.1", "::1"])
     local.add_argument("--port", default=8765, type=int)
@@ -83,6 +90,39 @@ def main(argv: Sequence[str] | None = None) -> int:
                 python_executable=args.python,
             )
             print(json.dumps(receipt.to_dict(), sort_keys=True))
+        elif args.command == "census-historical":
+            repository_root = args.repository_root.resolve(strict=True)
+            output_root = args.output_root.resolve(strict=True)
+            inventory = inventory_historical_estate(
+                HistoricalEstateRoot(
+                    root_id="org.flybrian.estate.historical-output",
+                    revision=args.revision,
+                    logical_root="output",
+                    license_id="NOASSERTION",
+                    access="private",
+                    redistribution="unknown",
+                    physical_root=output_root,
+                )
+            )
+            census = build_historical_census(
+                inventory,
+                evidence_root=output_root,
+                repository_root=repository_root,
+                source_index_path=repository_root / "consolidation/experiments_index.json",
+            )
+            args.output.write_bytes(census.canonical_bytes() + b"\n")
+            print(
+                json.dumps(
+                    {
+                        "census_sha256": census.sha256,
+                        "inventory_sha256": census.inventory_sha256,
+                        "reconciled_file_count": census.reconciled_file_count,
+                        "run_candidate_count": len(census.run_candidates),
+                        "indexed_source_count": census.indexed_source_count,
+                    },
+                    sort_keys=True,
+                )
+            )
         else:
             token = args.token or secrets.token_urlsafe(32)
             server = create_server(
