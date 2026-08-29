@@ -1,3 +1,3 @@
 """Package version without importing the public API graph."""
 
-__version__ = "0.1.4"
+__version__ = "0.1.5"
