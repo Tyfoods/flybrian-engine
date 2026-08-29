@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flybrian-engine"
-version = "0.1.4"
+version = "0.1.5"
 description = "Open experiment schema, execution adapters, artifacts, and local runner for FlyBrian"
 readme = "README.md"
 requires-python = ">=3.10"

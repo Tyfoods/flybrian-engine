@@ -175,6 +175,26 @@ def _validate_neurons(value: Any) -> set[int]:
     return seen_ids
 
 
+def _validate_population_assignments(value: Any) -> None:
+    assignments = _object(value, "population_assignments")
+    if not assignments:
+        raise ValidationError("population_assignments must contain at least one model family")
+    for family_name, raw_assignment in assignments.items():
+        _nonempty_string(family_name, "population_assignments family")
+        assignment = _object(
+            raw_assignment,
+            f"population_assignments.{family_name}",
+        )
+        if set(assignment) != {"selector"}:
+            raise ValidationError(
+                f"population_assignments.{family_name} must contain only selector"
+            )
+        if assignment["selector"] != "dataset_all":
+            raise ValidationError(
+                f"population_assignments.{family_name}.selector must equal 'dataset_all'"
+            )
+
+
 def _validate_neuron_models(value: Any, neuron_groups: JsonObject) -> None:
     models = _object(value, "neuron_models")
     if set(models) != set(neuron_groups):
@@ -499,10 +519,14 @@ class ExperimentSpec:
 
     @property
     def model_families(self) -> tuple[str, ...]:
+        populations = self.value.get("population_assignments", {})
+        population_families = set(populations) if isinstance(populations, dict) else set()
         models = self.value.get("neuron_models")
         if isinstance(models, dict):
-            return tuple(sorted({str(model["family"]) for model in models.values()}))
-        return tuple(sorted(self.value["neurons"]))
+            return tuple(sorted(
+                {str(model["family"]) for model in models.values()} | population_families
+            ))
+        return tuple(sorted(set(self.value["neurons"]) | population_families))
 
     @property
     def embodiment_mode(self) -> str:
@@ -529,6 +553,8 @@ def validate_experiment_spec(value: Any) -> ExperimentSpec:
     if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
         raise ValidationError("random_seed must be a non-negative integer")
     neuron_ids = _validate_neurons(root.get("neurons"))
+    if "population_assignments" in root:
+        _validate_population_assignments(root["population_assignments"])
     if "neuron_models" in root:
         neurons = _object(root["neurons"], "neurons")
         _validate_neuron_models(root["neuron_models"], neurons)
