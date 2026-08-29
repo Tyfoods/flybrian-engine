@@ -189,6 +189,7 @@ from .historical_standing_estate import (
     read_collection_result_bytes,
     read_collection_rows,
 )
+from .historical_standing_selection import execute_standing_selection
 from .ingestion import (
     MANC_CONNECTION_NORMALIZATION_V1,
     ConnectionNormalizationError,
@@ -432,6 +433,7 @@ __all__ = [
     "compare_historical_execution_artifacts",
     "execute_c148_phase0_selection",
     "execute_locked_python_recipe",
+    "execute_standing_selection",
     "extract_static_python_experiment",
     "initial_historical_leg_states",
     "initial_muscle_activation_state",

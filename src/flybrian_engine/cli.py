@@ -19,9 +19,11 @@ from .historical_standing import (
     execute_c148_phase0_selection,
 )
 from .historical_standing_estate import (
+    STANDING_COLLECTIONS,
     audit_standing_estate,
     build_standing_estate_normalization_bundle,
 )
+from .historical_standing_selection import execute_standing_selection
 from .reviewed_champions import build_reviewed_c174_normalization_bundle
 from .runner import CompatibilityError, create_server, default_registry, run_experiment
 from .schema import ValidationError, validate_experiment_spec
@@ -72,10 +74,34 @@ def parser() -> argparse.ArgumentParser:
     run_standing.add_argument("--seed", type=int, required=True)
     run_standing.add_argument(
         "--route",
-        choices=["standalone", "flybrian_local"],
+        choices=["standalone", "flybrian_local", "flybrian_cloud"],
         default="standalone",
     )
     run_standing.add_argument("--output", type=Path, required=True)
+    run_standing_row = commands.add_parser("run-historical-standing-row")
+    run_standing_row.add_argument(
+        "collection",
+        choices=[
+            item.collection_id
+            for item in STANDING_COLLECTIONS
+            if item.collection_id != "c148-phase0"
+        ],
+    )
+    run_standing_row.add_argument("--repository-root", type=Path, required=True)
+    run_standing_row.add_argument("--python", type=Path, required=True)
+    run_standing_row.add_argument("--revision", required=True)
+    run_standing_row.add_argument("--row", type=int, required=True)
+    run_standing_row.add_argument(
+        "--route",
+        choices=["standalone", "flybrian_local", "flybrian_cloud"],
+        default="standalone",
+    )
+    run_standing_row.add_argument(
+        "--selection-mode",
+        choices=["exact_prefix", "retained_context"],
+        default="exact_prefix",
+    )
+    run_standing_row.add_argument("--output", type=Path, required=True)
     audit_standing = commands.add_parser("audit-historical-standing")
     audit_standing.add_argument("--repository-root", type=Path, required=True)
     audit_standing.add_argument("--revision", required=True)
@@ -190,6 +216,18 @@ def main(argv: Sequence[str] | None = None) -> int:
                 config_name=args.config,
                 seed=args.seed,
                 route=args.route,
+            )
+            print(json.dumps(receipt, sort_keys=True))
+        elif args.command == "run-historical-standing-row":
+            receipt = execute_standing_selection(
+                repository_root=args.repository_root,
+                output_dir=args.output,
+                python_executable=args.python,
+                revision=args.revision,
+                collection_id=args.collection,
+                row_index=args.row,
+                route=args.route,
+                selection_mode=args.selection_mode,
             )
             print(json.dumps(receipt, sort_keys=True))
         elif args.command == "audit-historical-standing":

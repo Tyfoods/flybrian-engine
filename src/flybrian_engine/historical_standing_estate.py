@@ -17,6 +17,8 @@ from .historical_envelopes import (
 from .historical_normalization import (
     HistoricalArtifactReference,
     HistoricalClaim,
+    HistoricalExecutionRecipe,
+    HistoricalInputReference,
     HistoricalNormalizationBundle,
     HistoricalNormalizationError,
     HistoricalRunOccurrence,
@@ -24,6 +26,8 @@ from .historical_normalization import (
     canonical_json_bytes,
     canonical_sha256,
 )
+from .historical_python_backend import validate_historical_input_references
+from .historical_standing import C148_PHASE0_INPUTS
 
 _RESULT_CONTAINERS = (
     "results",
@@ -87,6 +91,51 @@ _OUTCOME_FIELDS = frozenset(
 )
 _CLAIM_FIELDS = frozenset({"desc", "exp", "exp_idx", "label", "name", "stage", "test"})
 _SEED_FIELDS = frozenset({"random_seed", "seed"})
+
+# The retained C156 phase-1 aggregate contains sixteen appended rows whose
+# appending writer source was not preserved. They remain evidence, but only the
+# source-generated prefix can truthfully carry an execution recipe.
+STANDING_SOURCE_ROW_COUNTS = {"c156-phase1": 36}
+
+
+_STANDING_UPSTREAM_INPUTS = (
+    HistoricalInputReference(
+        "org.flybrian.input.standing-estate.bridge-neurons",
+        "file",
+        "output/c148_phase2a/bridge_neurons.json",
+        1_978,
+        "c514398c6459e84b210ce9dd8aeddbfec1e741d19d7cecaf4d3715ec35e09bbe",
+        1,
+        "Retained C148 bridge-neuron set consumed by later standing writers.",
+    ),
+    HistoricalInputReference(
+        "org.flybrian.input.standing-estate.interleg-survey",
+        "file",
+        "output/c149_phase0/interleg_survey.json",
+        12_776,
+        "a9dccf6a589d16ac4b5d37cfc2597d1f78f0a3cc23d456da5b24fcddf092f26a",
+        1,
+        "Retained C149 interleg survey consumed by later standing writers.",
+    ),
+    HistoricalInputReference(
+        "org.flybrian.input.standing-estate.strong-premotor-neurons",
+        "file",
+        "output/c153_phase0/premn_ids_strong.json",
+        20_610,
+        "6369919ccc6decf2920978e6327db57cbc80835ba18b4fe6273be5526fb72d8a",
+        1,
+        "Retained strong premotor-neuron set consumed by C153-C156 writers.",
+    ),
+    HistoricalInputReference(
+        "org.flybrian.input.standing-estate.c155-phase0-archive",
+        "file",
+        "output/c155_phase0.tar.gz",
+        20_918,
+        "e8a0b8136be6108b1cbc8a0ea4c58f2381a529a4eec257c4957ee870b5396e51",
+        1,
+        "Retained C155 phase-0 archive containing the SN/PP intermediate census.",
+    ),
+)
 
 
 class _DecimalToken(str):
@@ -651,16 +700,70 @@ def _nested_result_rows(value: object) -> list[object] | None:
     return matches[0] if len(matches) == 1 else None
 
 
+def _result_context_input(
+    authority: StandingCollectionAuthority,
+) -> HistoricalInputReference:
+    """Bind the retained aggregate used to replay the writer's decision context."""
+    if authority.archive_member is None:
+        byte_length = authority.result_byte_length
+        sha256 = authority.result_sha256
+        provenance = "Retained writer aggregate used as row and decision-context evidence."
+    else:
+        if authority.container_byte_length is None or authority.container_sha256 is None:
+            raise HistoricalNormalizationError(
+                f"{authority.collection_id} archive authority is incomplete"
+            )
+        byte_length = authority.container_byte_length
+        sha256 = authority.container_sha256
+        provenance = (
+            "Retained archive containing the writer aggregate used as row and "
+            "decision-context evidence."
+        )
+    return HistoricalInputReference(
+        input_id=f"org.flybrian.input.{authority.collection_id}.retained-context",
+        kind="file",
+        logical_path=authority.result_path,
+        byte_length=byte_length,
+        sha256=sha256,
+        file_count=1,
+        provenance=provenance,
+    )
+
+
 def build_standing_estate_normalization_bundle(
     *,
     repository_root: Path,
     revision: str,
 ) -> HistoricalNormalizationBundle:
     """Normalize every exact C148-C156 row while preserving repeated occurrences."""
+    context_inputs = tuple(_result_context_input(item) for item in STANDING_COLLECTIONS)
+    inputs = tuple(
+        sorted(
+            (*C148_PHASE0_INPUTS, *_STANDING_UPSTREAM_INPUTS, *context_inputs),
+            key=lambda item: item.input_id,
+        )
+    )
+    validate_historical_input_references(inputs, source_root=repository_root)
+    shared_input_ids = tuple(
+        sorted(
+            {
+                *(
+                    item.input_id
+                    for item in (*C148_PHASE0_INPUTS, *_STANDING_UPSTREAM_INPUTS)
+                ),
+                "org.flybrian.input.c149-phase1.retained-context",
+            }
+        )
+    )
+    context_input_ids = {
+        authority.collection_id: _result_context_input(authority).input_id
+        for authority in STANDING_COLLECTIONS
+    }
     definitions: dict[str, NormalizedExperimentDefinition] = {}
     claims: list[HistoricalClaim] = []
     occurrences: list[HistoricalRunOccurrence] = []
     artifacts: list[HistoricalArtifactReference] = []
+    recipes: list[HistoricalExecutionRecipe] = []
     for authority in STANDING_COLLECTIONS:
         source = _source_authority(authority, repository_root=repository_root, revision=revision)
         for row_index, row in enumerate(
@@ -740,15 +843,61 @@ def build_standing_estate_normalization_bundle(
                     comparison="canonical_json",
                 )
             )
+            source_row_count = STANDING_SOURCE_ROW_COUNTS.get(
+                authority.collection_id, authority.row_count
+            )
+            if row_index >= source_row_count:
+                continue
+            input_ids = tuple(
+                sorted({*shared_input_ids, context_input_ids[authority.collection_id]})
+            )
+            for route in ("flybrian_cloud", "flybrian_local", "standalone"):
+                if authority.collection_id == "c148-phase0":
+                    executor_id = "org.flybrian.executor.selected-historical-sweep"
+                    argv = (
+                        authority.source_path,
+                        "--flybrian-config",
+                        str(row["config"]),
+                        "--flybrian-seed",
+                        str(row["seed"]),
+                    )
+                else:
+                    executor_id = "org.flybrian.executor.selected-historical-standing-row"
+                    argv = (
+                        authority.source_path,
+                        "--flybrian-row",
+                        str(row_index),
+                        "--flybrian-selection-mode",
+                        "exact_prefix",
+                    )
+                recipes.append(
+                    HistoricalExecutionRecipe(
+                        recipe_id=(
+                            f"org.flybrian.recipe.{authority.collection_id}-row-"
+                            f"{row_index}.{route}"
+                        ),
+                        definition_id=definition_id,
+                        definition_sha256=definitions[
+                            definition_id
+                        ].scientific_identity_sha256,
+                        route=route,
+                        executor_id=executor_id,
+                        executor_version="1.0",
+                        source=source,
+                        argv=argv,
+                        input_ids=input_ids,
+                        artifact_ids=(artifact_id,),
+                    )
+                )
     return HistoricalNormalizationBundle(
         bundle_id="org.flybrian.normalization.standing-c148-c156",
         version="1.0",
         definitions=tuple(sorted(definitions.values(), key=lambda item: item.definition_id)),
         claims=tuple(sorted(claims, key=lambda item: item.claim_id)),
         occurrences=tuple(sorted(occurrences, key=lambda item: item.occurrence_id)),
-        inputs=(),
+        inputs=inputs,
         artifacts=tuple(sorted(artifacts, key=lambda item: item.artifact_id)),
-        recipes=(),
+        recipes=tuple(sorted(recipes, key=lambda item: item.recipe_id)),
     )
 
 

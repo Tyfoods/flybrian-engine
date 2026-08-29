@@ -37,7 +37,7 @@ C148_PHASE0_RESULT_SHA256 = "dbc9abdab7c7b1bedb3f7bd266efc134ada65798de09f35de86
 C148_PHASE0_DURATION_MS = 3_000
 C148_PHASE0_ORIGINAL_PATH = "scripts/c148_phase0_standing_test.py"
 
-_C148_PHASE0_INPUTS = (
+C148_PHASE0_INPUTS = (
     HistoricalInputReference(
         "org.flybrian.input.c148-phase0.connectivity-part-1",
         "file",
@@ -332,7 +332,7 @@ def execute_c148_phase0_selection(
     revision: str,
     config_name: str,
     seed: int,
-    route: Literal["standalone", "flybrian_local"] = "standalone",
+    route: Literal["standalone", "flybrian_local", "flybrian_cloud"] = "standalone",
 ) -> dict[str, object]:
     """Execute one retained C148 row by selecting its original sweep coordinates."""
 
@@ -342,7 +342,7 @@ def execute_c148_phase0_selection(
     source_bytes = source_path.read_bytes()
     result_bytes = result_path.read_bytes()
     _source_authority(source_bytes, revision)
-    validate_historical_input_references(_C148_PHASE0_INPUTS, source_root=root)
+    validate_historical_input_references(C148_PHASE0_INPUTS, source_root=root)
     records = _records(result_bytes)
     matching = [
         record
@@ -640,7 +640,7 @@ def build_c148_phase0_normalization_bundle(
                 comparison="canonical_json",
             )
         )
-        input_ids = tuple(item.input_id for item in _C148_PHASE0_INPUTS)
+        input_ids = tuple(item.input_id for item in C148_PHASE0_INPUTS)
         for route in ("standalone", "flybrian_local"):
             recipes.append(
                 HistoricalExecutionRecipe(
@@ -684,7 +684,7 @@ def build_c148_phase0_normalization_bundle(
         definitions=tuple(definitions),
         claims=tuple(claims),
         occurrences=tuple(occurrences),
-        inputs=_C148_PHASE0_INPUTS,
+        inputs=C148_PHASE0_INPUTS,
         artifacts=tuple(artifacts),
         recipes=tuple(recipes),
     )
