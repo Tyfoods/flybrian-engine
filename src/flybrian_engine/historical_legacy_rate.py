@@ -1249,12 +1249,112 @@ _MODULE_INPUT_IDS = frozenset(
 )
 
 
-def _execution_inputs(collection: LegacyRateCollection) -> tuple[HistoricalInputReference, ...]:
+def _read_path_expression(
+    node: ast.AST,
+    constants: Mapping[str, str],
+) -> str | None:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.Name):
+        return constants.get(node.id)
+    if (
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "Path"
+        and len(node.args) == 1
+    ):
+        return _read_path_expression(node.args[0], constants)
+    return None
+
+
+def _source_file_inputs(
+    collection: LegacyRateCollection,
+    *,
+    repository_root: Path,
+) -> tuple[HistoricalInputReference, ...]:
+    """Bind literal retained files read directly by one historical writer."""
+    source_path = repository_root / collection.source_path
+    tree = ast.parse(source_path.read_bytes(), filename=collection.source_path)
+    constants: dict[str, str] = {}
+    for node in tree.body:
+        if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+            continue
+        targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+        value = node.value
+        if value is None:
+            continue
+        resolved = _read_path_expression(value, constants)
+        if resolved is None:
+            continue
+        for target in targets:
+            if isinstance(target, ast.Name):
+                constants[target.id] = resolved
+
+    logical_paths: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        path_node: ast.AST | None = None
+        if isinstance(node.func, ast.Name) and node.func.id == "open" and node.args:
+            if len(node.args) > 1:
+                mode = _read_path_expression(node.args[1], constants)
+                if mode is not None and any(flag in mode for flag in "wax+"):
+                    continue
+            path_node = node.args[0]
+        elif (
+            isinstance(node.func, ast.Attribute)
+            and node.func.attr in {"load", "loadtxt", "read_csv", "read_json"}
+            and node.args
+        ):
+            path_node = node.args[0]
+        elif isinstance(node.func, ast.Attribute) and node.func.attr in {"read_bytes", "read_text"}:
+            path_node = node.func.value
+        if path_node is None:
+            continue
+        logical_path = _read_path_expression(path_node, constants)
+        if logical_path is None or not logical_path.startswith("output/"):
+            continue
+        candidate = repository_root / logical_path
+        if candidate.is_file() and logical_path != collection.result_path:
+            logical_paths.add(logical_path)
+
+    references: list[HistoricalInputReference] = []
+    for logical_path in sorted(logical_paths):
+        data = (repository_root / logical_path).read_bytes()
+        identity = _sha256(logical_path.encode("utf-8"))[:16]
+        references.append(
+            HistoricalInputReference(
+                input_id=f"org.flybrian.input.legacy-rate.retained-file.{identity}",
+                kind="file",
+                logical_path=logical_path,
+                byte_length=len(data),
+                sha256=_sha256(data),
+                file_count=1,
+                provenance=(f"Retained file read directly by {collection.source_path}."),
+            )
+        )
+    return tuple(references)
+
+
+def _execution_inputs(
+    collection: LegacyRateCollection,
+    *,
+    repository_root: Path,
+) -> tuple[HistoricalInputReference, ...]:
     wanted = set(_CORE_INPUT_IDS)
     if collection.cycle >= 121:
         wanted.update(_MODULE_INPUT_IDS)
     shared = [item for item in C148_PHASE0_INPUTS if item.input_id in wanted]
-    return tuple(sorted([*shared, _context_input(collection)], key=lambda item: item.input_id))
+    return tuple(
+        sorted(
+            [
+                *shared,
+                *_source_file_inputs(collection, repository_root=repository_root),
+                _context_input(collection),
+            ],
+            key=lambda item: item.input_id,
+        )
+    )
 
 
 def build_legacy_rate_normalization_bundle(
@@ -1276,11 +1376,16 @@ def build_legacy_rate_normalization_bundle(
     artifacts: list[HistoricalArtifactReference] = []
     recipes: list[HistoricalExecutionRecipe] = []
     inputs_by_id = {
-        item.input_id: item for collection in collections for item in _execution_inputs(collection)
+        item.input_id: item
+        for collection in collections
+        for item in _execution_inputs(collection, repository_root=repository_root)
     }
     inputs = tuple(sorted(inputs_by_id.values(), key=lambda item: item.input_id))
     input_ids = {
-        item.collection_id: tuple(reference.input_id for reference in _execution_inputs(item))
+        item.collection_id: tuple(
+            reference.input_id
+            for reference in _execution_inputs(item, repository_root=repository_root)
+        )
         for item in collections
     }
     for expansion in expansions:
