@@ -148,11 +148,19 @@ def execute_legacy_rate_selection(
         output_dir=artifacts,
     )
     launcher = target / "replay_legacy_rate_writer.py"
+    captured_rows_path = artifacts / "flybrian_all_results_capture.json"
     launcher.write_text(
         "source = " + repr(redirected) + "\n"
         + "namespace = {'__file__': " + repr(str(source_path))
         + ", '__name__': '__main__'}\n"
-        + "exec(compile(source, namespace['__file__'], 'exec'), namespace)\n",
+        + "exec(compile(source, namespace['__file__'], 'exec'), namespace)\n"
+        + "captured = namespace.get('all_results')\n"
+        + "if isinstance(captured, list):\n"
+        + "    import json\n"
+        + "    from pathlib import Path\n"
+        + "    Path(" + repr(str(captured_rows_path)) + ").write_text(\n"
+        + "        json.dumps(captured, indent=2, default=str) + '\\n', encoding='utf-8'\n"
+        + "    )\n",
         encoding="utf-8",
     )
     stdout_path = target / "stdout.log"
@@ -202,11 +210,30 @@ def execute_legacy_rate_selection(
         )
     retained_science = _science(dict(retained_row.result))
     fresh_science = _science(dict(fresh_matches[0].result))
-    mismatch_paths, maximum_absolute, maximum_relative = _numeric_comparison(
-        retained_science,
-        fresh_science,
+    reference_available = bool(retained_row.result)
+    if not reference_available:
+        captured_rows = json.loads(captured_rows_path.read_text(encoding="utf-8"))
+        if not isinstance(captured_rows, list):
+            raise HistoricalNormalizationError("writer row capture is malformed")
+        label = retained_row.parameters.get("label")
+        candidates = [
+            item
+            for item in captured_rows
+            if isinstance(item, dict)
+            and item.get("config") == label
+            and item.get("seed") == retained_row.seed
+        ]
+        if len(candidates) != 1:
+            raise HistoricalNormalizationError(
+                "source-declared run did not produce one captured scientific row"
+            )
+        fresh_science = _science(candidates[0])
+    mismatch_paths, maximum_absolute, maximum_relative = (
+        _numeric_comparison(retained_science, fresh_science)
+        if reference_available
+        else ([], 0.0, 0.0)
     )
-    exact = retained_science == fresh_science
+    exact = reference_available and retained_science == fresh_science
     scientific_path = artifacts / "scientific_result.json"
     scientific_path.write_bytes(canonical_json_bytes(fresh_science) + b"\n")
     receipt: dict[str, object] = {
@@ -222,7 +249,9 @@ def execute_legacy_rate_selection(
             "profile_id": "org.flybrian.comparison.legacy-rate-numeric",
             "profile_version": "1.0",
             "status": (
-                "exact"
+                "reference_unavailable"
+                if not reference_available
+                else "exact"
                 if exact
                 else "numerically_equivalent"
                 if not mismatch_paths
@@ -234,7 +263,9 @@ def execute_legacy_rate_selection(
             "relative_tolerance": "1e-7",
             "maximum_absolute_difference": repr(maximum_absolute),
             "maximum_relative_difference": repr(maximum_relative),
-            "retained_scientific_sha256": canonical_sha256(retained_science),
+            "retained_scientific_sha256": (
+                canonical_sha256(retained_science) if reference_available else None
+            ),
             "fresh_scientific_sha256": canonical_sha256(fresh_science),
         },
         "artifacts": {
