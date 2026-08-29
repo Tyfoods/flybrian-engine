@@ -765,11 +765,12 @@ def execute_standing_selection(
         artifacts["qpos_trajectory"] = {
             "path": str(qpos_path.relative_to(target)),
             "sha256": _sha256(qpos_path.read_bytes()),
-            "frame_interval_ms": 2,
+            "frame_interval_ms": 32,
         }
         artifacts["motor_commands"] = {
             "path": str(motor_path.relative_to(target)),
             "sha256": _sha256(motor_path.read_bytes()),
+            "frame_interval_ms": 32,
         }
     receipt["sha256"] = canonical_sha256(receipt)
     (target / "receipt.json").write_text(
