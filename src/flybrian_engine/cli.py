@@ -10,6 +10,11 @@ from pathlib import Path
 
 from .historical_census import build_historical_census
 from .historical_estate import HistoricalEstateRoot, inventory_historical_estate
+from .historical_legacy_rate import (
+    audit_legacy_rate_estate,
+    build_legacy_rate_normalization_bundle,
+)
+from .historical_legacy_rate_selection import execute_legacy_rate_selection
 from .historical_normalization import canonical_json_bytes
 from .historical_python_backend import HistoricalExecutionError, execute_locked_python_recipe
 from .historical_standing import (
@@ -106,6 +111,26 @@ def parser() -> argparse.ArgumentParser:
     audit_standing.add_argument("--repository-root", type=Path, required=True)
     audit_standing.add_argument("--revision", required=True)
     audit_standing.add_argument("--output", type=Path, required=True)
+    normalize_legacy_rate = commands.add_parser("normalize-historical-legacy-rate")
+    normalize_legacy_rate.add_argument("--repository-root", type=Path, required=True)
+    normalize_legacy_rate.add_argument("--revision", required=True)
+    normalize_legacy_rate.add_argument("--output", type=Path, required=True)
+    audit_legacy_rate = commands.add_parser("audit-historical-legacy-rate")
+    audit_legacy_rate.add_argument("--repository-root", type=Path, required=True)
+    audit_legacy_rate.add_argument("--revision", required=True)
+    audit_legacy_rate.add_argument("--output", type=Path, required=True)
+    run_legacy_rate = commands.add_parser("run-historical-legacy-rate")
+    run_legacy_rate.add_argument("collection")
+    run_legacy_rate.add_argument("--repository-root", type=Path, required=True)
+    run_legacy_rate.add_argument("--python", type=Path, required=True)
+    run_legacy_rate.add_argument("--revision", required=True)
+    run_legacy_rate.add_argument("--selector", required=True)
+    run_legacy_rate.add_argument(
+        "--route",
+        choices=["standalone", "flybrian_local", "flybrian_cloud"],
+        default="standalone",
+    )
+    run_legacy_rate.add_argument("--output", type=Path, required=True)
     local = commands.add_parser("serve")
     local.add_argument("--host", default="127.0.0.1", choices=["127.0.0.1", "::1"])
     local.add_argument("--port", default=8765, type=int)
@@ -208,7 +233,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             )
         elif args.command == "run-historical-standing":
-            receipt = execute_c148_phase0_selection(
+            standing_receipt = execute_c148_phase0_selection(
                 source_root=args.repository_root,
                 output_dir=args.output,
                 python_executable=args.python,
@@ -217,9 +242,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 seed=args.seed,
                 route=args.route,
             )
-            print(json.dumps(receipt, sort_keys=True))
+            print(json.dumps(standing_receipt, sort_keys=True))
         elif args.command == "run-historical-standing-row":
-            receipt = execute_standing_selection(
+            standing_row_receipt = execute_standing_selection(
                 repository_root=args.repository_root,
                 output_dir=args.output,
                 python_executable=args.python,
@@ -229,24 +254,74 @@ def main(argv: Sequence[str] | None = None) -> int:
                 route=args.route,
                 selection_mode=args.selection_mode,
             )
-            print(json.dumps(receipt, sort_keys=True))
+            print(json.dumps(standing_row_receipt, sort_keys=True))
         elif args.command == "audit-historical-standing":
-            receipt = audit_standing_estate(
+            standing_audit = audit_standing_estate(
                 repository_root=args.repository_root.resolve(strict=True),
                 revision=args.revision,
             )
-            args.output.write_bytes(canonical_json_bytes(receipt) + b"\n")
+            args.output.write_bytes(canonical_json_bytes(standing_audit) + b"\n")
+            unresolved_standing = standing_audit["unresolved_results"]
+            if not isinstance(unresolved_standing, list):
+                raise ValueError("standing audit unresolved results are malformed")
             print(
                 json.dumps(
                     {
-                        "receipt_sha256": receipt["sha256"],
-                        "collection_count": receipt["collection_count"],
-                        "run_row_count": receipt["run_row_count"],
-                        "unresolved_result_count": len(receipt["unresolved_results"]),
+                        "receipt_sha256": standing_audit["sha256"],
+                        "collection_count": standing_audit["collection_count"],
+                        "run_row_count": standing_audit["run_row_count"],
+                        "unresolved_result_count": len(unresolved_standing),
                     },
                     sort_keys=True,
                 )
             )
+        elif args.command == "normalize-historical-legacy-rate":
+            legacy_bundle = build_legacy_rate_normalization_bundle(
+                repository_root=args.repository_root.resolve(strict=True),
+                revision=args.revision,
+            )
+            args.output.write_bytes(canonical_json_bytes(legacy_bundle.to_dict()) + b"\n")
+            print(
+                json.dumps(
+                    {
+                        "bundle_sha256": legacy_bundle.sha256,
+                        "definition_count": len(legacy_bundle.definitions),
+                        "occurrence_count": len(legacy_bundle.occurrences),
+                        "recipe_count": len(legacy_bundle.recipes),
+                    },
+                    sort_keys=True,
+                )
+            )
+        elif args.command == "audit-historical-legacy-rate":
+            legacy_audit = audit_legacy_rate_estate(
+                repository_root=args.repository_root.resolve(strict=True),
+                revision=args.revision,
+            )
+            args.output.write_bytes(canonical_json_bytes(legacy_audit) + b"\n")
+            print(
+                json.dumps(
+                    {
+                        "receipt_sha256": legacy_audit["sha256"],
+                        "collection_count": legacy_audit["collection_count"],
+                        "retained_run_count": legacy_audit["retained_run_count"],
+                        "unresolved_declared_run_count": legacy_audit[
+                            "unresolved_declared_run_count"
+                        ],
+                    },
+                    sort_keys=True,
+                )
+            )
+        elif args.command == "run-historical-legacy-rate":
+            legacy_receipt = execute_legacy_rate_selection(
+                repository_root=args.repository_root,
+                output_dir=args.output,
+                python_executable=args.python,
+                revision=args.revision,
+                collection_id=args.collection,
+                selector=args.selector,
+                route=args.route,
+            )
+            print(json.dumps(legacy_receipt, sort_keys=True))
         else:
             token = args.token or secrets.token_urlsafe(32)
             server = create_server(
