@@ -1,4 +1,4 @@
-"""Normalize the retained C91-C134 NumPy-rate writer collections.
+"""Normalize the retained C91-C147 NumPy-rate writer collections.
 
 The historical research scripts are the scientific authority.  This module
 does not translate their dynamics.  It binds each exact writer to the exact
@@ -39,7 +39,7 @@ from .historical_standing import C148_PHASE0_INPUTS
 LEGACY_RATE_PROFILE_ID = "org.flybrian.legacy-rate-writer-collection"
 LEGACY_RATE_PROFILE_VERSION = "1.0"
 
-_CYCLE_SOURCE = re.compile(r"cycle(?P<cycle>9[1-9]|1[01][0-9]|12[0-9]|13[0-4])(?:[^0-9]|$)")
+_CYCLE_SOURCE = re.compile(r"(?:cycle|c)(?P<cycle>9[1-9]|1[0-3][0-9]|14[0-7])(?:[^0-9]|$)")
 _RESULT_CONTAINERS = (
     "all_results",
     "per_seed",
@@ -106,7 +106,12 @@ _OUTCOME_FIELDS = frozenset(
         "gate_pass",
         "hcv",
         "height_cv",
+        "jtf",
         "jtf_primary",
+        "jtf_mean",
+        "jtf_t1",
+        "jtf_t2",
+        "jtf_t3",
         "loco_gate",
         "mean_clq",
         "mean_df",
@@ -115,6 +120,13 @@ _OUTCOME_FIELDS = frozenset(
         "mean_hcv",
         "mean_jtf",
         "mean_wqs",
+        "wqs_mean",
+        "elev_mean",
+        "fwd_speed",
+        "freq_mean",
+        "thd_mean",
+        "dom_freq",
+        "thd",
         "metrics",
         "n_gate",
         "n_legs_stepping",
@@ -282,8 +294,20 @@ def _static_paths(tree: ast.AST) -> dict[str, PurePosixPath]:
     return names
 
 
-def _written_json_paths(tree: ast.AST) -> tuple[str, ...]:
+def _written_json_paths(tree: ast.AST, *, repository_root: Path) -> tuple[str, ...]:
     names = _static_paths(tree)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ImportFrom) or node.module is None:
+            continue
+        module_path = repository_root / f"{node.module.replace('.', '/')}.py"
+        if not module_path.is_file():
+            continue
+        imported_tree = ast.parse(module_path.read_bytes(), filename=module_path.as_posix())
+        imported_paths = _static_paths(imported_tree)
+        for alias in node.names:
+            imported = imported_paths.get(alias.name)
+            if imported is not None:
+                names[alias.asname or alias.name] = imported
     paths: set[str] = set()
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call) or not isinstance(node.func, ast.Name):
@@ -431,13 +455,11 @@ def _result_bytes(
     return data, f"output/{archive_path.name}", member, _sha256(archive_bytes), len(archive_bytes)
 
 
-def discover_legacy_rate_collections(
-    *, repository_root: Path
-) -> tuple[LegacyRateCollection, ...]:
-    """Discover exact C91-C134 source/result bindings declared by writer code."""
+def discover_legacy_rate_collections(*, repository_root: Path) -> tuple[LegacyRateCollection, ...]:
+    """Discover exact C91-C147 source/result bindings declared by writer code."""
     collections: list[LegacyRateCollection] = []
     seen_results: set[str] = set()
-    for source_path in sorted((repository_root / "scripts").rglob("cycle*.py")):
+    for source_path in sorted((repository_root / "scripts").rglob("*.py")):
         if source_path.is_symlink():
             continue
         logical_source = source_path.relative_to(repository_root).as_posix()
@@ -454,7 +476,7 @@ def discover_legacy_rate_collections(
         )
         duration = _duration_ms(tree)
         default_seed = _default_seed(tree)
-        for declared_result in _written_json_paths(tree):
+        for declared_result in _written_json_paths(tree, repository_root=repository_root):
             if declared_result in seen_results:
                 raise HistoricalNormalizationError(
                     f"legacy result has multiple writer authorities: {declared_result}"
@@ -566,9 +588,7 @@ def _split_row(row: Mapping[str, object]) -> tuple[dict[str, object], dict[str, 
         and not key.endswith("_per_seed")
     }
     result = {
-        key: _materialize(value)
-        for key, value in row.items()
-        if key not in _OPERATIONAL_FIELDS
+        key: _materialize(value) for key, value in row.items() if key not in _OPERATIONAL_FIELDS
     }
     return parameters, result
 
@@ -664,9 +684,7 @@ def _summary_rows(
         parameters = {
             key: _materialize(value)
             for key, value in summary.items()
-            if key not in vectors
-            and key not in _OUTCOME_FIELDS
-            and key not in _OPERATIONAL_FIELDS
+            if key not in vectors and key not in _OUTCOME_FIELDS and key not in _OPERATIONAL_FIELDS
         }
         for seed_index, seed in enumerate(seeds):
             result = {
@@ -704,9 +722,7 @@ def _named_summary_rows(
         vectors = {
             key: value
             for key, value in summary.items()
-            if key.endswith("_per_seed")
-            and isinstance(value, list)
-            and len(value) == len(seeds)
+            if key.endswith("_per_seed") and isinstance(value, list) and len(value) == len(seeds)
         }
         if not vectors:
             continue
@@ -797,8 +813,7 @@ def _declared_grid_rows(
         or not all(isinstance(name, str) for name in dof_sets)
         or not isinstance(gains, list)
         or not all(
-            isinstance(gain, (int, _DecimalToken)) and not isinstance(gain, bool)
-            for gain in gains
+            isinstance(gain, (int, _DecimalToken)) and not isinstance(gain, bool) for gain in gains
         )
     ):
         return []
@@ -821,8 +836,7 @@ def _declared_grid_rows(
                 rows.append(
                     LegacyRateRunEvidence(
                         pointer=(
-                            f"/source_declared_grid/{dof_index}/{gain_index}/"
-                            f"seed/{seed_index}"
+                            f"/source_declared_grid/{dof_index}/{gain_index}/seed/{seed_index}"
                         ),
                         selector=f"/source_declared_grid/{dof_index}/{gain_index}:{seed_index}",
                         seed=seed,
@@ -856,14 +870,133 @@ def _named_mapping_rows(
         assert isinstance(result_value, dict)
         materialized_result = _materialize(result_value)
         assert isinstance(materialized_result, dict)
+        label_seed = re.search(r"(?:^|_)s(?P<seed>[0-9]+)$", label)
+        seed = _seed(result_value.get("seed", result_value.get("random_seed")))
+        if seed is None and label_seed is not None:
+            seed = int(label_seed.group("seed"))
         rows.append(
             LegacyRateRunEvidence(
                 pointer=f"{pointer}/{label}",
                 selector=f"{pointer}/{label}",
-                seed=_seed(result_value.get("seed", result_value.get("random_seed"))),
+                seed=seed,
                 duration_ms=_row_duration_ms(result_value) or duration_ms,
                 parameters={"label": label},
                 result={"label": label, **materialized_result},
+            )
+        )
+    return rows
+
+
+def _per_seed_mapping_rows(
+    root: Mapping[str, object],
+    *,
+    seeds: Sequence[int],
+) -> list[LegacyRateRunEvidence]:
+    """Expand keyed writer summaries that retain a list for every physical seed run."""
+    rows: list[LegacyRateRunEvidence] = []
+    declared_seed_count = root.get("n_seeds")
+    for container_name, container in root.items():
+        if container_name != "per_seed" and not container_name.endswith("_per_seed"):
+            continue
+        if not _is_mapping(container):
+            continue
+        assert isinstance(container, dict)
+        series = container_name.removesuffix("_per_seed")
+        summary_name = "results" if container_name == "per_seed" else f"{series}_results"
+        summaries = root.get(summary_name)
+        summary_map = summaries if _is_mapping(summaries) else {}
+        assert isinstance(summary_map, dict)
+        for label, run_values in container.items():
+            if not isinstance(run_values, list) or not run_values:
+                continue
+            count_is_declared = (
+                isinstance(declared_seed_count, int)
+                and not isinstance(declared_seed_count, bool)
+                and declared_seed_count == len(run_values)
+            )
+            count_matches_seeds = bool(seeds) and len(seeds) == len(run_values)
+            if not count_is_declared and not count_matches_seeds:
+                continue
+            summary = summary_map.get(label)
+            summary_parameters: dict[str, object] = {}
+            if _is_mapping(summary):
+                assert isinstance(summary, dict)
+                summary_parameters = {
+                    key: _materialize(item)
+                    for key, item in summary.items()
+                    if key not in _OUTCOME_FIELDS and key not in _OPERATIONAL_FIELDS
+                }
+            for index, run_value in enumerate(run_values):
+                if not _is_mapping(run_value):
+                    continue
+                assert isinstance(run_value, dict)
+                parameters, result = _split_row(run_value)
+                parameters = {
+                    **({"series": series} if series else {}),
+                    "label": label,
+                    **summary_parameters,
+                    **parameters,
+                }
+                seed = _seed(run_value.get("seed", run_value.get("random_seed")))
+                if seed is None:
+                    seed = seeds[index] if count_matches_seeds else index
+                result = {"label": label, "seed": seed, **result}
+                rows.append(
+                    LegacyRateRunEvidence(
+                        pointer=f"/{container_name}/{label}/{index}",
+                        selector=f"/{container_name}/{label}:{index}",
+                        seed=seed,
+                        duration_ms=_row_duration_ms(run_value),
+                        parameters=parameters,
+                        result=result,
+                    )
+                )
+    return rows
+
+
+def _top_level_per_seed_rows(
+    root: Mapping[str, object],
+    *,
+    seeds: Sequence[int],
+) -> list[LegacyRateRunEvidence]:
+    """Expand one validated configuration whose outcomes are parallel seed vectors."""
+    vectors = {
+        key: value
+        for key, value in root.items()
+        if key.endswith("_per_seed") and isinstance(value, list) and value
+    }
+    if not vectors:
+        return []
+    lengths = {len(value) for value in vectors.values()}
+    if len(lengths) != 1:
+        return []
+    count = next(iter(lengths))
+    if seeds and len(seeds) != count:
+        return []
+    parameters = {
+        key: _materialize(value)
+        for key, value in root.items()
+        if key not in vectors
+        and key not in _OUTCOME_FIELDS
+        and key not in _OPERATIONAL_FIELDS
+        and key not in _SUMMARY_FIELDS
+    }
+    rows: list[LegacyRateRunEvidence] = []
+    for index in range(count):
+        seed = seeds[index] if seeds else index
+        result = {
+            key.removesuffix("_per_seed"): _materialize(values[index])
+            for key, values in sorted(vectors.items())
+        }
+        result["seed"] = seed
+        rows.append(
+            LegacyRateRunEvidence(
+                pointer=f"/per_seed_vectors/{index}",
+                selector=f"/per_seed_vectors:{index}",
+                seed=seed,
+                duration_ms=_row_duration_ms(root),
+                parameters=parameters,
+                result=result,
             )
         )
     return rows
@@ -893,12 +1026,16 @@ def expand_legacy_rate_collection(
             if isinstance(raw_declared, int) and not isinstance(raw_declared, bool):
                 declared = raw_declared
         detailed = False
+        mapped = _per_seed_mapping_rows(value, seeds=collection.seeds)
+        if mapped:
+            rows.extend(mapped)
+            detailed = True
         container_keys = tuple(
-            key
-            for key in value
-            if key in _RESULT_CONTAINERS or key.endswith("_results")
+            key for key in value if key in _RESULT_CONTAINERS or key.endswith("_results")
         )
         for key in container_keys:
+            if detailed and (key == "results" or key.endswith("_results")):
+                continue
             direct = _direct_rows(value.get(key), f"/{key}")
             if direct:
                 rows.extend(direct)
@@ -913,13 +1050,23 @@ def expand_legacy_rate_collection(
             )
             rows.extend(_baseline_rows(value, seeds=collection.seeds))
             rows.extend(_named_summary_rows(value, seeds=collection.seeds))
+        if not rows:
+            rows.extend(_top_level_per_seed_rows(value, seeds=collection.seeds))
+        if not rows and _is_mapping(value.get("all_results")):
             rows.extend(
-                _declared_grid_rows(
-                    value,
-                    seeds=collection.seeds,
-                    existing=rows,
+                _named_mapping_rows(
+                    value.get("all_results"),
+                    pointer="/all_results",
+                    duration_ms=collection.duration_ms,
                 )
             )
+        rows.extend(
+            _declared_grid_rows(
+                value,
+                seeds=collection.seeds,
+                existing=rows,
+            )
+        )
         if not rows and "stability_map" in value and "wqs_scores" in value:
             rows.extend(
                 _named_mapping_rows(
@@ -1076,8 +1223,7 @@ def _option_value_kind(value: object) -> str:
         return "integer"
     if isinstance(value, list):
         if all(
-            isinstance(item, (int, _DecimalToken)) and not isinstance(item, bool)
-            for item in value
+            isinstance(item, (int, _DecimalToken)) and not isinstance(item, bool) for item in value
         ):
             return "decimal_list"
         return "text_list"
@@ -1117,11 +1263,10 @@ def build_legacy_rate_normalization_bundle(
     revision: str,
     include_recipes: bool = True,
 ) -> HistoricalNormalizationBundle:
-    """Normalize every retained C91-C134 run that has exact row evidence."""
+    """Normalize every retained C91-C147 run that has exact row evidence."""
     discovered = discover_legacy_rate_collections(repository_root=repository_root)
     expansions = tuple(
-        expand_legacy_rate_collection(item, repository_root=repository_root)
-        for item in discovered
+        expand_legacy_rate_collection(item, repository_root=repository_root) for item in discovered
     )
     expansions = tuple(item for item in expansions if item.runs or item.declared_run_count)
     collections = tuple(item.collection for item in expansions)
@@ -1131,15 +1276,11 @@ def build_legacy_rate_normalization_bundle(
     artifacts: list[HistoricalArtifactReference] = []
     recipes: list[HistoricalExecutionRecipe] = []
     inputs_by_id = {
-        item.input_id: item
-        for collection in collections
-        for item in _execution_inputs(collection)
+        item.input_id: item for collection in collections for item in _execution_inputs(collection)
     }
     inputs = tuple(sorted(inputs_by_id.values(), key=lambda item: item.input_id))
     input_ids = {
-        item.collection_id: tuple(
-            reference.input_id for reference in _execution_inputs(item)
-        )
+        item.collection_id: tuple(reference.input_id for reference in _execution_inputs(item))
         for item in collections
     }
     for expansion in expansions:
@@ -1233,9 +1374,7 @@ def build_legacy_rate_normalization_bundle(
                                 f"{index}.{route}"
                             ),
                             definition_id=definition_id,
-                            definition_sha256=definitions[
-                                definition_id
-                            ].scientific_identity_sha256,
+                            definition_sha256=definitions[definition_id].scientific_identity_sha256,
                             route=route,
                             executor_id="org.flybrian.executor.selected-legacy-rate-row",
                             executor_version="1.0",
@@ -1250,7 +1389,7 @@ def build_legacy_rate_normalization_bundle(
                         )
                     )
     return HistoricalNormalizationBundle(
-        bundle_id="org.flybrian.normalization.legacy-rate-c91-c134",
+        bundle_id="org.flybrian.normalization.legacy-rate-c91-c147",
         version="1.0",
         definitions=tuple(sorted(definitions.values(), key=lambda item: item.definition_id)),
         claims=tuple(sorted(claims, key=lambda item: item.claim_id)),
@@ -1264,8 +1403,7 @@ def build_legacy_rate_normalization_bundle(
 def audit_legacy_rate_estate(*, repository_root: Path, revision: str) -> dict[str, object]:
     discovered = discover_legacy_rate_collections(repository_root=repository_root)
     expansions = tuple(
-        expand_legacy_rate_collection(item, repository_root=repository_root)
-        for item in discovered
+        expand_legacy_rate_collection(item, repository_root=repository_root) for item in discovered
     )
     expansions = tuple(item for item in expansions if item.runs or item.declared_run_count)
     collections = tuple(item.collection for item in expansions)

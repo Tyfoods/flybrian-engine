@@ -6,6 +6,7 @@ import ast
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 from dataclasses import replace
 from pathlib import Path
@@ -72,6 +73,28 @@ class _WriterRedirector(ast.NodeTransformer):
             self.output_assignments += 1
         return node
 
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> ast.AST | list[ast.AST]:
+        imported_output_names = [
+            alias.asname or alias.name
+            for alias in node.names
+            if alias.name in {"OUT_DIR", "OUTPUT_DIR"}
+        ]
+        if not imported_output_names:
+            return node
+        self.output_assignments += len(imported_output_names)
+        assignments = [
+            ast.Assign(
+                targets=[ast.Name(id=name, ctx=ast.Store())],
+                value=ast.Call(
+                    func=ast.Name(id="Path", ctx=ast.Load()),
+                    args=[ast.Constant(value=str(self.output_dir))],
+                    keywords=[],
+                ),
+            )
+            for name in imported_output_names
+        ]
+        return [node, *assignments]
+
 
 def _redirected_source(
     source_bytes: bytes,
@@ -100,13 +123,29 @@ def _redirected_source(
 def _science(value: object) -> object:
     if isinstance(value, dict):
         return {
-            key: _science(item)
-            for key, item in value.items()
-            if key not in _OPERATIONAL_FIELDS
+            key: _science(item) for key, item in value.items() if key not in _OPERATIONAL_FIELDS
         }
     if isinstance(value, list):
         return [_science(item) for item in value]
     return value
+
+
+def _legacy_repository_view(repository_root: Path, target: Path) -> Path:
+    """Restore the original script layout while sharing the retained inputs."""
+    view = target / "legacy_repository"
+    scripts = view / "scripts"
+    scripts.mkdir(parents=True)
+    for source in (repository_root / "scripts").rglob("*.py"):
+        destination = scripts / source.relative_to(repository_root / "scripts")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(source.read_bytes())
+    for source in repository_root.glob("*.py"):
+        (view / source.name).write_bytes(source.read_bytes())
+    for name in ("flybrian", "output", "simplelog", "results", "experiments"):
+        source = repository_root / name
+        if source.is_dir():
+            (view / name).symlink_to(source, target_is_directory=True)
+    return view
 
 
 def execute_legacy_rate_selection(
@@ -141,24 +180,30 @@ def execute_legacy_rate_selection(
         raise HistoricalNormalizationError(
             f"{collection_id} writer differs from discovered authority"
         )
+    repository_view = _legacy_repository_view(root, target)
     redirected = _redirected_source(
         source_bytes,
         source_path=collection.source_path,
-        repository_root=root,
+        repository_root=repository_view,
         output_dir=artifacts,
     )
     launcher = target / "replay_legacy_rate_writer.py"
     captured_rows_path = artifacts / "flybrian_all_results_capture.json"
     launcher.write_text(
-        "source = " + repr(redirected) + "\n"
-        + "namespace = {'__file__': " + repr(str(source_path))
+        "source = "
+        + repr(redirected)
+        + "\n"
+        + "namespace = {'__file__': "
+        + repr(str(source_path))
         + ", '__name__': '__main__'}\n"
         + "exec(compile(source, namespace['__file__'], 'exec'), namespace)\n"
         + "captured = namespace.get('all_results')\n"
         + "if isinstance(captured, list):\n"
         + "    import json\n"
         + "    from pathlib import Path\n"
-        + "    Path(" + repr(str(captured_rows_path)) + ").write_text(\n"
+        + "    Path("
+        + repr(str(captured_rows_path))
+        + ").write_text(\n"
         + "        json.dumps(captured, indent=2, default=str) + '\\n', encoding='utf-8'\n"
         + "    )\n",
         encoding="utf-8",
@@ -171,18 +216,25 @@ def execute_legacy_rate_selection(
     engine_source = str(Path(__file__).resolve().parents[1])
     environment["PYTHONPATH"] = os.pathsep.join(
         item
-        for item in (str(root), engine_source, environment.get("PYTHONPATH", ""))
+        for item in (
+            str(repository_view),
+            engine_source,
+            environment.get("PYTHONPATH", ""),
+        )
         if item
     )
-    with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
-        completed = subprocess.run(
-            (str(python_executable.resolve(strict=True)), str(launcher)),
-            cwd=root,
-            env=environment,
-            stdout=stdout,
-            stderr=stderr,
-            check=False,
-        )
+    try:
+        with stdout_path.open("wb") as stdout, stderr_path.open("wb") as stderr:
+            completed = subprocess.run(
+                (str(python_executable.resolve(strict=True)), str(launcher)),
+                cwd=repository_view,
+                env=environment,
+                stdout=stdout,
+                stderr=stderr,
+                check=False,
+            )
+    finally:
+        shutil.rmtree(repository_view)
     fresh_path = artifacts / Path(collection.archive_member or collection.result_path).name
     if completed.returncode != 0 or not fresh_path.is_file():
         tail = stderr_path.read_text(encoding="utf-8", errors="replace")[-4_000:]
