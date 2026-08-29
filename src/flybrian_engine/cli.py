@@ -18,6 +18,10 @@ from .historical_standing import (
     build_c148_phase0_normalization_bundle,
     execute_c148_phase0_selection,
 )
+from .historical_standing_estate import (
+    audit_standing_estate,
+    build_standing_estate_normalization_bundle,
+)
 from .reviewed_champions import build_reviewed_c174_normalization_bundle
 from .runner import CompatibilityError, create_server, default_registry, run_experiment
 from .schema import ValidationError, validate_experiment_spec
@@ -55,7 +59,7 @@ def parser() -> argparse.ArgumentParser:
     census.add_argument("--revision", required=True)
     census.add_argument("--output", type=Path, required=True)
     normalize_standing = commands.add_parser("normalize-historical-standing")
-    normalize_standing.add_argument("collection", choices=["c148-phase0"])
+    normalize_standing.add_argument("collection", choices=["c148-phase0", "standing-estate"])
     normalize_standing.add_argument("--repository-root", type=Path, required=True)
     normalize_standing.add_argument("--revision", required=True)
     normalize_standing.add_argument("--output", type=Path, required=True)
@@ -72,6 +76,10 @@ def parser() -> argparse.ArgumentParser:
         default="standalone",
     )
     run_standing.add_argument("--output", type=Path, required=True)
+    audit_standing = commands.add_parser("audit-historical-standing")
+    audit_standing.add_argument("--repository-root", type=Path, required=True)
+    audit_standing.add_argument("--revision", required=True)
+    audit_standing.add_argument("--output", type=Path, required=True)
     local = commands.add_parser("serve")
     local.add_argument("--host", default="127.0.0.1", choices=["127.0.0.1", "::1"])
     local.add_argument("--port", default=8765, type=int)
@@ -150,11 +158,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         elif args.command == "normalize-historical-standing":
             repository_root = args.repository_root.resolve(strict=True)
-            bundle = build_c148_phase0_normalization_bundle(
-                source_bytes=(repository_root / C148_PHASE0_SOURCE_PATH).read_bytes(),
-                result_bytes=(repository_root / C148_PHASE0_RESULT_PATH).read_bytes(),
-                revision=args.revision,
-            )
+            if args.collection == "c148-phase0":
+                bundle = build_c148_phase0_normalization_bundle(
+                    source_bytes=(repository_root / C148_PHASE0_SOURCE_PATH).read_bytes(),
+                    result_bytes=(repository_root / C148_PHASE0_RESULT_PATH).read_bytes(),
+                    revision=args.revision,
+                )
+            else:
+                bundle = build_standing_estate_normalization_bundle(
+                    repository_root=repository_root,
+                    revision=args.revision,
+                )
             args.output.write_bytes(canonical_json_bytes(bundle.to_dict()) + b"\n")
             print(
                 json.dumps(
@@ -178,6 +192,23 @@ def main(argv: Sequence[str] | None = None) -> int:
                 route=args.route,
             )
             print(json.dumps(receipt, sort_keys=True))
+        elif args.command == "audit-historical-standing":
+            receipt = audit_standing_estate(
+                repository_root=args.repository_root.resolve(strict=True),
+                revision=args.revision,
+            )
+            args.output.write_bytes(canonical_json_bytes(receipt) + b"\n")
+            print(
+                json.dumps(
+                    {
+                        "receipt_sha256": receipt["sha256"],
+                        "collection_count": receipt["collection_count"],
+                        "run_row_count": receipt["run_row_count"],
+                        "unresolved_result_count": len(receipt["unresolved_results"]),
+                    },
+                    sort_keys=True,
+                )
+            )
         else:
             token = args.token or secrets.token_urlsafe(32)
             server = create_server(
