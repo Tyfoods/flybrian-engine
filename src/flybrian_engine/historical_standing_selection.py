@@ -217,6 +217,35 @@ class _StubPerStep:
             self.joint_pos_log = [positions for _ in range(count)]
 
 
+class _RetainedDecisionDict(dict[object, object]):
+    """Expose retained values to writer decisions while serializing fresh values."""
+
+    def __init__(self, fresh: Mapping[object, object], retained: Mapping[object, object]) -> None:
+        super().__init__(fresh)
+        self._retained = retained
+
+    def __getitem__(self, key: object) -> object:
+        fresh = super().__getitem__(key)
+        retained = self._retained.get(key, fresh)
+        return _retained_decision_context(fresh, retained)
+
+    def get(self, key: object, default: object = None) -> object:
+        if key not in self:
+            return default
+        return self[key]
+
+
+def _retained_decision_context(fresh: object, retained: object) -> object:
+    if isinstance(fresh, Mapping) and isinstance(retained, Mapping):
+        return _RetainedDecisionDict(fresh, retained)
+    if isinstance(fresh, tuple) and isinstance(retained, tuple) and len(fresh) == len(retained):
+        return tuple(
+            _retained_decision_context(fresh_item, retained_item)
+            for fresh_item, retained_item in zip(fresh, retained, strict=True)
+        )
+    return retained
+
+
 class _Dispatch:
     def __init__(
         self,
@@ -241,7 +270,13 @@ class _Dispatch:
         if index == self.target_index or (self.replay_prefix and index < self.target_index):
             if not callable(function):
                 raise HistoricalNormalizationError("selected historical call is not callable")
-            return function(*args, **kwargs)
+            fresh = function(*args, **kwargs)
+            retained = _stub_value(
+                self.collection_id,
+                self.retained_rows[index],
+                getattr(function, "__name__", ""),
+            )
+            return _retained_decision_context(fresh, retained)
         return _stub_value(
             self.collection_id,
             self.retained_rows[index],
