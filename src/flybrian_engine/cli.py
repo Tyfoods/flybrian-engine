@@ -15,6 +15,7 @@ from .historical_legacy_rate import (
     build_legacy_rate_normalization_bundle,
 )
 from .historical_legacy_rate_selection import execute_legacy_rate_selection
+from .historical_network_projection import merge_historical_network_projection
 from .historical_normalization import canonical_json_bytes
 from .historical_python_backend import HistoricalExecutionError, execute_locked_python_recipe
 from .historical_standing import (
@@ -130,7 +131,13 @@ def parser() -> argparse.ArgumentParser:
         choices=["standalone", "flybrian_local", "flybrian_cloud"],
         default="standalone",
     )
+    run_legacy_rate.add_argument("--projection-only", action="store_true")
     run_legacy_rate.add_argument("--output", type=Path, required=True)
+    merge_projection = commands.add_parser("merge-historical-network-projection")
+    merge_projection.add_argument("--manifest", type=Path, required=True)
+    merge_projection.add_argument("--bundle", type=Path, required=True)
+    merge_projection.add_argument("--receipt", type=Path, required=True)
+    merge_projection.add_argument("--output", type=Path, required=True)
     local = commands.add_parser("serve")
     local.add_argument("--host", default="127.0.0.1", choices=["127.0.0.1", "::1"])
     local.add_argument("--port", default=8765, type=int)
@@ -320,8 +327,25 @@ def main(argv: Sequence[str] | None = None) -> int:
                 collection_id=args.collection,
                 selector=args.selector,
                 route=args.route,
+                projection_only=args.projection_only,
             )
             print(json.dumps(legacy_receipt, sort_keys=True))
+        elif args.command == "merge-historical-network-projection":
+            projection_manifest = merge_historical_network_projection(
+                _load(args.manifest),
+                _load(args.bundle),
+                _load(args.receipt),
+            )
+            args.output.write_bytes(canonical_json_bytes(projection_manifest) + b"\n")
+            print(
+                json.dumps(
+                    {
+                        "manifest_sha256": projection_manifest["sha256"],
+                        "output": str(args.output),
+                    },
+                    sort_keys=True,
+                )
+            )
         else:
             token = args.token or secrets.token_urlsafe(32)
             server = create_server(

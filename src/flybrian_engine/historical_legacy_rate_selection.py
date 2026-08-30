@@ -43,9 +43,16 @@ def _authority(repository_root: Path, collection_id: str) -> LegacyRateCollectio
 
 
 class _WriterRedirector(ast.NodeTransformer):
-    def __init__(self, *, repository_root: Path, output_dir: Path) -> None:
+    def __init__(
+        self,
+        *,
+        repository_root: Path,
+        output_dir: Path,
+        capture_network_build: bool,
+    ) -> None:
         self.repository_root = repository_root
         self.output_dir = output_dir
+        self.capture_network_build = capture_network_build
         self.output_assignments = 0
 
     def visit_Assign(self, node: ast.Assign) -> ast.AST:
@@ -95,6 +102,22 @@ class _WriterRedirector(ast.NodeTransformer):
         ]
         return [node, *assignments]
 
+    def visit_Call(self, node: ast.Call) -> ast.AST:
+        node = cast(ast.Call, self.generic_visit(node))
+        if (
+            self.capture_network_build
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "build_mixed_network"
+        ):
+            node.func = ast.Name(id="__flybrian_capture_build__", ctx=ast.Load())
+            node.keywords.append(
+                ast.keyword(
+                    arg="__flybrian_artifact_dir",
+                    value=ast.Constant(value=str(self.output_dir)),
+                )
+            )
+        return node
+
 
 def _redirected_source(
     source_bytes: bytes,
@@ -102,6 +125,7 @@ def _redirected_source(
     source_path: str,
     repository_root: Path,
     output_dir: Path,
+    capture_network_build: bool = False,
 ) -> str:
     try:
         tree = ast.parse(source_bytes, filename=source_path)
@@ -110,6 +134,7 @@ def _redirected_source(
     redirector = _WriterRedirector(
         repository_root=repository_root,
         output_dir=output_dir,
+        capture_network_build=capture_network_build,
     )
     transformed = redirector.visit(tree)
     ast.fix_missing_locations(transformed)
@@ -157,8 +182,9 @@ def execute_legacy_rate_selection(
     collection_id: str,
     selector: str,
     route: Literal["standalone", "flybrian_local", "flybrian_cloud"] = "standalone",
+    projection_only: bool = False,
 ) -> dict[str, object]:
-    """Replay the exact writer batch, then project and compare the selected row."""
+    """Replay one exact row, or capture its canonical network before Brian constructs it."""
 
     root = repository_root.resolve(strict=True)
     collection = _authority(root, collection_id)
@@ -186,6 +212,7 @@ def execute_legacy_rate_selection(
         source_path=collection.source_path,
         repository_root=repository_view,
         output_dir=artifacts,
+        capture_network_build=projection_only,
     )
     launcher = target / "replay_legacy_rate_writer.py"
     captured_rows_path = artifacts / "flybrian_all_results_capture.json"
@@ -193,10 +220,23 @@ def execute_legacy_rate_selection(
         "source = "
         + repr(redirected)
         + "\n"
+        + "from flybrian_engine.historical_standing_selection import "
+        + "_NetworkProjectionCaptured, _capture_network_build\n"
+        + "projection_only = "
+        + repr(projection_only)
+        + "\n"
         + "namespace = {'__file__': "
         + repr(str(source_path))
-        + ", '__name__': '__main__'}\n"
-        + "exec(compile(source, namespace['__file__'], 'exec'), namespace)\n"
+        + ", '__name__': '__main__', "
+        + "'__flybrian_capture_build__': _capture_network_build}\n"
+        + "try:\n"
+        + "    exec(compile(source, namespace['__file__'], 'exec'), namespace)\n"
+        + "except _NetworkProjectionCaptured:\n"
+        + "    if not projection_only:\n"
+        + "        raise\n"
+        + "else:\n"
+        + "    if projection_only:\n"
+        + "        raise RuntimeError('writer did not compile a mixed neural network')\n"
         + "captured = namespace.get('all_results')\n"
         + "if isinstance(captured, list):\n"
         + "    import json\n"
@@ -235,6 +275,27 @@ def execute_legacy_rate_selection(
             )
     finally:
         shutil.rmtree(repository_view)
+    if projection_only:
+        projection_path = artifacts / "network_projection.json"
+        if completed.returncode != 0 or not projection_path.is_file():
+            tail = stderr_path.read_text(encoding="utf-8", errors="replace")[-4_000:]
+            raise HistoricalNormalizationError(
+                f"legacy writer could not project its neural network: {tail}"
+            )
+        projection = json.loads(projection_path.read_text(encoding="utf-8"))
+        receipt: dict[str, object] = {
+            "schema_version": "1.0",
+            "collection_id": collection_id,
+            "selector": selector,
+            "route": route,
+            "source_revision": revision,
+            "source_sha256": collection.source_sha256,
+            "network_projection": projection,
+            "writer_exit_status": completed.returncode,
+        }
+        receipt["sha256"] = canonical_sha256(receipt)
+        (target / "receipt.json").write_bytes(canonical_json_bytes(receipt) + b"\n")
+        return receipt
     fresh_path = artifacts / Path(collection.archive_member or collection.result_path).name
     if completed.returncode != 0 or not fresh_path.is_file():
         tail = stderr_path.read_text(encoding="utf-8", errors="replace")[-4_000:]

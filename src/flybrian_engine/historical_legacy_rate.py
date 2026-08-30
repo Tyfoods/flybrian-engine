@@ -1,9 +1,10 @@
-"""Normalize the retained C91-C147 NumPy-rate writer collections.
+"""Normalize retained walking writers from the NumPy-rate and Brian2 eras.
 
 The historical research scripts are the scientific authority.  This module
 does not translate their dynamics.  It binds each exact writer to the exact
 JSON collection it wrote, expands the collection into physical run evidence,
-and separates configuration from observed outcomes.
+separates configuration from observed outcomes, and records the writer's
+actual execution lineage.
 """
 
 from __future__ import annotations
@@ -149,7 +150,7 @@ _OUTCOME_FIELDS = frozenset(
         "yaw_zero",
     }
 )
-_OPERATIONAL_FIELDS = frozenset({"date", "elapsed_s", "runtime_s", "time_s"})
+_OPERATIONAL_FIELDS = frozenset({"date", "elapsed", "elapsed_s", "runtime_s", "time_s"})
 _SUMMARY_FIELDS = frozenset(
     {
         "config_summaries",
@@ -222,6 +223,12 @@ class LegacyRateCollectionExpansion:
     runs: tuple[LegacyRateRunEvidence, ...]
     declared_run_count: int | None
     unresolved_run_count: int
+
+
+@dataclass(frozen=True)
+class LegacyExperimentNarrative:
+    title: str
+    purpose: str
 
 
 def _sha256(data: bytes) -> str:
@@ -1140,6 +1147,112 @@ def _source_authority(
     )
 
 
+def _script_dependency(repository_root: Path, module_name: str) -> Path | None:
+    if not module_name.startswith("scripts."):
+        return None
+    candidate = repository_root / f"{module_name.replace('.', '/')}.py"
+    return candidate if candidate.is_file() else None
+
+
+def _source_execution_lineage(
+    collection: LegacyRateCollection,
+    *,
+    repository_root: Path,
+) -> str:
+    """Classify the executable writer path without inferring from its cycle label."""
+
+    pending = [repository_root / collection.source_path]
+    visited: set[Path] = set()
+    while pending:
+        source_path = pending.pop().resolve()
+        if source_path in visited:
+            continue
+        visited.add(source_path)
+        try:
+            tree = ast.parse(source_path.read_bytes(), filename=str(source_path))
+        except SyntaxError as error:
+            raise HistoricalNormalizationError(
+                f"cannot classify execution lineage for {collection.collection_id}"
+            ) from error
+        imported_modules: list[str] = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported_modules.extend(alias.name for alias in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module is not None:
+                imported_modules.append(node.module)
+        if any(
+            module_name == "brian2" or module_name.startswith("brian2.")
+            for module_name in imported_modules
+        ):
+            return "brian2"
+        pending.extend(
+            dependency
+            for module_name in imported_modules
+            if (dependency := _script_dependency(repository_root, module_name)) is not None
+        )
+    return "numpy_rate"
+
+
+def _source_experiment_narrative(
+    collection: LegacyRateCollection,
+    *,
+    repository_root: Path,
+) -> LegacyExperimentNarrative:
+    """Read the experiment's scientific name and purpose from its retained writer."""
+
+    source_path = repository_root / collection.source_path
+    tree = ast.parse(source_path.read_bytes(), filename=collection.source_path)
+    docstring = ast.get_docstring(tree, clean=True)
+    if not docstring:
+        return LegacyExperimentNarrative(
+            title=f"Cycle {collection.cycle} retained walking experiment",
+            purpose="Retained FlyBrian walking experiment.",
+        )
+    paragraphs = tuple(
+        " ".join(line.strip() for line in paragraph.splitlines() if line.strip())
+        for paragraph in re.split(r"\n\s*\n", docstring)
+        if paragraph.strip()
+    )
+    title = paragraphs[0]
+    purpose = paragraphs[1] if len(paragraphs) > 1 else title
+    if purpose[-1] not in ".!?":
+        purpose = f"{purpose}."
+    return LegacyExperimentNarrative(title=title, purpose=purpose)
+
+
+def _display_value(value: object) -> str | None:
+    if isinstance(value, bool):
+        return "enabled" if value else "disabled"
+    if isinstance(value, (int, _DecimalToken)):
+        return str(value)
+    if isinstance(value, str) and 0 < len(value) <= 48:
+        return value.replace("_", " ")
+    if isinstance(value, list) and 0 < len(value) <= 4:
+        values = tuple(_display_value(item) for item in value)
+        if all(item is not None for item in values):
+            return ", ".join(item for item in values if item is not None)
+    return None
+
+
+def _variation_summary(row: LegacyRateRunEvidence, *, run_index: int) -> str:
+    displayed: list[str] = []
+    deferred: list[str] = []
+    for name, value in _flatten_option_values(row.parameters):
+        rendered = _display_value(value)
+        if rendered is None:
+            continue
+        label = name.replace(".", " · ").replace("_", " ").title()
+        item = f"{label} {rendered}"
+        if name.rsplit(".", 1)[-1] in {"config", "config_name", "label", "name"}:
+            deferred.append(item)
+        else:
+            displayed.append(item)
+    if row.seed is not None:
+        displayed.append(f"Seed {row.seed}")
+    selected = (displayed or deferred)[:3]
+    return " · ".join(selected) if selected else f"Run {run_index + 1}"
+
+
 def _context_input(collection: LegacyRateCollection) -> HistoricalInputReference:
     if collection.archive_member is None:
         byte_length = collection.result_byte_length
@@ -1161,7 +1274,10 @@ def _context_input(collection: LegacyRateCollection) -> HistoricalInputReference
 
 
 def _configuration(
-    collection: LegacyRateCollection, row: LegacyRateRunEvidence
+    collection: LegacyRateCollection,
+    row: LegacyRateRunEvidence,
+    *,
+    execution_lineage: str,
 ) -> dict[str, object]:
     duration_ms = row.duration_ms or collection.duration_ms
     parameters = dict(row.parameters)
@@ -1191,8 +1307,12 @@ def _configuration(
             for name, value in option_values
         ],
         "implementation": {
-            "backend": "historical_numpy_rate_source",
-            "neuron_models": "continuous_rate_euler_1ms",
+            "backend": f"historical_{execution_lineage}_source",
+            "neuron_models": (
+                "continuous_rate_euler_1ms"
+                if execution_lineage == "numpy_rate"
+                else "brian2_source_bound"
+            ),
             "controller": "source_bound",
             "body": "flybody_mujoco_source_bound",
             "writer_collection": collection.collection_id,
@@ -1363,7 +1483,7 @@ def build_legacy_rate_normalization_bundle(
     revision: str,
     include_recipes: bool = True,
 ) -> HistoricalNormalizationBundle:
-    """Normalize every retained C91-C147 run that has exact row evidence."""
+    """Normalize every retained walking run that has exact row evidence."""
     discovered = discover_legacy_rate_collections(repository_root=repository_root)
     expansions = tuple(
         expand_legacy_rate_collection(item, repository_root=repository_root) for item in discovered
@@ -1388,12 +1508,29 @@ def build_legacy_rate_normalization_bundle(
         )
         for item in collections
     }
+    execution_lineages = {
+        item.collection_id: _source_execution_lineage(item, repository_root=repository_root)
+        for item in collections
+    }
+    narratives = {
+        item.collection_id: _source_experiment_narrative(
+            item,
+            repository_root=repository_root,
+        )
+        for item in collections
+    }
     for expansion in expansions:
         collection = expansion.collection
         source = _source_authority(collection, revision=revision)
+        execution_lineage = execution_lineages[collection.collection_id]
+        narrative = narratives[collection.collection_id]
         for index, row in enumerate(expansion.runs):
-            configuration = _configuration(collection, row)
-            family_id = f"org.flybrian.family.legacy-rate.c{collection.cycle}"
+            configuration = _configuration(
+                collection,
+                row,
+                execution_lineage=execution_lineage,
+            )
+            family_id = f"org.flybrian.family.historical-walking.c{collection.cycle}"
             identity = canonical_sha256(
                 {
                     "family_id": family_id,
@@ -1415,18 +1552,23 @@ def build_legacy_rate_normalization_bundle(
             claim_id = f"org.flybrian.claim.{collection.collection_id}-run-{index}"
             occurrence_id = f"org.flybrian.occurrence.{collection.collection_id}-run-{index}"
             artifact_id = f"org.flybrian.artifact.{collection.collection_id}-run-{index}-result"
-            label = row.parameters.get("label", row.parameters.get("config", f"run {index}"))
+            variation = _variation_summary(row, run_index=index)
             claims.append(
                 HistoricalClaim(
                     claim_id=claim_id,
                     definition_id=definition_id,
-                    name=f"C{collection.cycle} {collection.collection_id} — {label}",
+                    name=f"{narrative.title} — {variation}",
                     description=(
-                        f"Retained {(row.duration_ms or collection.duration_ms):,} ms "
-                        f"NumPy-rate execution at "
-                        f"{collection.evidence_locator}#{row.pointer}."
+                        f"{narrative.purpose} This retained run used {variation.lower()} "
+                        f"for {(row.duration_ms or collection.duration_ms):,} ms in "
+                        f"{'Brian2' if execution_lineage == 'brian2' else 'the NumPy-rate model'}."
                     ),
-                    tags=(f"c{collection.cycle}", "legacy-rate", "walking"),
+                    tags=tuple(sorted({
+                        f"c{collection.cycle}",
+                        execution_lineage.replace("_", "-"),
+                        "historical-walking",
+                        "walking",
+                    })),
                 )
             )
             occurrences.append(
