@@ -29,6 +29,7 @@ _OPERATIONAL_FIELDS = frozenset({"elapsed_s", "runtime_s", "time_s"})
 # These are the calls that correspond one-for-one, in source order, with rows
 # appended by each reviewed writer. Calls made only for summaries are omitted.
 _DISPATCH_NAMES: dict[str, tuple[str, ...]] = {
+    "c148-phase0": ("run_closed_loop_from_network",),
     "c148-phase0b": ("run_closed_loop_from_network",),
     "c148-phase1": ("run_standing_trial",),
     "c148-phase1c": ("run_trial",),
@@ -76,6 +77,7 @@ _DISPATCH_NAMES: dict[str, tuple[str, ...]] = {
 # Some retained aggregate files contain appended experiments whose producing
 # source bytes were not retained. Only the source-generated prefix is runnable.
 _SOURCE_ROW_COUNTS = {"c156-phase1": 36}
+_NON_NEURAL_DISPATCH_NAMES = frozenset({"run_openloop", "run_step_response", "servo_settle"})
 
 
 def _sha256(data: bytes) -> str:
@@ -253,11 +255,18 @@ class _Dispatch:
         retained_rows: Sequence[Mapping[str, object]],
         target_index: int,
         replay_prefix: bool = True,
+        projection_all: bool = False,
+        projection_expected_rows: int | None = None,
+        projection_artifact_dir: str | None = None,
     ) -> None:
         self.collection_id = collection_id
         self.retained_rows = retained_rows
         self.target_index = target_index
         self.replay_prefix = replay_prefix
+        self.projection_all = projection_all
+        self.projection_expected_rows = projection_expected_rows
+        self.projection_artifact_dir = projection_artifact_dir
+        self.network_projections: dict[int, dict[str, object] | None] = {}
         self.index = 0
 
     def __call__(self, function: object, /, *args: object, **kwargs: object) -> object:
@@ -267,6 +276,32 @@ class _Dispatch:
             raise HistoricalNormalizationError(
                 f"{self.collection_id} writer invoked more experiments than retained rows"
             )
+        function_name = getattr(function, "__name__", "")
+        if self.projection_all:
+            if function_name in _NON_NEURAL_DISPATCH_NAMES:
+                self.network_projections[index] = None
+                if self.index == self.projection_expected_rows:
+                    raise _ProjectionInventoryComplete
+                return _stub_value(self.collection_id, self.retained_rows[index], function_name)
+            if not callable(function):
+                raise HistoricalNormalizationError("selected historical call is not callable")
+            try:
+                if function_name == "run_closed_loop_from_network":
+                    network_data = kwargs.get("network_data")
+                    if self.projection_artifact_dir is None:
+                        raise HistoricalNormalizationError(
+                            "projection inventory lacks an artifact directory"
+                        )
+                    _capture_network_projection(network_data, self.projection_artifact_dir)
+                else:
+                    function(*args, **kwargs)
+            except _NetworkProjectionCaptured as captured:
+                self.network_projections[index] = captured.projection
+            else:
+                self.network_projections[index] = None
+            if self.index == self.projection_expected_rows:
+                raise _ProjectionInventoryComplete
+            return _stub_value(self.collection_id, self.retained_rows[index], function_name)
         if index == self.target_index or (self.replay_prefix and index < self.target_index):
             if not callable(function):
                 raise HistoricalNormalizationError("selected historical call is not callable")
@@ -274,13 +309,13 @@ class _Dispatch:
             retained = _stub_value(
                 self.collection_id,
                 self.retained_rows[index],
-                getattr(function, "__name__", ""),
+                function_name,
             )
             return _retained_decision_context(fresh, retained)
         return _stub_value(
             self.collection_id,
             self.retained_rows[index],
-            getattr(function, "__name__", ""),
+            function_name,
         )
 
 
@@ -295,6 +330,56 @@ def _capture_closed_loop_result(result: object, artifact_dir: str) -> None:
     target = Path(artifact_dir)
     np.save(target / "qpos_trajectory.npy", np.asarray(qpos))
     np.save(target / "motor_commands.npy", np.asarray(motor_commands))
+
+
+class _NetworkProjectionCaptured(BaseException):
+    """Stop a projection-only writer immediately after its network is compiled."""
+
+    def __init__(self, projection: dict[str, object]) -> None:
+        self.projection = projection
+
+
+class _ProjectionInventoryComplete(BaseException):
+    """Stop a projection inventory after its final reviewed experiment call."""
+
+
+def _write_network_projection(
+    model_assignments: Mapping[object, object],
+    artifact_dir: str,
+) -> dict[str, object]:
+    assignments: dict[str, list[int]] = {}
+    for model_name, neuron_ids in sorted(
+        model_assignments.items(), key=lambda item: str(item[0])
+    ):
+        if (
+            not isinstance(model_name, str)
+            or not isinstance(neuron_ids, Sequence)
+            or isinstance(neuron_ids, (str, bytes))
+        ):
+            raise HistoricalNormalizationError("network model assignments are malformed")
+        assignments[model_name] = sorted(int(neuron_id) for neuron_id in neuron_ids)
+
+    projection: dict[str, object] = {
+        "schema_version": "1.0",
+        "model_assignments": assignments,
+        "neuron_count": sum(len(neuron_ids) for neuron_ids in assignments.values()),
+    }
+    projection["sha256"] = canonical_sha256(projection)
+    target = Path(artifact_dir) / "network_projection.json"
+    target.write_bytes(canonical_json_bytes(projection) + b"\n")
+    return projection
+
+
+def _capture_network_build(*args: object, **kwargs: object) -> None:
+    """Capture exact model assignments before Brian constructs the selected network."""
+    artifact_dir = kwargs.pop("__flybrian_artifact_dir")
+    model_assignments = kwargs.get("model_assignments")
+    if model_assignments is None and len(args) > 1:
+        model_assignments = args[1]
+    if not isinstance(artifact_dir, str) or not isinstance(model_assignments, Mapping):
+        raise HistoricalNormalizationError("mixed-network build lacks model assignments")
+    projection = _write_network_projection(model_assignments, artifact_dir)
+    raise _NetworkProjectionCaptured(projection)
 
 
 def _capture_network_projection(network_data: object, artifact_dir: str) -> object:
@@ -318,14 +403,9 @@ def _capture_network_projection(network_data: object, artifact_dir: str) -> obje
         neuron_ids = sorted(int(neuron_id) for neuron_id in mapping[0])
         assignments[model_name] = neuron_ids
 
-    projection: dict[str, object] = {
-        "schema_version": "1.0",
-        "model_assignments": assignments,
-        "neuron_count": sum(len(neuron_ids) for neuron_ids in assignments.values()),
-    }
-    projection["sha256"] = canonical_sha256(projection)
-    target = Path(artifact_dir) / "network_projection.json"
-    target.write_bytes(canonical_json_bytes(projection) + b"\n")
+    projection = _write_network_projection(assignments, artifact_dir)
+    if os.environ.get("FLYBRIAN_CAPTURE_NETWORK_ONLY") == "1":
+        raise _NetworkProjectionCaptured(projection)
     return network_data
 
 
@@ -338,12 +418,16 @@ class _WriterSelector(ast.NodeTransformer):
         target_row: Mapping[str, object],
         project_root: Path,
         output_dir: Path,
+        capture_network_build: bool,
+        projection_all: bool,
     ) -> None:
         self.dispatch_names = frozenset(dispatch_names)
         self.collection_id = collection_id
         self.target_row = target_row
         self.project_root = project_root
         self.output_dir = output_dir
+        self.capture_network_build = capture_network_build
+        self.projection_all = projection_all
         self.project_assignments = 0
         self.output_assignments = 0
         self.dispatched_calls = 0
@@ -404,7 +488,28 @@ class _WriterSelector(ast.NodeTransformer):
 
     def visit_Call(self, node: ast.Call) -> ast.AST:
         node = self.generic_visit(node)
-        if isinstance(node.func, ast.Name) and node.func.id == "run_closed_loop_from_network":
+        dispatches_call = (
+            self._inside_main
+            and isinstance(node.func, ast.Name)
+            and node.func.id in self.dispatch_names
+        )
+        if (
+            self.capture_network_build
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "build_mixed_network"
+        ):
+            node.func = ast.Name(id="__flybrian_capture_build__", ctx=ast.Load())
+            node.keywords.append(
+                ast.keyword(
+                    arg="__flybrian_artifact_dir",
+                    value=ast.Constant(value=str(self.output_dir)),
+                )
+            )
+        if (
+            isinstance(node.func, ast.Name)
+            and node.func.id == "run_closed_loop_from_network"
+            and not (self.projection_all and dispatches_call)
+        ):
             for keyword in node.keywords:
                 if keyword.arg == "network_data":
                     keyword.value = ast.Call(
@@ -413,9 +518,8 @@ class _WriterSelector(ast.NodeTransformer):
                         keywords=[],
                     )
         if (
-            self._inside_main
+            dispatches_call
             and isinstance(node.func, ast.Name)
-            and node.func.id in self.dispatch_names
         ):
             self.dispatched_calls += 1
             return ast.Call(
@@ -427,7 +531,7 @@ class _WriterSelector(ast.NodeTransformer):
 
     def visit_For(self, node: ast.For) -> ast.AST:
         node = self.generic_visit(node)
-        if self.collection_id != "c148-phase0b":
+        if self.collection_id != "c148-phase0b" or self.projection_all:
             return node
         if (
             isinstance(node.target, ast.Name)
@@ -472,6 +576,8 @@ def _selected_source(
     target_row: Mapping[str, object],
     project_root: Path,
     output_dir: Path,
+    capture_network_build: bool = False,
+    projection_all: bool = False,
 ) -> str:
     try:
         tree = ast.parse(source_bytes, filename=authority.source_path)
@@ -490,6 +596,8 @@ def _selected_source(
         target_row=target_row,
         project_root=project_root,
         output_dir=output_dir,
+        capture_network_build=capture_network_build,
+        projection_all=projection_all,
     )
     transformed = selector.visit(tree)
     ast.fix_missing_locations(transformed)
@@ -606,6 +714,8 @@ def execute_standing_selection(
     route: Literal["standalone", "flybrian_local", "flybrian_cloud"] = "standalone",
     selection_mode: Literal["exact_prefix", "retained_context"] = "exact_prefix",
     execute_target: bool = True,
+    projection_only: bool = False,
+    projection_all: bool = False,
 ) -> dict[str, object]:
     """Run one retained row while replaying the writer's historical decision context."""
 
@@ -643,17 +753,27 @@ def execute_standing_selection(
                     "C155 phase-0 archive lacks snpp_intermediates.json"
                 )
             census_target.write_bytes(member.read())
+    if projection_only and projection_all:
+        raise ValueError("projection_only and projection_all are mutually exclusive")
     selected_source = _selected_source(
         source_bytes,
         authority=authority,
         target_row=retained_rows[row_index],
         project_root=root,
         output_dir=artifact_dir,
+        capture_network_build=projection_only or projection_all,
+        projection_all=projection_all,
+    )
+    expected_dispatch_rows = (
+        source_row_count
+        if projection_all or collection_id != "c148-phase0b"
+        else 1
     )
     launcher = target / "selected_historical_standing.py"
     launcher.write_text(
         "import json, pathlib, sys\n"
-        + "from flybrian_engine.historical_standing_selection import _Dispatch\n"
+        + "from flybrian_engine.historical_standing_selection import "
+        + "_Dispatch, _NetworkProjectionCaptured, _ProjectionInventoryComplete\n"
         + "from flybrian_engine.historical_standing_estate import "
         + "STANDING_COLLECTIONS, read_collection_rows\n"
         + "root = pathlib.Path(" + repr(str(root)) + ")\n"
@@ -669,7 +789,13 @@ def execute_standing_selection(
             else -1
         )
         + ", replay_prefix="
-        + repr(selection_mode == "exact_prefix") + ")\n"
+        + repr(selection_mode == "exact_prefix")
+        + ", projection_all=" + repr(projection_all)
+        + ", projection_expected_rows="
+        + repr(source_row_count if projection_all else None)
+        + ", projection_artifact_dir="
+        + repr(str(artifact_dir) if projection_all else None)
+        + ")\n"
         + "source = " + repr(selected_source) + "\n"
         + "namespace = {'__file__': str(root / " + repr(authority.source_path) + "), "
         + "'__name__': 'flybrian_historical_selection', "
@@ -679,7 +805,10 @@ def execute_standing_selection(
         + ", fromlist=['_capture_closed_loop_result'])._capture_closed_loop_result, "
         + "'__flybrian_capture_network__': __import__("
         + repr("flybrian_engine.historical_standing_selection")
-        + ", fromlist=['_capture_network_projection'])._capture_network_projection}\n"
+        + ", fromlist=['_capture_network_projection'])._capture_network_projection, "
+        + "'__flybrian_capture_build__': __import__("
+        + repr("flybrian_engine.historical_standing_selection")
+        + ", fromlist=['_capture_network_build'])._capture_network_build}\n"
         + "exec(compile(source, namespace['__file__'], 'exec'), namespace)\n"
         + "organized_root = root / 'scripts'\n"
         + "for imported_module in tuple(sys.modules.values()):\n"
@@ -696,11 +825,40 @@ def execute_standing_selection(
         + "                pass\n"
         + "            else:\n"
         + "                imported_module.OUT_DIR = root / imported_relative\n"
-        + "namespace['main']()\n"
+        + "projection_only = " + repr(projection_only) + "\n"
+        + "projection_all = " + repr(projection_all) + "\n"
         + "expected_rows = "
-        + repr(1 if collection_id == "c148-phase0b" else source_row_count)
+        + repr(expected_dispatch_rows)
         + "\n"
-        + "if __flybrian_dispatch__.index != expected_rows:\n"
+        + "try:\n"
+        + "    namespace['main']()\n"
+        + "except _ProjectionInventoryComplete:\n"
+        + "    if not projection_all:\n"
+        + "        raise\n"
+        + "except _NetworkProjectionCaptured as captured:\n"
+        + "    if projection_all and __flybrian_dispatch__.index == 0:\n"
+        + "        __flybrian_dispatch__.network_projections = "
+        + "{index: captured.projection for index in range(expected_rows)}\n"
+        + "    elif not projection_only:\n"
+        + "        raise\n"
+        + "else:\n"
+        + "    if projection_only:\n"
+        + "        raise RuntimeError('writer did not compile a closed-loop network')\n"
+        + "if projection_all:\n"
+        + "    projection_path = pathlib.Path("
+        + repr(str(artifact_dir / "network_projections.json"))
+        + ")\n"
+        + "    projection_path.write_text(json.dumps("
+        + "{str(k): v for k, v in "
+        + "__flybrian_dispatch__.network_projections.items()}, sort_keys=True))\n"
+        + "if projection_all and "
+        + "len(__flybrian_dispatch__.network_projections) != expected_rows:\n"
+        + "    raise RuntimeError(\n"
+        + "        f'writer captured {len(__flybrian_dispatch__.network_projections)} rows; "
+        + "expected {expected_rows}'\n"
+        + "    )\n"
+        + "if not projection_only and not projection_all and "
+        + "__flybrian_dispatch__.index != expected_rows:\n"
         + "    raise RuntimeError(\n"
         + "        f'writer dispatched {__flybrian_dispatch__.index} rows; "
         + "expected {expected_rows}'\n"
@@ -712,6 +870,8 @@ def execute_standing_selection(
     environment = os.environ.copy()
     environment["PYTHONHASHSEED"] = "0"
     environment["MPLCONFIGDIR"] = str(target / "matplotlib")
+    if projection_only or projection_all:
+        environment["FLYBRIAN_CAPTURE_NETWORK_ONLY"] = "1"
     engine_source = str(Path(__file__).resolve().parents[1])
     environment["PYTHONPATH"] = os.pathsep.join(
         item for item in (engine_source, environment.get("PYTHONPATH", "")) if item
@@ -725,6 +885,46 @@ def execute_standing_selection(
             stderr=stderr,
             check=False,
         )
+    if projection_all:
+        projections_path = artifact_dir / "network_projections.json"
+        if completed.returncode != 0 or not projections_path.is_file():
+            tail = stderr_path.read_text(encoding="utf-8", errors="replace")[-2_000:]
+            raise HistoricalNormalizationError(
+                f"selected {collection_id} writer could not inventory its networks: {tail}"
+            )
+        projections = json.loads(projections_path.read_text(encoding="utf-8"))
+        receipt = {
+            "schema_version": "1.0",
+            "collection_id": collection_id,
+            "family_id": f"org.flybrian.family.standing.{collection_id}",
+            "source_revision": revision,
+            "source_sha256": authority.source_sha256,
+            "network_projections": projections,
+            "writer_exit_status": completed.returncode,
+        }
+        receipt["sha256"] = canonical_sha256(receipt)
+        (target / "receipt.json").write_bytes(canonical_json_bytes(receipt) + b"\n")
+        return receipt
+    if projection_only:
+        projection_path = artifact_dir / "network_projection.json"
+        if completed.returncode != 0 or not projection_path.is_file():
+            tail = stderr_path.read_text(encoding="utf-8", errors="replace")[-2_000:]
+            raise HistoricalNormalizationError(
+                f"selected {collection_id} writer could not compile its network: {tail}"
+            )
+        projection = json.loads(projection_path.read_text(encoding="utf-8"))
+        receipt = {
+            "schema_version": "1.0",
+            "collection_id": collection_id,
+            "family_id": f"org.flybrian.family.standing.{collection_id}",
+            "source_revision": revision,
+            "source_sha256": authority.source_sha256,
+            "network_projection": projection,
+            "writer_exit_status": completed.returncode,
+        }
+        receipt["sha256"] = canonical_sha256(receipt)
+        (target / "receipt.json").write_bytes(canonical_json_bytes(receipt) + b"\n")
+        return receipt
     fresh_path = artifact_dir / Path(authority.archive_member or authority.result_path).name
     if not fresh_path.is_file():
         tail = stderr_path.read_text(encoding="utf-8", errors="replace")[-2_000:]
