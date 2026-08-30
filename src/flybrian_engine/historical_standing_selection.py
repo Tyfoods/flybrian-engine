@@ -297,6 +297,38 @@ def _capture_closed_loop_result(result: object, artifact_dir: str) -> None:
     np.save(target / "motor_commands.npy", np.asarray(motor_commands))
 
 
+def _capture_network_projection(network_data: object, artifact_dir: str) -> object:
+    """Persist the exact model assignment consumed by the retained runner."""
+    if not isinstance(network_data, Mapping):
+        raise HistoricalNormalizationError("closed-loop network_data must be an object")
+    mappings = network_data.get("id_mappings")
+    if not isinstance(mappings, Mapping):
+        raise HistoricalNormalizationError("closed-loop network_data lacks id_mappings")
+
+    assignments: dict[str, list[int]] = {}
+    for model_name, mapping in sorted(mappings.items(), key=lambda item: str(item[0])):
+        if (
+            not isinstance(model_name, str)
+            or not isinstance(mapping, Sequence)
+            or isinstance(mapping, (str, bytes))
+            or len(mapping) < 1
+            or not isinstance(mapping[0], Mapping)
+        ):
+            raise HistoricalNormalizationError("closed-loop id_mappings are malformed")
+        neuron_ids = sorted(int(neuron_id) for neuron_id in mapping[0])
+        assignments[model_name] = neuron_ids
+
+    projection: dict[str, object] = {
+        "schema_version": "1.0",
+        "model_assignments": assignments,
+        "neuron_count": sum(len(neuron_ids) for neuron_ids in assignments.values()),
+    }
+    projection["sha256"] = canonical_sha256(projection)
+    target = Path(artifact_dir) / "network_projection.json"
+    target.write_bytes(canonical_json_bytes(projection) + b"\n")
+    return network_data
+
+
 class _WriterSelector(ast.NodeTransformer):
     def __init__(
         self,
@@ -372,6 +404,14 @@ class _WriterSelector(ast.NodeTransformer):
 
     def visit_Call(self, node: ast.Call) -> ast.AST:
         node = self.generic_visit(node)
+        if isinstance(node.func, ast.Name) and node.func.id == "run_closed_loop_from_network":
+            for keyword in node.keywords:
+                if keyword.arg == "network_data":
+                    keyword.value = ast.Call(
+                        func=ast.Name(id="__flybrian_capture_network__", ctx=ast.Load()),
+                        args=[keyword.value, ast.Constant(value=str(self.output_dir))],
+                        keywords=[],
+                    )
         if (
             self._inside_main
             and isinstance(node.func, ast.Name)
@@ -636,7 +676,10 @@ def execute_standing_selection(
         + "'__flybrian_dispatch__': __flybrian_dispatch__, "
         + "'__flybrian_capture__': __import__("
         + repr("flybrian_engine.historical_standing_selection")
-        + ", fromlist=['_capture_closed_loop_result'])._capture_closed_loop_result}\n"
+        + ", fromlist=['_capture_closed_loop_result'])._capture_closed_loop_result, "
+        + "'__flybrian_capture_network__': __import__("
+        + repr("flybrian_engine.historical_standing_selection")
+        + ", fromlist=['_capture_network_projection'])._capture_network_projection}\n"
         + "exec(compile(source, namespace['__file__'], 'exec'), namespace)\n"
         + "organized_root = root / 'scripts'\n"
         + "for imported_module in tuple(sys.modules.values()):\n"
