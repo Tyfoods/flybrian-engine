@@ -622,6 +622,271 @@ STANDING_COLLECTIONS = (
 )
 
 
+# Scientific catalog language distilled from the reviewed writer docstrings. The
+# collection authority remains the single owner: web imports project these
+# narratives and keep row selectors, paths, hashes, and parameters in evidence.
+STANDING_COLLECTION_NARRATIVES: Mapping[str, tuple[str, str]] = {
+    "c148-phase0": (
+        "Can Walking Targets Support Passive Standing?",
+        "Tests whether stance-phase joint angles measured from the walking "
+        "controller can replace the zero-angle posture that caused the fly to "
+        "collapse under gravity.",
+    ),
+    "c148-phase0b": (
+        "How Much Authority Does Passive Standing Need?",
+        "Tests whether more controlled joints, stronger correction, and "
+        "continuous stance support can lift the body after the first "
+        "walking-derived posture remained too weak.",
+    ),
+    "c148-phase1": (
+        "Can Quiet Motor Neurons Eliminate Standing Vibration?",
+        "Tests whether biophysical motor neurons and velocity damping can remove "
+        "the severe joint vibration seen in the first numerically stable standing "
+        "controller.",
+    ),
+    "c148-phase1c": (
+        "Can Faster Posture Correction Prevent Overshoot?",
+        "Tests whether applying stance correction at every physics step, with "
+        "corrected front-leg targets and proportional-derivative control, removes "
+        "vibration without losing support.",
+    ),
+    "c148-phase1d": (
+        "Can Continuous Correction Bring Every Leg to Ground?",
+        "Tests whether correcting airborne as well as contacting legs resolves "
+        "the failure in which contact-gated control left the front legs "
+        "permanently raised.",
+    ),
+    "c148-phase1e": (
+        "Which Joint Angles Produce a Stable Standing Pose?",
+        "Searches MuJoCo posture space for joint targets that support the body "
+        "with stable ground contact after both walking-derived and "
+        "gravity-settled targets proved unsuitable.",
+    ),
+    "c148-phase1f": (
+        "Do the Discovered Standing Targets Survive Neural Control?",
+        "Tests whether targets found by the fast MuJoCo posture search remain "
+        "stable in the full Brian2 closed loop across stance-spring strengths, "
+        "motor drive, and random seeds.",
+    ),
+    "c148-phase2-validation": (
+        "Does the Walking Champion Generalize Across Seeds?",
+        "Repeats the leading descending-neuron walking configurations across "
+        "seeds and records video to determine whether their stepping, support, "
+        "and forward movement are reproducible.",
+    ),
+    "c148-phase2a": (
+        "Can DNp09 Initiate Walking from Quiet Standing?",
+        "Tests whether the biological walking-initiation neuron DNp09 can recruit "
+        "the central pattern generator through measured bridge interneurons and "
+        "turn stable standing into stepping.",
+    ),
+    "c148-phase2a2": (
+        "Does Standing Support Suppress Neural Stepping?",
+        "Tests whether reducing stance-spring authority allows DNp09-driven "
+        "neural commands to produce meaningful leg excursions without collapsing "
+        "the body.",
+    ),
+    "c148-phase2b": (
+        "Which Descending Neurons Best Initiate Coordinated Stepping?",
+        "Compares DNp09 with descending neurons that have stronger direct or "
+        "indirect access to the central pattern generator to identify the most "
+        "effective walking-initiation pathway.",
+    ),
+    "c148-phase4": (
+        "How Closely Does the Walking Champion Match Natural Gait?",
+        "Assesses the leading height-gated walking controller across seeds, joint "
+        "waveforms, duty factors, support robustness, forward movement, and "
+        "comparison with reference locomotion.",
+    ),
+    "c149-phase0": (
+        "Do Anatomical Inter-Leg Neurons Improve Coordination?",
+        "Tests progressively larger sets of MANC interneurons that connect "
+        "multiple leg segments to determine whether they improve tripod "
+        "coordination and walking stability.",
+    ),
+    "c149-phase1": (
+        "What Sensory Drive Produces Alternation Instead of Synchrony?",
+        "Tests segment-specific, opposite-tripod, asymmetry, and synaptic-only "
+        "drive after uniform contact feedback synchronized the legs rather than "
+        "alternating them.",
+    ),
+    "c149-phase2": (
+        "Can Stance-Swing Asymmetry Improve Propulsion?",
+        "Tests whether relaxing coxa correction during stance while preserving "
+        "swing recovery converts coordinated contact into stronger backward "
+        "retraction and forward movement.",
+    ),
+    "c149-phase3": (
+        "Is the Coordinated Walking Improvement Reproducible?",
+        "Validates the best inter-leg and stance-asymmetry controller across "
+        "seeds, then records gait diagrams and videos for comparison with earlier "
+        "walking controllers and reference motion.",
+    ),
+    "c150-phase0": (
+        "Do Biophysical Motor Neurons Reproduce the Size Principle?",
+        "Characterizes slow, intermediate, and fast Hodgkin-Huxley motor-neuron "
+        "classes in open loop to test their firing thresholds, regularity, and "
+        "recruitment order before embodied use.",
+    ),
+    "c150-phase1": (
+        "Can Tonic Biophysical Motor Activity Sustain Standing?",
+        "Tests whether slow motor-neuron firing contributes stable postural force "
+        "when coupled to the validated standing pose instead of relying entirely "
+        "on the stance spring.",
+    ),
+    "c150-phase1b": (
+        "Can Anatomically Identified Motor Neurons Support Standing?",
+        "Corrects the circuit by adding real motor neurons downstream of premotor "
+        "interneurons and tests whether their spikes can drive actuators while "
+        "preserving stable posture.",
+    ),
+    "c150-phase2": (
+        "Can Postural Authority Transfer from the Spring to Neurons?",
+        "Reduces stance-spring gain while increasing motor output to find a "
+        "stable operating point where neural activity supplies a substantial "
+        "share of postural force.",
+    ),
+    "c150-phase2b": (
+        "Are Neural Commands Fighting the Standing Controller?",
+        "Measures neural and spring commands joint by joint to distinguish "
+        "insufficient firing from a force-direction error that makes motor output "
+        "oppose the standing pose.",
+    ),
+    "c150-phase2c": (
+        "Does a Standing-Centered Motor Baseline Align Neural Force?",
+        "Tests whether mapping zero neural output to standing joint targets "
+        "removes the constant actuator offset that forced neural commands and the "
+        "stance spring to fight each other.",
+    ),
+    "c150-phase3": (
+        "Are Slow Motor Neurons Causally Required for Standing?",
+        "Silences slow motor neurons during stable standing and compares the "
+        "resulting loss of support with fast-neuron silencing and recruitment "
+        "controls.",
+    ),
+    "c150-phase4": (
+        "How Robust Is Neural Standing?",
+        "Measures the operating range of the neural-standing controller under "
+        "spring, motor-drive, and membrane-potential perturbations and compares "
+        "it with earlier controllers and biological expectations.",
+    ),
+    "c151-phase0": (
+        "Can DNp09 Start Walking from Neural Standing?",
+        "Activates DNp09 after a real-motor-neuron standing circuit stabilizes to "
+        "test whether descending drive can transition the embodied network from "
+        "posture to stepping.",
+    ),
+    "c151-phase1": (
+        "Can Body Height Gate the Transition from Standing to Walking?",
+        "Tests a controller that relaxes postural support when the body is safely "
+        "elevated and restores it during a fall so neural stepping can emerge "
+        "without collapse.",
+    ),
+    "c151-phase1b": (
+        "How Much Neural Motor Authority Is Needed for Visible Stepping?",
+        "Increases motor scale under height-gated support after the standing "
+        "calibration proved too weak to move joints through biologically "
+        "meaningful excursions.",
+    ),
+    "c152-phase0": (
+        "What Does the Neural Circuit Do Without Postural Scaffolds?",
+        "Removes standing offsets, stance springs, and cached baselines to "
+        "observe the circuit's native actuator output, collapse dynamics, and "
+        "sensory-feedback response.",
+    ),
+    "c152-phase1": (
+        "Where Does the Standing Feedback Loop Fail?",
+        "Traces motor-neuron response, feedback sign, tonic drive, mapping bias, "
+        "and sensory gain to determine why the scaffold-free circuit drifts "
+        "toward actuator midpoints.",
+    ),
+    "c152-phase2": (
+        "Can Muscle Rest Length Provide a Biological Standing Baseline?",
+        "Tests a standing-centered actuator calibration at higher neural gain, "
+        "then silences slow motor neurons to measure whether posture depends on "
+        "genuine neural contribution.",
+    ),
+    "c153-phase1": (
+        "Do Additional Premotor Pathways Improve Postural Commands?",
+        "Adds the full retained premotor census and compares midpoint with "
+        "standing-centered actuator mappings to test whether premotor shaping "
+        "brings motor output closer to a support posture.",
+    ),
+    "c153-phase2": (
+        "Which Residual Asymmetries Prevent Premotor Standing?",
+        "Examines actuator-specific errors, stronger tonic drive, tier-specific "
+        "mappings, and walking-derived baselines after the expanded premotor "
+        "layer improved alignment but not elevation.",
+    ),
+    "c154-phase1": (
+        "Does Direct Spring-Relative Motor Output Restore Useful Scale?",
+        "Removes normalization and clipping that compressed neural commands, then "
+        "measures whether raw motor output around the standing reference can "
+        "produce meaningful joint displacement.",
+    ),
+    "c154-phase1b": (
+        "What Motor Scale Matches the Anatomical Mapping?",
+        "Repeats the spring-relative experiment over the corrected gain range "
+        "after diagnosing that the original mapping weights made the first sweep "
+        "orders of magnitude too small.",
+    ),
+    "c154-phase2": (
+        "Does Flexor-Extensor Co-Contraction Limit Standing?",
+        "Removes sign cancellation and adds damping to test whether "
+        "extensor-dominated anatomical mapping or uncontrolled motion explains "
+        "the remaining support failure.",
+    ),
+    "c154-phase3": (
+        "Can Torque Control Produce Support Without Oscillation?",
+        "Replaces high-gain position actuators with direct neural torque and "
+        "independently tunes stiffness and damping to seek elevation without the "
+        "instability seen previously.",
+    ),
+    "c155-phase1": (
+        "Can Anatomical Proprioceptive Feedback Stabilize Neural Standing?",
+        "Routes position- and velocity-sensitive feedback into premotor pathways "
+        "that reach extensor motor neurons to test whether sensory correction "
+        "breaks the elevation-stability tradeoff.",
+    ),
+    "c155-phase1b": (
+        "Is the Feedback Architecture Sound but Synaptically Attenuated?",
+        "Compares direct motor-neuron feedback with fast physics-space servo "
+        "feedback after anatomical intermediate pathways changed firing too "
+        "weakly to stabilize posture.",
+    ),
+    "c155-phase1c": (
+        "Can Bidirectional Velocity Feedback Preserve Lift and Add Damping?",
+        "Combines strong position feedback with direction-sensitive velocity "
+        "correction to test whether the body can remain elevated while "
+        "oscillation is suppressed.",
+    ),
+    "c155-phase1d": (
+        "Can Contact Gate Damping Without Suppressing Leg Lift?",
+        "Activates velocity feedback only during ground contact so position "
+        "feedback can lift a leg freely and damping begins when that leg enters "
+        "stance.",
+    ),
+    "c156-phase1": (
+        "Which Muscle Properties Produce Stable Force?",
+        "Characterizes Hill-type muscle force, shortening velocity, passive "
+        "elasticity, and step response in open loop before coupling the model to "
+        "neural activity.",
+    ),
+    "c156-phase2": (
+        "Can Neural Activity Sustain Standing Through Muscle Dynamics?",
+        "Connects the full MANC circuit to Hill-type muscles and tests whether "
+        "intrinsic force-velocity damping can support the body without a "
+        "physics-space damping scaffold.",
+    ),
+    "c156-phase2b": (
+        "Can a Fast Stretch Reflex Rescue Muscle-Based Standing?",
+        "Adds position-error-driven muscle activation at the physics timestep to "
+        "test whether proprioceptive stretch feedback can stabilize a neural "
+        "muscle controller that otherwise fails to stand.",
+    ),
+}
+
+
 UNRESOLVED_STANDING_RESULT = {
     "evidence_locator": "output/c148_phase3/phase3c_results.json",
     "sha256": "3b59a3f64e961e88b8b5faf6ae39af14f0f7bb448bf75d8d3335f1243f2eb01b",
@@ -797,10 +1062,7 @@ def build_standing_estate_normalization_bundle(
                     claim_id=claim_id,
                     definition_id=definition_id,
                     name=_claim_name(authority, row, row_index),
-                    description=(
-                        f"Retained {authority.duration_ms:,} ms row {row_index} from "
-                        f"{authority.evidence_locator}."
-                    ),
+                    description=_collection_narrative(authority)[1],
                     tags=tuple(
                         sorted(
                             {
@@ -1012,7 +1274,16 @@ def _claim_name(
         if key in row and row[key] is not None and str(row[key]).strip()
     ]
     suffix = ", ".join(descriptors[:3]) or f"row {row_index}"
-    return f"{authority.collection_id} — {suffix}"
+    return f"{_collection_narrative(authority)[0]} — {suffix}"
+
+
+def _collection_narrative(authority: StandingCollectionAuthority) -> tuple[str, str]:
+    narrative = STANDING_COLLECTION_NARRATIVES.get(authority.collection_id)
+    if narrative is None:
+        raise HistoricalNormalizationError(
+            f"{authority.collection_id} has no reviewed scientific narrative"
+        )
+    return narrative
 
 
 def _occurrence_evidence(
