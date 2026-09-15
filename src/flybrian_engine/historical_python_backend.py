@@ -12,6 +12,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
+from typing import TypedDict
 
 from .historical_normalization import (
     HistoricalArtifactReference,
@@ -36,8 +37,14 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+class _TreeFileRecord(TypedDict):
+    path: str
+    byte_length: int
+    sha256: str
+
+
 def _tree_identity(path: Path) -> tuple[int, int, str]:
-    records: list[dict[str, object]] = []
+    records: list[_TreeFileRecord] = []
     for item in sorted(candidate for candidate in path.rglob("*") if candidate.is_file()):
         records.append(
             {
@@ -49,7 +56,7 @@ def _tree_identity(path: Path) -> tuple[int, int, str]:
     payload = json.dumps(records, sort_keys=True, separators=(",", ":")).encode()
     return (
         len(records),
-        sum(int(item["byte_length"]) for item in records),
+        sum(item["byte_length"] for item in records),
         hashlib.sha256(payload).hexdigest(),
     )
 

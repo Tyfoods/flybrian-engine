@@ -40,6 +40,13 @@ def _load(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _load_object(path: Path) -> dict[str, object]:
+    value = _load(path)
+    if not isinstance(value, dict) or not all(isinstance(key, str) for key in value):
+        raise ValueError(f"{path} must contain a JSON object")
+    return {key: item for key, item in value.items()}
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="flybrian-engine")
     root.add_argument("--version", action="version", version=__version__)
@@ -332,9 +339,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(legacy_receipt, sort_keys=True))
         elif args.command == "merge-historical-network-projection":
             projection_manifest = merge_historical_network_projection(
-                _load(args.manifest),
-                _load(args.bundle),
-                _load(args.receipt),
+                _load_object(args.manifest),
+                _load_object(args.bundle),
+                _load_object(args.receipt),
             )
             args.output.write_bytes(canonical_json_bytes(projection_manifest) + b"\n")
             print(

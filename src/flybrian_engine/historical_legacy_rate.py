@@ -1411,24 +1411,27 @@ def _source_file_inputs(
                 constants[target.id] = resolved
 
     logical_paths: set[str] = set()
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call):
+    for call_node in ast.walk(tree):
+        if not isinstance(call_node, ast.Call):
             continue
         path_node: ast.AST | None = None
-        if isinstance(node.func, ast.Name) and node.func.id == "open" and node.args:
-            if len(node.args) > 1:
-                mode = _read_path_expression(node.args[1], constants)
+        if isinstance(call_node.func, ast.Name) and call_node.func.id == "open" and call_node.args:
+            if len(call_node.args) > 1:
+                mode = _read_path_expression(call_node.args[1], constants)
                 if mode is not None and any(flag in mode for flag in "wax+"):
                     continue
-            path_node = node.args[0]
+            path_node = call_node.args[0]
         elif (
-            isinstance(node.func, ast.Attribute)
-            and node.func.attr in {"load", "loadtxt", "read_csv", "read_json"}
-            and node.args
+            isinstance(call_node.func, ast.Attribute)
+            and call_node.func.attr in {"load", "loadtxt", "read_csv", "read_json"}
+            and call_node.args
         ):
-            path_node = node.args[0]
-        elif isinstance(node.func, ast.Attribute) and node.func.attr in {"read_bytes", "read_text"}:
-            path_node = node.func.value
+            path_node = call_node.args[0]
+        elif (
+            isinstance(call_node.func, ast.Attribute)
+            and call_node.func.attr in {"read_bytes", "read_text"}
+        ):
+            path_node = call_node.func.value
         if path_node is None:
             continue
         logical_path = _read_path_expression(path_node, constants)

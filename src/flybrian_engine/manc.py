@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 
 from .backends import CompatibilityIssue
 from .body_execution import compatibility_issues as body_issues
@@ -160,7 +161,7 @@ def prepare_execution(spec: ExperimentSpec) -> ChurginExecution:
 
 
 def realize_conductance_drives(
-    spec: ExperimentSpec, ids: np.ndarray, grouped: dict[tuple[float, float, str], list[int]]
+    spec: ExperimentSpec, ids: NDArray[np.int64], grouped: dict[tuple[float, float, str], list[int]]
 ) -> tuple[ConductanceDrive, ...]:
     sources = [
         (rate, weight, TRANSMITTERS[nt], tuple(targets))

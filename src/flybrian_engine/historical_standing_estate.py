@@ -955,7 +955,7 @@ def read_collection_rows(
         )
     if not all(isinstance(row, dict) and all(isinstance(key, str) for key in row) for row in rows):
         raise HistoricalNormalizationError(f"{authority.collection_id} rows must be JSON objects")
-    return tuple(rows)  # type: ignore[arg-type]
+    return tuple(rows)
 
 
 def _nested_result_rows(value: object) -> list[object] | None:

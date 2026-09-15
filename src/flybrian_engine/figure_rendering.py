@@ -4,8 +4,10 @@ import json
 import re
 from hashlib import sha256
 from pathlib import Path
+from typing import Any
 
-import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.figure import Figure
 
 from .figure_style import FigurePanel, FigureStyleSpec
 
@@ -40,10 +42,13 @@ def render_spike_raster_from_result(
 
     panel = style.panels[0]
     neuron_ids = [neuron_id for rule in panel.series for neuron_id in rule.neuron_ids]
-    figure, axis = plt.subplots(figsize=(panel.canvas.width_inches, panel.canvas.height_inches))
+    figure = Figure(figsize=(panel.canvas.width_inches, panel.canvas.height_inches))
+    FigureCanvasAgg(figure)
+    axis = figure.subplots()
     id2idx = {neuron_id: index for index, neuron_id in enumerate(neuron_ids)}
     for rule in panel.series:
-        times, rows = [], []
+        times: list[float] = []
+        rows: list[int] = []
         for neuron_id in rule.neuron_ids:
             values = spike_times_seconds.get(str(neuron_id), [])
             times.extend(float(value) * 1000 for value in values)
@@ -74,11 +79,10 @@ def render_spike_raster_from_result(
     output_dir.mkdir(parents=True, exist_ok=True)
     filename = _output_filename(style, panel)
     figure.savefig(output_dir / filename, dpi=panel.canvas.dpi, bbox_inches="tight")
-    plt.close(figure)
     return {filename: f"/files/{output_dir.name}/{filename}"}
 
 
-def renderer_options(style: FigureStyleSpec, id2idx: dict[int, int]) -> dict:
+def renderer_options(style: FigureStyleSpec, id2idx: dict[int, int]) -> dict[str, Any]:
     """Convert a canonical raster style for monitors that already exist."""
     panel = next(
         (candidate for candidate in style.panels if candidate.kind == "spike_raster"), None
@@ -98,7 +102,7 @@ def renderer_options(style: FigureStyleSpec, id2idx: dict[int, int]) -> dict:
     }
 
 
-def _renderer_styles(panel: FigurePanel, id2idx: dict[int, int]) -> dict:
+def _renderer_styles(panel: FigurePanel, id2idx: dict[int, int]) -> dict[int, dict[str, object]]:
     return {
         id2idx[neuron_id]: {
             "color": rule.color,
@@ -120,7 +124,9 @@ def _output_filename(style: FigureStyleSpec, panel: FigurePanel) -> str:
     return f"{slug}--{panel.id}--{identity}.png"
 
 
-def render_standardized_figures(spec: dict, result: dict, output_dir: Path) -> dict[str, str]:
+def render_standardized_figures(
+    spec: dict[str, Any], result: dict[str, Any], output_dir: Path
+) -> dict[str, str]:
     """Use one plotting path for every scientific backend's stored observations."""
     extension = spec.get("extensions", {}).get("org.flybrian.figure_styles", {})
     preset = next(
@@ -133,7 +139,7 @@ def render_standardized_figures(spec: dict, result: dict, output_dir: Path) -> d
     )
     files = {}
     if preset is not None:
-        spikes = {}
+        spikes: dict[str, list[float]] = {}
         for spike in result["spikes"]:
             spikes.setdefault(str(spike["neuron_id"]), []).append(spike["time_seconds"])
         files.update(
@@ -144,7 +150,7 @@ def render_standardized_figures(spec: dict, result: dict, output_dir: Path) -> d
                 output_dir,
             )
         )
-    requested = set()
+    requested: set[tuple[int, str | None, str]] = set()
     for group_id, cells in spec["neurons"].items():
         model = spec.get("neuron_models", {}).get(group_id, {})
         variable = "rate" if model.get("family") == "rate" else "membrane_potential"
@@ -155,7 +161,7 @@ def render_standardized_figures(spec: dict, result: dict, output_dir: Path) -> d
                 )
                 requested.update((int(key), compartment, variable) for compartment in compartments)
 
-    def identity(series):
+    def identity(series: dict[str, Any]) -> tuple[int, str | None, str]:
         return series["neuron_id"], series["compartment_id"], series["variable"]
 
     traces = [series for series in result["series"] if identity(series) in requested]
@@ -168,7 +174,9 @@ def render_standardized_figures(spec: dict, result: dict, output_dir: Path) -> d
         selected = [series for series in traces if series["variable"] == variable]
         if not selected:
             continue
-        figure, axis = plt.subplots(figsize=(8, 4))
+        figure = Figure(figsize=(8, 4))
+        FigureCanvasAgg(figure)
+        axis = figure.subplots()
         for series in selected:
             label = f"Neuron {series['neuron_id']}"
             if series["compartment_id"] is not None:
@@ -182,6 +190,5 @@ def render_standardized_figures(spec: dict, result: dict, output_dir: Path) -> d
         axis.legend()
         figure.tight_layout()
         figure.savefig(output_dir / filename, dpi=150)
-        plt.close(figure)
         files[filename] = f"/files/{output_dir.name}/{filename}"
     return files

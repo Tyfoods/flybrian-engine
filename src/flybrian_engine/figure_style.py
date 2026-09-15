@@ -1,5 +1,7 @@
 """Canonical FlyBrian Figure Style Specification v0.1."""
 
+from __future__ import annotations
+
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -24,7 +26,7 @@ class FigureXAxis(BaseModel):
     maximum: float | None = None
 
     @model_validator(mode="after")
-    def range_is_ordered(self):
+    def range_is_ordered(self) -> FigureXAxis:
         if self.maximum is not None and self.maximum <= self.minimum:
             raise ValueError("x_axis.maximum must be greater than x_axis.minimum")
         return self
@@ -69,8 +71,8 @@ class FigurePanel(BaseModel):
     series: list[FigureSeriesRule] = Field(min_length=1)
 
     @model_validator(mode="after")
-    def neuron_rules_do_not_overlap(self):
-        seen = set()
+    def neuron_rules_do_not_overlap(self) -> FigurePanel:
+        seen: set[int] = set()
         for rule in self.series:
             overlap = seen.intersection(rule.neuron_ids)
             if overlap:

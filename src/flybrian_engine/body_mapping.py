@@ -11,8 +11,13 @@ import math
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    import mujoco
 
 
 @dataclass
@@ -58,14 +63,14 @@ class MappingConfig:
     actuators: list[ActuatorInfo] = field(default_factory=list)
     motor_neurons: list[MotorNeuronInfo] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "mapping_id": self.mapping_id,
             "links": [asdict(link) for link in self.links],
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> MappingConfig:
+    def from_dict(cls, d: dict[str, Any]) -> MappingConfig:
         return cls(
             mapping_id=d.get("mapping_id", "default"),
             links=[NeuronActuatorLink(**link) for link in d.get("links", [])],
@@ -200,7 +205,7 @@ for _i in range(8):  # adhesion: 82-89 → 70-77
     MAP_90_TO_78[82 + _i] = 70 + _i
 
 
-def remap_to_ctrlrange(cmd: np.ndarray) -> np.ndarray:
+def remap_to_ctrlrange(cmd: NDArray[np.float64]) -> NDArray[np.float64]:
     """Remap 90-dim commands from [-1, 1] to actual MuJoCo ctrlranges.
 
     Maps: -1 → lo, 0 → midpoint, +1 → hi for each actuator.
@@ -215,7 +220,7 @@ def remap_to_ctrlrange(cmd: np.ndarray) -> np.ndarray:
     return out
 
 
-def cmd_90_to_ctrl_78(cmd: np.ndarray) -> np.ndarray:
+def cmd_90_to_ctrl_78(cmd: NDArray[np.float64]) -> NDArray[np.float64]:
     """Convert a 90-dim motor command array to 78-dim MuJoCo ctrl array.
 
     Uses MAP_90_TO_78 index mapping. Tarsus3/tarsus4 values are dropped.
@@ -232,7 +237,7 @@ def spikes_to_firing_rates(
     mapping: MappingConfig,
     window_ms: float = 32.0,
     sim_time_ms: float = 500.0,
-) -> np.ndarray:
+) -> NDArray[np.float64]:
     """Convert spike trains to raw (unnormalized) actuator firing rates.
 
     Returns (num_windows, 90) array of weighted firing rate sums per actuator.
@@ -240,7 +245,7 @@ def spikes_to_firing_rates(
     num_windows = max(1, math.ceil(sim_time_ms / window_ms))
     raw = np.zeros((num_windows, 90))
 
-    neuron_to_actuators: dict[int, list[tuple]] = defaultdict(list)
+    neuron_to_actuators: dict[int, list[tuple[int, float, float]]] = defaultdict(list)
     for link in mapping.links:
         neuron_to_actuators[link.neuron_id].append(
             (link.actuator_index, link.weight, getattr(link, "sign", 1.0))
@@ -271,10 +276,10 @@ def spikes_to_firing_rates(
 
 
 def normalize_motor_commands(
-    raw: np.ndarray,
+    raw: NDArray[np.float64],
     mode: str = "peak_normalize",
-    reference: np.ndarray | None = None,
-) -> np.ndarray:
+    reference: NDArray[np.float64] | None = None,
+) -> NDArray[np.float64]:
     """Normalize raw firing-rate motor commands to ctrl_range [-1, 1].
 
     Args:
@@ -347,8 +352,8 @@ def spikes_to_motor_commands(
     window_ms: float = 32.0,
     sim_time_ms: float = 500.0,
     normalize_mode: str = "peak_normalize",
-    reference: np.ndarray | None = None,
-) -> np.ndarray:
+    reference: NDArray[np.float64] | None = None,
+) -> NDArray[np.float64]:
     """Convert spike trains to normalized motor commands.
 
     Args:
@@ -493,7 +498,7 @@ class SensoryMappingConfig:
     snta_by_nerve: dict[str, list[int]] = field(default_factory=dict)
     gains: SensoryGains = field(default_factory=SensoryGains)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "snpp_by_nerve": self.snpp_by_nerve,
             "snch_by_nerve": self.snch_by_nerve,
@@ -502,7 +507,7 @@ class SensoryMappingConfig:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> SensoryMappingConfig:
+    def from_dict(cls, d: dict[str, Any]) -> SensoryMappingConfig:
         return cls(
             snpp_by_nerve=d.get("snpp_by_nerve", {}),
             snch_by_nerve=d.get("snch_by_nerve", {}),
@@ -542,7 +547,7 @@ class SensoryMappingConfig:
 
 
 def _resolve_joint_indices(
-    model,
+    model: mujoco.MjModel,
     body_part: str,
 ) -> list[int]:
     """Get qpos/qvel indices for a leg segment's joints.
@@ -578,12 +583,12 @@ FORCE_SENSOR_INDICES: dict[str, tuple[list[int], int]] = {
 
 
 def body_state_to_sensory_currents(
-    qpos: np.ndarray,
-    qvel: np.ndarray,
+    qpos: NDArray[np.float64],
+    qvel: NDArray[np.float64],
     sensory_mapping: SensoryMappingConfig,
-    model=None,
+    model: mujoco.MjModel | None = None,
     joint_index_cache: dict[str, list[int]] | None = None,
-    sensordata: np.ndarray | None = None,
+    sensordata: NDArray[np.float64] | None = None,
 ) -> dict[int, float]:
     """Convert MuJoCo body state to sensory neuron input currents.
 

@@ -1,7 +1,7 @@
 """Shared admission, parameter selection and artifacts for the public reference models."""
 
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 from .artifacts import Artifact, ArtifactDisposition, ArtifactManifest, DatasetReference
 from .backends import BackendCapabilities, CompatibilityIssue
@@ -230,7 +230,7 @@ def compatibility_issues(spec: ExperimentSpec) -> tuple[CompatibilityIssue, ...]
 
 
 def write_result(
-    spec: ExperimentSpec, result: dict, run_dir: Path, capabilities: BackendCapabilities
+    spec: ExperimentSpec, result: dict[str, Any], run_dir: Path, capabilities: BackendCapabilities
 ) -> ArtifactManifest:
     run_id = run_dir.name
     result_path = run_dir / "standardized-results.json"

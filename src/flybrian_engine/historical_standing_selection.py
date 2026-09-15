@@ -101,9 +101,16 @@ def _materialize(value: object) -> object:
     return value
 
 
+def _materialize_object(value: object) -> dict[str, object]:
+    materialized = _materialize(value)
+    if not isinstance(materialized, dict) or not all(isinstance(key, str) for key in materialized):
+        raise HistoricalNormalizationError("retained result must be a JSON object")
+    return {key: item for key, item in materialized.items()}
+
+
 def _metric_payload(collection_id: str, row: Mapping[str, object]) -> object:
     if collection_id in {"c151-phase0", "c151-phase1", "c151-phase1b"}:
-        payload = dict(_materialize(dict(row)))
+        payload = _materialize_object(dict(row))
         payload.setdefault("contact_log", [])
         payload.setdefault("elevation_log", [])
         payload.setdefault("n_neurons", 0)
@@ -126,11 +133,11 @@ def _metric_payload(collection_id: str, row: Mapping[str, object]) -> object:
     if collection_id == "c150-phase0":
         return _materialize(row["results"])
     if collection_id == "c150-phase3":
-        payload = dict(_materialize(row["result"]))
+        payload = _materialize_object(row["result"])
         payload["elev_trajectory"] = _materialize(row.get("elev_trajectory", []))
         return payload
     if collection_id in {"c152-phase1", "c152-phase2"}:
-        payload = dict(_materialize(dict(row)))
+        payload = _materialize_object(dict(row))
         payload["perstep_fn"] = _StubPerStep({})
         return payload
     return _materialize(dict(row))
@@ -141,7 +148,7 @@ def _stub_value(
     row: Mapping[str, object],
     function_name: str,
 ) -> object:
-    materialized = _materialize(dict(row))
+    materialized = _materialize_object(dict(row))
     if function_name == "run_closed_loop_from_network":
         return _StubResults()
     if collection_id == "c148-phase2-validation":
@@ -344,7 +351,7 @@ class _ProjectionInventoryComplete(BaseException):
 
 
 def _write_network_projection(
-    model_assignments: Mapping[object, object],
+    model_assignments: Mapping[str, object],
     artifact_dir: str,
 ) -> dict[str, object]:
     assignments: dict[str, list[int]] = {}
@@ -436,7 +443,7 @@ class _WriterSelector(ast.NodeTransformer):
     def visit_FunctionDef(self, node: ast.FunctionDef) -> ast.AST:
         if node.name == "main":
             self._inside_main += 1
-            node = self.generic_visit(node)
+            self.generic_visit(node)
             self._inside_main -= 1
             return node
         return self.generic_visit(node)
@@ -447,7 +454,7 @@ class _WriterSelector(ast.NodeTransformer):
             and isinstance(node.value.func, ast.Name)
             and node.value.func.id == "run_closed_loop_from_network"
         )
-        node = self.generic_visit(node)
+        self.generic_visit(node)
         assigned = {target.id for target in node.targets if isinstance(target, ast.Name)}
         if "PROJECT" in assigned:
             node.value = ast.Call(
@@ -487,7 +494,7 @@ class _WriterSelector(ast.NodeTransformer):
         return node
 
     def visit_Call(self, node: ast.Call) -> ast.AST:
-        node = self.generic_visit(node)
+        self.generic_visit(node)
         dispatches_call = (
             self._inside_main
             and isinstance(node.func, ast.Name)
@@ -530,7 +537,7 @@ class _WriterSelector(ast.NodeTransformer):
         return node
 
     def visit_For(self, node: ast.For) -> ast.AST:
-        node = self.generic_visit(node)
+        self.generic_visit(node)
         if self.collection_id != "c148-phase0b" or self.projection_all:
             return node
         if (
@@ -539,6 +546,9 @@ class _WriterSelector(ast.NodeTransformer):
             and isinstance(node.iter, ast.Name)
             and node.iter.id == "configs"
         ):
+            config_name = self.target_row["config"]
+            if not isinstance(config_name, str):
+                raise HistoricalNormalizationError("selected config must be a string")
             candidate = ast.Name(id="candidate", ctx=ast.Load())
             node.iter = ast.ListComp(
                 elt=candidate,
@@ -554,7 +564,7 @@ class _WriterSelector(ast.NodeTransformer):
                                     ctx=ast.Load(),
                                 ),
                                 ops=[ast.Eq()],
-                                comparators=[ast.Constant(value=self.target_row["config"])],
+                                comparators=[ast.Constant(value=config_name)],
                             )
                         ],
                         is_async=0,
@@ -562,8 +572,11 @@ class _WriterSelector(ast.NodeTransformer):
                 ],
             )
         if isinstance(node.target, ast.Name) and node.target.id == "seed":
+            seed = self.target_row["seed"]
+            if not isinstance(seed, int) or isinstance(seed, bool):
+                raise HistoricalNormalizationError("selected seed must be an integer")
             node.iter = ast.List(
-                elts=[ast.Constant(value=self.target_row["seed"])],
+                elts=[ast.Constant(value=seed)],
                 ctx=ast.Load(),
             )
         return node
@@ -618,6 +631,7 @@ def _fresh_rows(path: Path) -> list[Mapping[str, object]]:
         parse_float=lambda token: token,
         parse_constant=lambda token: token,
     )
+    candidate: object
     if isinstance(loaded, list):
         candidate = loaded
     elif isinstance(loaded, dict):
@@ -893,7 +907,7 @@ def execute_standing_selection(
                 f"selected {collection_id} writer could not inventory its networks: {tail}"
             )
         projections = json.loads(projections_path.read_text(encoding="utf-8"))
-        receipt = {
+        receipt: dict[str, object] = {
             "schema_version": "1.0",
             "collection_id": collection_id,
             "family_id": f"org.flybrian.family.standing.{collection_id}",
@@ -984,7 +998,7 @@ def execute_standing_selection(
         capture_output=True,
         text=True,
     ).stdout.strip()
-    receipt: dict[str, object] = {
+    receipt = {
         "schema_version": "1.0",
         "collection_id": collection_id,
         "row_index": row_index,

@@ -13,6 +13,7 @@ import pytest
 import flybrian_engine.cli as cli_module
 from flybrian_engine.cli import main
 from flybrian_engine.runner import CompatibilityError, create_server, run_experiment
+from flybrian_engine.version import __version__
 
 FIXTURE = Path(__file__).parents[1] / "examples" / "minimal-experiment.json"
 HETEROGENEOUS_FIXTURE = Path(__file__).parents[1] / "examples" / "heterogeneous-experiment.json"
@@ -23,7 +24,7 @@ def test_reference_backend_emits_verified_manifest(tmp_path: Path) -> None:
     manifest = run_experiment(experiment, tmp_path, run_id="run_fixture")
     assert manifest["backend_id"] == "reference"
     assert manifest["schema_version"] == "1.1"
-    assert manifest["engine_version"] == "0.1.4"
+    assert manifest["engine_version"] == __version__
     assert manifest["experiment_spec_version"] == "1.0"
     assert manifest["random_seed"] == 42
     assert manifest["scientific_execution"] is False

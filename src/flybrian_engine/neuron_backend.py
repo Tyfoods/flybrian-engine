@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import TypedDict
 
 from .artifacts import ArtifactManifest
 from .backends import BackendCapabilities, CompatibilityIssue
@@ -58,6 +59,11 @@ def load_mechanism() -> None:
             )
     if not neuron.load_mechanisms(str(build)) or not all(hasattr(neuron.h, name) for name in names):
         raise RuntimeError(f"Could not load compiled FlyBrianChurginLIF from {build}")
+
+
+class SpikeObservation(TypedDict):
+    neuron_id: int
+    time_seconds: float
 
 
 class NeuronBackend:
@@ -291,7 +297,7 @@ class NeuronBackend:
         sim.net.addStims()
         sim.setupRecording()
         body = None
-        boundary_spikes = []
+        boundary_spikes: list[SpikeObservation] = []
         if spec.embodiment_mode == "none":
             sim.runSim()
         else:
@@ -303,7 +309,7 @@ class NeuronBackend:
                 for index, nid in enumerate(network.ids)
             }
 
-            def current_tick_spikes():
+            def current_tick_spikes() -> list[SpikeObservation]:
                 seconds = round(float(sim.h.t) / cfg.dt) * cfg.dt / 1000
                 return [
                     dict(neuron_id=nid, time_seconds=seconds)
@@ -311,8 +317,8 @@ class NeuronBackend:
                     if point.spike_out > 0.5
                 ]
 
-            def window_spikes(start, stop):
-                output = {}
+            def window_spikes(start: float, stop: float) -> dict[str, list[float]]:
+                output: dict[str, list[float]] = {}
                 for gid, time in zip(sim.simData["spkid"], sim.simData["spkt"], strict=True):
                     # Event membership uses the shared 0.1 ms integration grid.
                     seconds = round(float(time) / 0.1) * 0.0001
@@ -326,7 +332,7 @@ class NeuronBackend:
                         output.setdefault(str(spike["neuron_id"]), []).append(seconds)
                 return output
 
-            def set_currents(currents):
+            def set_currents(currents: dict[int, float]) -> None:
                 for point in points.values():
                     point.I_ext = 0
                 for nid, current in currents.items():
@@ -334,7 +340,7 @@ class NeuronBackend:
                     if point is not None:
                         point.I_ext = current
 
-            def advance(stop_ms):
+            def advance(stop_ms: float) -> None:
                 # Brian2's window ends before the tick at stop_ms. NEURON's
                 # psolve includes that tick, so stop at this window's last tick
                 # before applying the next window's sensory feedback.
@@ -344,7 +350,7 @@ class NeuronBackend:
             boundary_spikes = current_tick_spikes()
             postRun(cfg.duration)
         data = sim.simData
-        spikes = []
+        spikes: list[SpikeObservation] = []
         for gid, time in zip(data["spkid"], data["spkt"], strict=True):
             gid = int(gid)
             if not 0 <= gid < len(network.ids):
@@ -380,6 +386,6 @@ class NeuronBackend:
                     )
                 )
         manifest = write_result(
-            spec, execution, run_dir, "neuron", runtime_version("neuron"), spikes, series
+            spec, execution, run_dir, "neuron", importlib.metadata.version("neuron"), spikes, series
         )
         return manifest if body is None else attach_body_artifacts(spec, manifest, run_dir, body)

@@ -472,13 +472,17 @@ class HistoricalNormalizationBundle:
             raise HistoricalNormalizationError("bundle artifact IDs must be unique")
         if len(recipes) != len(self.recipes):
             raise HistoricalNormalizationError("bundle recipe IDs must be unique")
-        for record in (
+        records: tuple[
+            HistoricalClaim | HistoricalRunOccurrence | HistoricalArtifactReference
+            | HistoricalExecutionRecipe | HistoricalComparisonReceipt, ...
+        ] = (
             *self.claims,
             *self.occurrences,
             *self.artifacts,
             *self.recipes,
             *self.comparisons,
-        ):
+        )
+        for record in records:
             if record.definition_id not in definitions:
                 raise HistoricalNormalizationError(
                     f"{record.__class__.__name__} references an unknown definition"

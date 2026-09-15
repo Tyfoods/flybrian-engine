@@ -10,8 +10,13 @@ import os
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
+from numpy.typing import NDArray
+
+if TYPE_CHECKING:
+    import mujoco
 
 from .artifacts import Artifact, ArtifactDisposition, ArtifactManifest, DatasetReference
 from .backends import CompatibilityIssue
@@ -134,7 +139,7 @@ def compatibility_issues(spec: ExperimentSpec) -> tuple[CompatibilityIssue, ...]
     return tuple(issues)
 
 
-def load_body_model():
+def load_body_model() -> mujoco.MjModel:
     import mujoco
 
     root_value = os.environ.get("FLYBRIAN_BODY_MODEL_ROOT")
@@ -150,11 +155,11 @@ def load_body_model():
 
 @dataclass
 class BodyResult:
-    motor_commands: np.ndarray
-    qpos: np.ndarray
-    qvel: np.ndarray
+    motor_commands: NDArray[np.float64]
+    qpos: NDArray[np.float64]
+    qvel: NDArray[np.float64]
     sensory_currents: list[dict[int, float]]
-    model: object
+    model: mujoco.MjModel
 
 
 def run_body(
@@ -223,19 +228,18 @@ def render_recorded_body(spec: ExperimentSpec, body: BodyResult, destination: Pa
     fps, speed = config["video_fps"], config["playback_speed"]
     duration = execution_duration_ms(spec) / 1000
     window = config["firing_rate_window_ms"] / 1000
-    with (
-        mujoco.Renderer(body.model, height=height, width=width) as renderer,
-        imageio.get_writer(destination, fps=fps, codec="libx264", macro_block_size=1) as writer,
-    ):
-        for frame in range(max(1, math.ceil(duration / speed * fps))):
-            time = min(duration, frame * speed / fps)
-            index = min(len(body.qpos) - 1, round(time / window))
-            data.qpos[:] = body.qpos[index]
-            data.qvel[:] = body.qvel[index]
-            data.time = index * window
-            mujoco.mj_forward(body.model, data)
-            renderer.update_scene(data, camera=camera)
-            writer.append_data(renderer.render())
+    with mujoco.Renderer(body.model, height=height, width=width) as renderer:
+        writer = imageio.get_writer(destination, fps=fps, codec="libx264", macro_block_size=1)
+        with writer:
+            for frame in range(max(1, math.ceil(duration / speed * fps))):
+                time = min(duration, frame * speed / fps)
+                index = min(len(body.qpos) - 1, round(time / window))
+                data.qpos[:] = body.qpos[index]
+                data.qvel[:] = body.qvel[index]
+                data.time = index * window
+                mujoco.mj_forward(body.model, data)
+                renderer.update_scene(data, camera=camera)
+                writer.append_data(renderer.render())
 
 
 def attach_body_artifacts(

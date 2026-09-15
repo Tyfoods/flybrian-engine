@@ -349,7 +349,7 @@ def execute_legacy_rate_selection(
     exact = reference_available and retained_science == fresh_science
     scientific_path = artifacts / "scientific_result.json"
     scientific_path.write_bytes(canonical_json_bytes(fresh_science) + b"\n")
-    receipt: dict[str, object] = {
+    receipt = {
         "schema_version": "1.0",
         "collection_id": collection_id,
         "selector": selector,

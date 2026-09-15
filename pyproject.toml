@@ -29,7 +29,7 @@ brian2 = ["brian2>=2.7,<3", "numpy>=2.0,<2.2", "pandas>=2.2,<3", "matplotlib>=3.
 neuron = ["neuron==9.0.2", "netpyne==1.1.1", "numpy>=2.0,<2.2", "pandas>=2.2,<3", "matplotlib>=3.9,<4", "pydantic>=2,<3"]
 body = ["mujoco==3.13.0", "imageio==2.37.4", "imageio-ffmpeg==0.6.0", "certifi>=2024,<2027"]
 neuprint = ["neuprint-python>=0.6.3,<0.7"]
-dev = ["build>=1.2", "mypy>=1.11", "pytest>=8.3", "ruff>=0.6"]
+dev = ["build>=1.2", "mypy>=1.11", "pytest>=8.3", "ruff>=0.6", "pandas-stubs>=2.2,<3", "certifi>=2024,<2027"]
 
 [project.scripts]
 flybrian-engine = "flybrian_engine.cli:main"
@@ -58,3 +58,9 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 python_version = "3.10"
 strict = true
 files = ["src", "tests"]
+
+# These optional scientific runtimes expose untyped native/dynamic APIs.
+# Project modules remain under strict checking.
+[[tool.mypy.overrides]]
+module = ["brian2.*", "neuron.*", "netpyne.*", "mujoco.*", "imageio.*"]
+ignore_missing_imports = true

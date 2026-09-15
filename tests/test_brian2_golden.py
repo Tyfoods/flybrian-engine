@@ -99,11 +99,15 @@ def test_golden_science_rejects_ambiguous_or_dimensionally_invalid_fields(
 def test_brian2_backend_advertises_only_frozen_model_definitions() -> None:
     capabilities = default_registry().get("brian2").capabilities
     assert capabilities.scientific_execution is True
-    assert capabilities.neuron_model_families == ("compartmental", "lif", "rate")
+    assert capabilities.neuron_model_families == (
+        "compartmental", "lif", "rate", "lif_churgin_projection_neuron"
+    )
     assert capabilities.neuron_model_ids == (
         "compartmental.passive_two.v1",
         "lif.basic.v1",
         "rate.first_order.v1",
+        "lif.churgin_projection.figure8.v1",
+        "lif.churgin_projection.manc.v1",
     )
     assert capabilities.artifact_kinds == ("standardized_results",)
 
@@ -144,6 +148,16 @@ def test_brian2_golden_run_matches_independent_analytic_oracle(tmp_path: Path) -
     assert manifest["dispositions"] == [{
         "artifact_keys": ["standardized_results"],
         "kind": "standardized_results",
+        "reason": None,
+        "status": "available",
+    }, {
+        "artifact_keys": ["run_summary"],
+        "kind": "summary",
+        "reason": None,
+        "status": "available",
+    }, {
+        "artifact_keys": ["membrane-potential.png", "firing-rate.png"],
+        "kind": "plot",
         "reason": None,
         "status": "available",
     }]

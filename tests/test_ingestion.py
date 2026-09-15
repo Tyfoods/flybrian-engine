@@ -309,7 +309,8 @@ def test_connection_normalization_canonical_receipt_and_idempotence(tmp_path: Pa
     assert result.receipt.output_sha256 == (
         "92123fdbf30851dbc3ff6f175fbbc000911b18429b5a2ccc3b0f2a4e6a51f2dc"
     )
-    assert result.receipt.sha256() == (
+    # Preserve the canonical historical fixture independently of the package release.
+    assert replace(result.receipt, engine_version="0.1.2").sha256() == (
         "f02c4221c4dc31e929fb1273764381757f393b84ce4701a6f4d1f13486aee0bf"
     )
     assert MANC_CONNECTION_NORMALIZATION_V1.sha256() == (

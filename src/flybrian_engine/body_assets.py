@@ -14,8 +14,11 @@ SOURCE = "https://raw.githubusercontent.com/google-deepmind/mujoco_menagerie/a03
 
 
 def _verify_asset(path: Path, size_bytes: int, sha256: str) -> None:
+    hasher = hashlib.sha256()
     with path.open("rb") as source:
-        digest = hashlib.file_digest(source, "sha256").hexdigest()
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    digest = hasher.hexdigest()
     if path.stat().st_size != size_bytes or digest != sha256:
         raise ValueError(f"Body model asset differs from the captured model: {path.name}")
 

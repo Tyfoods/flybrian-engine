@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+from numpy.typing import NDArray
 
 from .artifacts import Artifact, ArtifactDisposition, ArtifactManifest, DatasetReference
 from .backends import CompatibilityIssue
@@ -28,7 +30,7 @@ PARAMETERS = FIGURE8_PARAMETERS
 
 
 def is_figure8(spec: ExperimentSpec) -> bool:
-    return (
+    return bool(
         spec.value.get("extensions", {}).get("org.flybrian.execution", {}).get("profile")
         == "figure8_fes_v1"
     )
@@ -94,11 +96,11 @@ def compatibility_issues(spec: ExperimentSpec) -> tuple[CompatibilityIssue, ...]
 
 @dataclass(frozen=True)
 class Network:
-    ids: np.ndarray
-    sources: np.ndarray
-    targets: np.ndarray
-    transmitters: np.ndarray
-    weights: np.ndarray
+    ids: NDArray[np.int64]
+    sources: NDArray[np.intp]
+    targets: NDArray[np.intp]
+    transmitters: NDArray[np.int8]
+    weights: NDArray[np.float64]
     manifest: DatasetManifest
 
 
@@ -155,7 +157,7 @@ def load_clean_connectivity(root: Path, manifest: DatasetManifest) -> pd.DataFra
         "postNt",
         "total_weight",
     ]
-    frame = pd.concat(
+    frame: pd.DataFrame = pd.concat(
         [
             pd.read_csv(root / item.path, usecols=columns)
             for item in verified.manifest.files
@@ -171,7 +173,9 @@ def load_clean_connectivity(root: Path, manifest: DatasetManifest) -> pd.DataFra
     return frame
 
 
-def network_from_frame(frame: pd.DataFrame, ids: np.ndarray, manifest: DatasetManifest) -> Network:
+def network_from_frame(
+    frame: pd.DataFrame, ids: NDArray[np.int64], manifest: DatasetManifest
+) -> Network:
     """Aggregate biological edges while retaining the caller's declared population."""
     edges = frame.groupby(
         ["preId", "postId", "preNt"], as_index=False, sort=True
@@ -225,7 +229,7 @@ def write_result(
     run_dir: Path,
     backend_id: str,
     backend_version: str,
-    spikes: list[dict[str, Any]],
+    spikes: Sequence[Mapping[str, Any]],
     series: list[dict[str, Any]],
 ) -> ArtifactManifest:
     network = execution.network
@@ -395,7 +399,7 @@ def run_brian2(spec: ExperimentSpec, output_dir: Path, run_id: str) -> ArtifactM
             schedules.append((index, current_schedule(current, spec.value["sim_time_ms"])))
     feedback = np.zeros(len(network.ids))
 
-    def update_current(t):
+    def update_current(t: Any) -> None:
         time = float(t / b.ms)
         group.I_ext = feedback * b.nA
         for index, intervals in schedules:
@@ -461,19 +465,19 @@ def run_brian2(spec: ExperimentSpec, output_dir: Path, run_id: str) -> ArtifactM
     else:
         id_to_index = {int(nid): index for index, nid in enumerate(network.ids)}
 
-        def advance(stop_ms):
+        def advance(stop_ms: float) -> None:
             net.run((stop_ms - float(net.t / b.ms)) * b.ms)
 
-        def window_spikes(start, stop):
+        def window_spikes(start: float, stop: float) -> dict[str, list[float]]:
             times = np.asarray(spike.t / b.second)
             indices = np.asarray(spike.i)
             selected = (times >= start) & (times < stop)
-            output = {}
+            output: dict[str, list[float]] = {}
             for index, time in zip(indices[selected], times[selected], strict=True):
                 output.setdefault(str(network.ids[index]), []).append(float(time))
             return output
 
-        def set_currents(currents):
+        def set_currents(currents: dict[int, float]) -> None:
             feedback[:] = 0
             for nid, current in currents.items():
                 index = id_to_index.get(nid)

@@ -2,6 +2,7 @@
 
 import math
 from pathlib import Path
+from typing import Any, TypedDict
 
 from .artifacts import ArtifactManifest
 from .backends import BackendCapabilities
@@ -9,6 +10,16 @@ from .model_catalog import PUBLIC_MODEL_DEFINITIONS
 from .public_models import _model_parameters, _stimulus_for, parameter_si, write_result
 from .schema import ExperimentSpec
 from .version import __version__
+
+
+class RecordedSeries(TypedDict):
+    neuron_id: int
+    compartment_id: str | None
+    variable: str
+    unit: str
+    times_seconds: list[float]
+    values: list[float]
+
 
 _MECHANISMS = {
     "lif.basic.v1": "FlyBrianBasicLIF",
@@ -46,7 +57,8 @@ def run_public_models(
     times = [index * dt_seconds for index in range(steps)]
     run_dir = output_dir / run_id
     run_dir.mkdir(parents=True, exist_ok=False)
-    sections, points, neurons, recordings, spiking = [], [], [], [], []
+    sections, points, neurons, spiking = [], [], [], []
+    recordings: list[tuple[Any, str, float, RecordedSeries]] = []
     for group_id, cells in sorted(spec.value["neurons"].items()):
         model_id = spec.value["neuron_models"][group_id]["model_id"]
         definition = PUBLIC_MODEL_DEFINITIONS[model_id]
@@ -59,6 +71,8 @@ def run_public_models(
             for name, value in _model_parameters(spec, group_id, cell).items():
                 scale = _NATIVE_SCALE[definition.parameters[name].dimension]
                 setattr(point, name, parameter_si(value, name) * scale)
+            drive_scale: float
+            observed: list[tuple[str | None, str, str, str, float]]
             if definition.family == "rate":
                 drive_variable, compartment, native_variable, drive_scale = (
                     "input_rate",
@@ -99,7 +113,7 @@ def run_public_models(
                 spiking.append((neuron_id, point))
             if cell["record_variables"]:
                 for compartment, native_variable, variable, unit, scale in observed:
-                    series = dict(
+                    series: RecordedSeries = dict(
                         neuron_id=neuron_id,
                         compartment_id=compartment,
                         variable=variable,
@@ -120,8 +134,8 @@ def run_public_models(
         for neuron_id, point in spiking:
             if point.spike_out > 0.5:
                 spikes.append(dict(neuron_id=neuron_id, time_seconds=time))
-    series = [record[3] for record in recordings]
-    series.sort(
+    result_series = [record[3] for record in recordings]
+    result_series.sort(
         key=lambda item: (item["neuron_id"], item["compartment_id"] or "", item["variable"])
     )
     result = dict(
@@ -139,7 +153,7 @@ def run_public_models(
             random_seed=spec.value["random_seed"],
         ),
         spikes=spikes,
-        series=series,
+        series=result_series,
         warnings=[],
     )
     return write_result(spec, result, run_dir, capabilities)

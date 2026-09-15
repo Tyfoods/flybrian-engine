@@ -213,7 +213,7 @@ class _C148Phase0Selector(ast.NodeTransformer):
         self.result_capture_count = 0
 
     def visit_Assign(self, node: ast.Assign) -> ast.AST | list[ast.AST]:
-        node = self.generic_visit(node)
+        self.generic_visit(node)
         assigned_names = {
             target.id for target in node.targets if isinstance(target, ast.Name)
         }
@@ -247,7 +247,7 @@ class _C148Phase0Selector(ast.NodeTransformer):
         return node
 
     def visit_For(self, node: ast.For) -> ast.AST:
-        node = self.generic_visit(node)
+        self.generic_visit(node)
         if (
             isinstance(node.target, ast.Name)
             and node.target.id == "cfg"
