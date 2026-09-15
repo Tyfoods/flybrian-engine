@@ -9,11 +9,71 @@ This alpha establishes the package and protocol boundary. Its built-in `referenc
 is deterministic contract verification, not a biological simulator. Brian2/NEURON adapters
 must register through the same interface and declare their scientific/version provenance.
 
-The optional `brian2` backend is the first real biological adapter. Its frozen offline oracle
+The optional `brian2` backend is a biological adapter. Its frozen offline oracle
 covers public `lif.basic.v1`, `rate.first_order.v1`, and
 `compartmental.passive_two.v1` definitions and emits standardized scientific results. It does
-not yet claim public inter-model connections, MANC ingestion, or historical private-model
-equivalence.
+not claim general public inter-model connections or historical private-model equivalence.
+
+The retained **Murphey Figure 7 — Axo-axonic control of DNp01 spiking** experiment
+also runs through `brian2` and `neuron`. Its internal profile is `figure8_fes_v1`.
+Both adapters consume the same FES, checksum-verified retained MANC network, and shared
+Churgin model parameters. NEURON uses NetPyNE for network construction and orchestration;
+the packaged `FlyBrianChurginLIF.mod` supplies the cell and event behavior. Results use the
+same standardized spikes, recordings, and artifact manifest as other engine runs.
+
+Install the reviewed wheel with `pip install 'flybrian-engine[brian2,neuron,body]==0.1.14'`
+using the wheel directory as `--find-links`. The NEURON extra pins NEURON 9.0.2 and
+NetPyNE 1.1.1. A working C++ compiler is required on first use; the mechanism build is
+cached by source, platform, and NEURON version. Set `FLYBRIAN_FIGURE8_DATA_ROOT` to the
+directory containing the exact CSV files described by `data/figure8-dataset.json`.
+The engine verifies those files before constructing the network.
+
+```python
+import json
+from pathlib import Path
+from flybrian_engine.runner import run_experiment
+
+fes = json.loads(Path("saved-figure7-experiment.json").read_text())
+manifest = run_experiment(fes, Path("runs"), backend_id="neuron")
+```
+
+This capability covers the retained connected point-cell experiment, Euler steps of
+0.1 ms, zero background drive, and per-neuron currents and membrane-resistance overrides.
+Unsupported model or dataset combinations return compatibility issues; NEURON never
+falls back to Brian2. Simulator selection belongs to the run request, outside FES.
+The two retained variations produce zero DNp01 spikes with electrode current alone and
+seven with added axo-axonic current in both adapters. Version 0.1.6 compares refractory
+boundaries in fixed-step indices, preventing floating-point time drift from adding an
+extra refractory step in NEURON. At the retained 0.1 ms step, this restores agreement on
+all 196 network spikes and the monitored voltage trajectories. NEURON's native spike
+timestamps are one step later than Brian2's; current and conductance samples can fall on
+opposite sides of instantaneous input events. These native output conventions are retained.
+Agreement between adapters at a fixed step does not establish step-size convergence or
+biological validity; smaller-step comparisons are distinct numerical experiments.
+
+Both scientific backends also execute the three public reference models above with exact
+integration and constant full-duration inputs. Their common admission code rejects unsupported
+connections, input shapes and recording requests rather than dropping them. Native NEURON
+mechanisms implement the LIF, rate and passive soma/dendrite updates; Brian2 remains an
+independent implementation. Result plots separate firing rate in Hz from voltage in mV.
+
+Ordinary MANC Churgin circuits use the three-part connectivity snapshot and neurotransmitter
+corrections described by `data/manc-dataset.json`. Set `FLYBRIAN_MANC_DATA_ROOT` to that
+directory. This population and parameter policy is distinct from the retained Figure 7 profile.
+The shipped six neural presets and captured connectome-walking preset have paired scientific
+comparisons and Cloud/Connect development runs on both backends.
+
+The captured walking policy uses 32 ms feedback windows. Its 2,000 ms request therefore executes
+2,016 ms; the result records both durations. Body replay starts with the initial pose at zero,
+then uses recorded positions. Video rendering does not rerun the physics. The retained controller
+and body model can reproduce a tipping fly; agreement across engines establishes translation
+consistency, not successful biological locomotion.
+
+Set `FLYBRIAN_BODY_MODEL_ROOT` to the body-model directory. The `body_assets.acquire_body_assets`
+operation retrieves only missing pinned upstream files, reproduces the retained actuator-filter
+changes, and verifies the captured hashes. Existing files are reused and verified. License,
+attribution and modification notices accompany the assets. The engine's explicit compatibility
+errors identify unsupported body configurations and missing runtime resources.
 
 FES 1.0 accepts additive simulator-neutral descriptors for heterogeneous neuron models,
 unit-bearing values or distributions, direct or muscle-mediated embodiment, backend/version

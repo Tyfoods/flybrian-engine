@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flybrian-engine"
-version = "0.1.5"
+version = "0.1.14"
 description = "Open experiment schema, execution adapters, artifacts, and local runner for FlyBrian"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,7 +25,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-brian2 = ["brian2>=2.7,<3", "numpy>=2.0,<2.2"]
+brian2 = ["brian2>=2.7,<3", "numpy>=2.0,<2.2", "pandas>=2.2,<3", "matplotlib>=3.9,<4", "pydantic>=2,<3"]
+neuron = ["neuron==9.0.2", "netpyne==1.1.1", "numpy>=2.0,<2.2", "pandas>=2.2,<3", "matplotlib>=3.9,<4", "pydantic>=2,<3"]
+body = ["mujoco==3.13.0", "imageio==2.37.4", "imageio-ffmpeg==0.6.0", "certifi>=2024,<2027"]
 neuprint = ["neuprint-python>=0.6.3,<0.7"]
 dev = ["build>=1.2", "mypy>=1.11", "pytest>=8.3", "ruff>=0.6"]
 
@@ -36,7 +38,7 @@ flybrian-engine = "flybrian_engine.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-flybrian_engine = ["py.typed", "data/*.json", "data/*.b64"]
+flybrian_engine = ["py.typed", "data/*.json", "data/*.b64", "data/*.txt", "data/*.md", "mechanisms/*.mod"]
 
 [tool.setuptools.data-files]
 "." = ["THIRD_PARTY_NOTICES.md"]

@@ -10,10 +10,17 @@ from typing import Any, cast
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-from .artifacts import Artifact, ArtifactDisposition, ArtifactManifest, DatasetReference
+from .artifacts import ArtifactManifest
 from .backends import BackendCapabilities, CompatibilityIssue
-from .model_catalog import PUBLIC_MODEL_DEFINITIONS, public_model_ids
-from .results import validate_standardized_results
+from .model_catalog import MANC_MODEL, PUBLIC_MODEL_DEFINITIONS, public_model_ids
+from .public_models import (
+    _model_parameters,
+    _parameter_record,
+    _stimulus_for,
+    parameter_si,
+    write_result,
+)
+from .public_models import compatibility_issues as public_model_issues
 from .schema import ExperimentSpec
 from .version import __version__
 
@@ -25,12 +32,6 @@ def _installed_brian_version() -> str | None:
         return importlib.metadata.version("brian2")
     except importlib.metadata.PackageNotFoundError:
         return None
-
-
-def _parameter_record(value: object, path: str) -> dict[str, object]:
-    if not isinstance(value, dict) or "value" not in value or "unit" not in value:
-        raise ValueError(f"{path} must be a fixed unit-bearing parameter")
-    return cast(dict[str, object], value)
 
 
 def _parameter_quantity(brian: Any, value: object, path: str) -> Any:
@@ -57,41 +58,6 @@ def _parameter_quantity(brian: Any, value: object, path: str) -> Any:
     except KeyError as error:
         raise ValueError(f"{path}.unit is unsupported by the Brian2 adapter") from error
     return cast(float, parameter["value"]) * unit
-
-
-def _model_parameters(
-    spec: ExperimentSpec,
-    group_id: str,
-    neuron: dict[str, object],
-) -> dict[str, object]:
-    models = cast(dict[str, dict[str, object]], spec.value["neuron_models"])
-    parameters = cast(dict[str, object], models[group_id]["parameters"]).copy()
-    overrides = neuron.get("parameter_overrides")
-    if isinstance(overrides, dict):
-        parameters.update(overrides)
-    return parameters
-
-
-def _stimulus_for(
-    spec: ExperimentSpec,
-    neuron_id: int,
-    variable: str,
-    compartment_id: str | None = None,
-) -> object | None:
-    found: list[object] = []
-    for raw_stimulus in cast(list[dict[str, object]], spec.value.get("stimuli", [])):
-        target = cast(dict[str, object], raw_stimulus["target"])
-        if (
-            target["neuron_id"] == neuron_id
-            and target["variable"] == variable
-            and target.get("compartment_id") == compartment_id
-        ):
-            found.append(raw_stimulus["amplitude"])
-    if len(found) > 1:
-        raise ValueError(
-            f"multiple stimuli target neuron {neuron_id} variable {variable!r}"
-        )
-    return found[0] if found else None
 
 
 def _seconds(brian: Any, values: Any) -> list[float]:
@@ -121,9 +87,13 @@ class Brian2Backend:
             backend_id="brian2",
             backend_version=version,
             experiment_spec_versions=("1.0",),
-            neuron_model_families=("compartmental", "lif", "rate"),
-            neuron_model_ids=public_model_ids(),
-            embodiment_modes=("none",),
+            neuron_model_families=("compartmental", "lif", "rate", "lif_churgin_projection_neuron"),
+            neuron_model_ids=(
+                *public_model_ids(),
+                "lif.churgin_projection.figure8.v1",
+                MANC_MODEL.model_id,
+            ),
+            embodiment_modes=("none", "direct_actuator"),
             artifact_kinds=("standardized_results",),
             deterministic_for_fixed_seed=True,
             scientific_execution=True,
@@ -132,60 +102,39 @@ class Brian2Backend:
         )
 
     def compatibility_issues(self, spec: ExperimentSpec) -> tuple[CompatibilityIssue, ...]:
-        issues: list[CompatibilityIssue] = []
-        simulation = spec.value.get("simulation")
-        if not isinstance(simulation, dict):
-            issues.append(CompatibilityIssue(
-                code="missing_simulation_contract",
-                path="simulation",
-                message="Brian2 execution requires an explicit simulation contract",
-            ))
-        elif simulation.get("integration_method") != "exact":
-            issues.append(CompatibilityIssue(
-                code="unsupported_integration_method",
-                path="simulation.integration_method",
-                message="Brian2 golden models require the exact integration method",
-            ))
-        connections = spec.value.get("connections")
-        if connections not in (None, []):
-            issues.append(CompatibilityIssue(
-                code="unsupported_connections",
-                path="connections",
-                message="this Brian2 release does not yet support public connection definitions",
-            ))
-        seen_targets: set[tuple[object, object, object]] = set()
-        for index, raw_stimulus in enumerate(cast(list[object], spec.value.get("stimuli", []))):
-            if not isinstance(raw_stimulus, dict):
-                continue
-            target = raw_stimulus.get("target")
-            if not isinstance(target, dict):
-                continue
-            identity = (
-                target.get("neuron_id"),
-                target.get("compartment_id"),
-                target.get("variable"),
+        from .manc import compatibility_issues as manc_issues
+        from .manc import is_manc
+
+        if is_manc(spec):
+            return manc_issues(spec)
+        if spec.embodiment_mode != "none":
+            return (
+                CompatibilityIssue(
+                    "unsupported_body_execution",
+                    "embodied_config",
+                    "Body execution is currently translated for the ordinary MANC walking profile.",
+                ),
             )
-            if identity in seen_targets:
-                issues.append(CompatibilityIssue(
-                    code="overlapping_stimulus",
-                    path=f"stimuli[{index}].target",
-                    message="this Brian2 release accepts one stimulus per target variable",
-                ))
-            seen_targets.add(identity)
-            start = cast(dict[str, object], raw_stimulus["start_time"])
-            end = cast(dict[str, object], raw_stimulus["end_time"])
-            if start != {"unit": "ms", "value": 0} or end != {
-                "unit": "ms",
-                "value": spec.value["sim_time_ms"],
-            }:
-                issues.append(CompatibilityIssue(
-                    code="unsupported_stimulus_window",
-                    path=f"stimuli[{index}]",
-                    message="this Brian2 release accepts constant full-duration stimuli",
-                ))
-        return tuple(issues)
+        if (
+            spec.value.get("extensions", {}).get("org.flybrian.execution", {}).get("profile")
+            == "figure8_fes_v1"
+        ):
+            from .figure8 import compatibility_issues
+
+            return compatibility_issues(spec)
+        return public_model_issues(spec)
 
     def run(self, spec: ExperimentSpec, output_dir: Path, run_id: str) -> ArtifactManifest:
+        from .manc import is_manc
+
+        if (
+            is_manc(spec)
+            or spec.value.get("extensions", {}).get("org.flybrian.execution", {}).get("profile")
+            == "figure8_fes_v1"
+        ):
+            from .figure8 import run_brian2
+
+            return run_brian2(spec, output_dir, run_id)
         brian = importlib.import_module("brian2")
         capabilities = self.capabilities
         if capabilities.availability != "available":
@@ -214,11 +163,13 @@ class Brian2Backend:
                 neuron = neurons[group_id][neuron_key]
                 neuron_id = cast(int, neuron["neuron_id"])
                 parameters = _model_parameters(spec, group_id, neuron)
-                neuron_records.append({
-                    "family": definition.family,
-                    "model_id": model_id,
-                    "neuron_id": neuron_id,
-                })
+                neuron_records.append(
+                    {
+                        "family": definition.family,
+                        "model_id": model_id,
+                        "neuron_id": neuron_id,
+                    }
+                )
                 if model_id == "lif.basic.v1":
                     group = self._build_lif(
                         brian,
@@ -235,14 +186,16 @@ class Brian2Backend:
                     if neuron["record_variables"]:
                         state_monitor = brian.StateMonitor(group, "v", record=True, clock=clock)
                         network.add(state_monitor)
-                        series_monitors.append((
-                            neuron_id,
-                            None,
-                            "membrane_potential",
-                            "V",
-                            state_monitor,
-                            "v",
-                        ))
+                        series_monitors.append(
+                            (
+                                neuron_id,
+                                None,
+                                "membrane_potential",
+                                "V",
+                                state_monitor,
+                                "v",
+                            )
+                        )
                 elif model_id == "rate.first_order.v1":
                     group = self._build_rate(
                         brian,
@@ -255,14 +208,16 @@ class Brian2Backend:
                     if neuron["record_variables"]:
                         state_monitor = brian.StateMonitor(group, "r", record=True, clock=clock)
                         network.add(state_monitor)
-                        series_monitors.append((
-                            neuron_id,
-                            None,
-                            "rate",
-                            "Hz",
-                            state_monitor,
-                            "r",
-                        ))
+                        series_monitors.append(
+                            (
+                                neuron_id,
+                                None,
+                                "rate",
+                                "Hz",
+                                state_monitor,
+                                "r",
+                            )
+                        )
                 elif model_id == "compartmental.passive_two.v1":
                     group = self._build_compartmental(
                         brian,
@@ -285,24 +240,26 @@ class Brian2Backend:
                             clock=clock,
                         )
                         network.add(state_monitor)
-                        series_monitors.extend((
+                        series_monitors.extend(
                             (
-                                neuron_id,
-                                "dendrite",
-                                "membrane_potential",
-                                "V",
-                                state_monitor,
-                                "v_dendrite",
-                            ),
-                            (
-                                neuron_id,
-                                "soma",
-                                "membrane_potential",
-                                "V",
-                                state_monitor,
-                                "v_soma",
-                            ),
-                        ))
+                                (
+                                    neuron_id,
+                                    "dendrite",
+                                    "membrane_potential",
+                                    "V",
+                                    state_monitor,
+                                    "v_dendrite",
+                                ),
+                                (
+                                    neuron_id,
+                                    "soma",
+                                    "membrane_potential",
+                                    "V",
+                                    state_monitor,
+                                    "v_soma",
+                                ),
+                            )
+                        )
                 else:
                     raise ValueError(f"unsupported public model definition {model_id!r}")
 
@@ -317,36 +274,7 @@ class Brian2Backend:
             series_monitors,
             simulation,
         )
-        result_path = run_dir / "standardized-results.json"
-        validated_result = validate_standardized_results(result)
-        result_path.write_text(validated_result.to_json(), encoding="utf-8")
-        artifact = Artifact.from_file(
-            key="standardized_results",
-            kind="standardized_results",
-            media_type="application/json",
-            path=result_path,
-            root=run_dir,
-        )
-        manifest = ArtifactManifest(
-            run_id=run_id,
-            engine_version=__version__,
-            backend_id=capabilities.backend_id,
-            backend_version=capabilities.backend_version,
-            experiment_spec_version=str(spec.value["spec_version"]),
-            experiment_sha256=spec.sha256(),
-            random_seed=int(spec.value["random_seed"]),
-            datasets=(DatasetReference(dataset_id=str(spec.value["dataset"])),),
-            scientific_execution=True,
-            deterministic_for_fixed_seed=True,
-            artifacts=(artifact,),
-            dispositions=(ArtifactDisposition(
-                kind="standardized_results",
-                status="available",
-                artifact_keys=("standardized_results",),
-            ),),
-        )
-        manifest.write(run_dir / "manifest.json")
-        return manifest
+        return write_result(spec, result, run_dir, capabilities)
 
     @staticmethod
     def _build_lif(
@@ -430,9 +358,7 @@ class Brian2Backend:
         stimulus: object | None,
         neuron_id: int,
     ) -> Any:
-        group = brian.NeuronGroup(
-            1,
-            """
+        equations = """
             dv_soma/dt = soma_current / capacitance_soma : volt
             dv_dendrite/dt = dendrite_total_current / capacitance_dendrite : volt
             soma_current = soma_leak + soma_coupling : amp
@@ -448,7 +374,15 @@ class Brian2Backend:
             capacitance_dendrite : farad (constant)
             v_rest : volt (constant)
             dendrite_current : amp (constant)
-            """,
+            """
+        if parameter_si(parameters["coupling_conductance"], "coupling_conductance") == 0:
+            # Remove the absent coupling before symbolic integration, which otherwise
+            # divides by a degenerate eigenvalue difference for equal compartments.
+            equations = equations.replace("g_couple * (v_dendrite - v_soma)", "0 * amp")
+            equations = equations.replace("g_couple * (v_soma - v_dendrite)", "0 * amp")
+        group = brian.NeuronGroup(
+            1,
+            equations,
             method="exact",
             clock=clock,
             name=f"compartmental_{neuron_id}",
@@ -500,19 +434,23 @@ class Brian2Backend:
         series: list[dict[str, object]] = []
         unit_objects = {"V": brian.volt, "Hz": brian.Hz}
         for neuron_id, compartment_id, variable, unit, monitor, monitor_variable in series_monitors:
-            series.append({
-                "compartment_id": compartment_id,
-                "neuron_id": neuron_id,
-                "times_seconds": _seconds(brian, monitor.t),
-                "unit": unit,
-                "values": _values(getattr(monitor, monitor_variable)[0], unit_objects[unit]),
-                "variable": variable,
-            })
-        series.sort(key=lambda item: (
-            cast(int, item["neuron_id"]),
-            cast(str | None, item["compartment_id"]) or "",
-            cast(str, item["variable"]),
-        ))
+            series.append(
+                {
+                    "compartment_id": compartment_id,
+                    "neuron_id": neuron_id,
+                    "times_seconds": _seconds(brian, monitor.t),
+                    "unit": unit,
+                    "values": _values(getattr(monitor, monitor_variable)[0], unit_objects[unit]),
+                    "variable": variable,
+                }
+            )
+        series.sort(
+            key=lambda item: (
+                cast(int, item["neuron_id"]),
+                cast(str | None, item["compartment_id"]) or "",
+                cast(str, item["variable"]),
+            )
+        )
         time_step = _parameter_quantity(brian, simulation["time_step"], "simulation.time_step")
         return {
             "backend_id": "brian2",

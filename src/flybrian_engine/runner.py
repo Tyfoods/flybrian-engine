@@ -7,6 +7,7 @@ import ipaddress
 import json
 import secrets
 import socket
+import threading
 import uuid
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -50,7 +51,9 @@ def run_experiment(
     spec = preflight_experiment(value, resolved_backend_id, registry)
     backend = registry.get(resolved_backend_id)
     manifest = backend.run(spec, output_dir, resolved_run_id)
-    return manifest.to_dict()
+    from .result_summary import present_result
+
+    return present_result(spec, manifest, output_dir / resolved_run_id).to_dict()
 
 
 class LocalRunnerServer(ThreadingHTTPServer):
@@ -324,6 +327,13 @@ def create_server(
                 )
                 return
             try:
+                if parts == ("v1", "shutdown"):
+                    if body:
+                        raise ValidationError("shutdown request body must be an empty object")
+                    self.manager.close_idle_admission()
+                    self._json(HTTPStatus.OK, {"status": "stopping"})
+                    threading.Thread(target=self.server.shutdown, daemon=True).start()
+                    return
                 if parts == ("v1", "jobs"):
                     unknown = sorted(set(body) - {"experiment", "backend_id", "run_id"})
                     if unknown:

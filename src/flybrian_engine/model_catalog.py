@@ -81,3 +81,54 @@ UNIT_DIMENSIONS: dict[str, str] = {
 
 def public_model_ids() -> tuple[str, ...]:
     return tuple(sorted(PUBLIC_MODEL_DEFINITIONS))
+
+
+# Retained full-connectome model: admitted through the Figure 8 FES profile only.
+FIGURE8_MODEL = ModelDefinition(
+    model_id="lif.churgin_projection.figure8.v1",
+    family="lif",
+    supports_spikes=True,
+    parameters={"R_m": ParameterDefinition("resistance")},
+)
+FIGURE8_PARAMETERS = dict(
+    v_rest=-55.0,
+    v_reset=-55.0,
+    v_threshold=-40.0,
+    capacitance=72.0,
+    resistance=300.0,
+    refractory=2.0,
+    e_ace=0.0,
+    e_gab=-60.0,
+    e_glu=-60.0,
+    tau_ace=1.1,
+    tau_gab=5.4,
+    tau_glu=5.0,
+    j_ace=0.27,
+    j_gab=0.8,
+    j_glu=0.8,
+)
+
+# Ordinary MANC uses its own glutamate reversal potential and dataset policy.
+MANC_MODEL = ModelDefinition(
+    model_id="lif.churgin_projection.manc.v1",
+    family="lif",
+    supports_spikes=True,
+    parameters={"R_m": ParameterDefinition("resistance")},
+)
+MANC_PARAMETERS = dict(
+    v_rest=-55.0,
+    v_reset=-55.0,
+    v_threshold=-40.0,
+    capacitance=72.0,
+    resistance=300.0,
+    refractory=2.0,
+    e_ace=0.0,
+    e_gab=-60.0,
+    e_glu=-80.0,
+    tau_ace=1.1,
+    tau_gab=5.4,
+    tau_glu=5.0,
+    j_ace=0.27,
+    j_gab=0.8,
+    j_glu=0.8,
+)

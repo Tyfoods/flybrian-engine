@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "manc:v1.2.1+flybrian-figure7-2025-12-05",
+  "provider": "Janelia Research Campus",
+  "release": "2025-12-05",
+  "source_url": "https://neuprint.janelia.org",
+  "citation": null,
+  "license": "See upstream dataset terms",
+  "redistribution": "unknown",
+  "access": "public",
+  "files": [
+    {
+      "role": "connectivity",
+      "path": "unique_pairs_by_id_part1.csv",
+      "sha256": "b7c58ed0439247aed662e5e9ef71a766813f20748a065e435269fc6077b0ae9c",
+      "size_bytes": 49309654,
+      "media_type": "text/csv",
+      "schema_id": "org.janelia.neuprint.connection-summary.v1",
+      "data_rows": 593631
+    },
+    {
+      "role": "connectivity",
+      "path": "unique_pairs_by_id_part2.csv",
+      "sha256": "08225c0765f363d96f30281d6a4b594b7a4b9bff3f33dd7798928cdf624d9c26",
+      "size_bytes": 48494576,
+      "media_type": "text/csv",
+      "schema_id": "org.janelia.neuprint.connection-summary.v1",
+      "data_rows": 593631
+    }
+  ]
+}

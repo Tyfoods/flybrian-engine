@@ -21,6 +21,7 @@ from typing import IO, Any, Literal
 from .artifacts import Artifact, ArtifactManifest
 from .backends import BackendRegistry, CompatibilityIssue, assess_backend_compatibility
 from .brian2_backend import Brian2Backend
+from .neuron_backend import NeuronBackend
 from .reference import ReferenceBackend
 from .schema import ExperimentSpec, ValidationError, validate_experiment_spec
 from .version import __version__
@@ -77,6 +78,7 @@ def default_registry() -> BackendRegistry:
     registry = BackendRegistry()
     registry.register(ReferenceBackend())
     registry.register(Brian2Backend())
+    registry.register(NeuronBackend())
     return registry
 
 
@@ -424,6 +426,16 @@ class DurableJobManager:
         if len(data) != artifact.size_bytes or hashlib.sha256(data).hexdigest() != artifact.sha256:
             raise ValueError(f"artifact {artifact.key!r} size or SHA-256 does not match")
         return artifact, data
+
+    def close_idle_admission(self) -> None:
+        """Reserve an idle runner for an explicit runtime installation update."""
+        with self._condition:
+            if self._queue or self._workers:
+                raise InvalidTransitionError(
+                    "Wait for local simulations to finish before updating the runtime."
+                )
+            self._closing = True
+            self._condition.notify_all()
 
     def shutdown(self) -> None:
         with self._condition:

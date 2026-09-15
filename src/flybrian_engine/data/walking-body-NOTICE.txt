@@ -1,0 +1,12 @@
+FlyBrian retained body model
+
+Derived from the Flybody model distributed by Google DeepMind's MuJoCo Menagerie,
+commit a03e87bf13502b0b48ebbf2808928fd96ebf9cf3, directory flybody.
+Source: https://github.com/google-deepmind/mujoco_menagerie/tree/a03e87bf13502b0b48ebbf2808928fd96ebf9cf3/flybody
+The upstream Apache License 2.0 and attribution README accompany this notice.
+
+FlyBrian modifies two defaults in fruitfly.xml to preserve its retained simulation:
+- General actuators: dyntype="filter", dynprm="0.01 0 0".
+- Adhesion actuators: dyntype="filter", dynprm="0.007 0 0".
+All other model files remain unchanged. The engine's walking-body-model.json
+records the exact resulting file sizes and SHA-256 checksums.
